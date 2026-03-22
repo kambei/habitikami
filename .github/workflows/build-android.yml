@@ -36,9 +36,24 @@ jobs:
       - name: Rename APK
         run: mv app/build/outputs/apk/debug/*.apk app/build/outputs/apk/debug/habitikami.apk
 
+      - name: Get version name
+        id: version
+        run: |
+          VERSION=$(grep 'versionName' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "name=v${VERSION}" >> "$GITHUB_OUTPUT"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: habitikami-debug-apk
           path: habitikami-android-and-widgets/app/build/outputs/apk/debug/habitikami.apk
           retention-days: 30
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.name }}
+          name: Habitikami ${{ steps.version.outputs.name }}
+          files: habitikami-android-and-widgets/app/build/outputs/apk/debug/habitikami.apk
+          generate_release_notes: true

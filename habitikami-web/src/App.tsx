@@ -5,7 +5,7 @@ import { habitService } from './services/HabitService'
 import { Toaster, toast } from 'sonner'
 import { BottomNav } from './components/BottomNav'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LayoutDashboard, Heart, Globe, Settings } from 'lucide-react'
+import { LayoutDashboard, Heart, Globe, Settings, Github } from 'lucide-react'
 import { useTranslation } from './i18n'
 
 const HabitTable = React.lazy(() => import('./components/HabitTable').then(m => ({ default: m.HabitTable })))
@@ -295,9 +295,46 @@ function App() {
         >
           <header className="p-2 md:p-4 border-b border-border bg-card/50 backdrop-blur shrink-0 z-20">
             <div className="w-full max-w-7xl mx-auto px-2 md:px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
-                Habitikami
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
+                  Habitikami
+                </h1>
+                <a
+                  href="https://ko-fi.com/kambei"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-secondary text-rose-400 hover:bg-rose-500/20 flex items-center justify-center transition-colors shadow-sm shrink-0"
+                  title={t('tooltipKofi')}
+                >
+                  <Heart width={16} height={16} />
+                </a>
+                <div className="relative group">
+                  <button
+                    className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 flex items-center justify-center transition-colors shadow-sm shrink-0"
+                    title="GitHub"
+                  >
+                    <Github width={16} height={16} />
+                  </button>
+                  <div className="absolute left-0 top-full mt-1 hidden group-hover:flex flex-col bg-card border border-border rounded-lg shadow-lg p-2 min-w-[180px] z-50">
+                    <a
+                      href="https://github.com/kambei/habitikami"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 rounded hover:bg-secondary/50 transition-colors"
+                    >
+                      View on GitHub
+                    </a>
+                    <a
+                      href="https://github.com/kambei/habitikami/issues/new"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 rounded hover:bg-secondary/50 transition-colors"
+                    >
+                      Report an issue
+                    </a>
+                  </div>
+                </div>
+              </div>
 
               <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 w-full md:w-auto">
                 {/* Top Nav - Hidden on Mobile */}
@@ -368,15 +405,6 @@ function App() {
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                   </button>
-                  <a
-                    href="https://ko-fi.com/kambei"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-8 h-8 rounded-full bg-secondary text-rose-400 hover:bg-rose-500/20 flex items-center justify-center transition-colors shadow-sm shrink-0"
-                    title={t('tooltipKofi')}
-                  >
-                    <Heart width={16} height={16} />
-                  </a>
                 </div>
               </div>
             </div>

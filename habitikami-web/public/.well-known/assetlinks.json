@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "dev.kambei.habitikami",
+    "sha256_cert_fingerprints": ["B0:41:09:B5:9D:86:8A:1F:6A:6C:E8:0E:A0:DD:83:E9:A0:23:5A:2B:63:3A:18:5A:9C:CC:40:CE:A2:33:44:49"]
+  }
+}]

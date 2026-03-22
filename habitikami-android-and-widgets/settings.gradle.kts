@@ -5,13 +5,16 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
+}
 
-dependencyResolution {
+dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
     }
 }
 
-rootProject.name = "habitikami"
+rootProject.name = "habitikami-android-and-widgets"
 include(":app")

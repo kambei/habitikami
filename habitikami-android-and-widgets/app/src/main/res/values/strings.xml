@@ -1,5 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Habitikami</string>
-    <string name="widget_tap_to_open">Tap to open</string>
+
+    <!-- TWA: Digital Asset Links (replace SHA-256 with your signing key fingerprint) -->
+    <string name="asset_statements">[{\"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": {\"namespace\": \"web\", \"site\": \"https://habitikami.kambei.dev\"}}]</string>
+
+    <!-- Widget -->
+    <string name="widget_description">Track and increment your daily counters</string>
+    <string name="label_resist">Resist</string>
+    <string name="label_smoked">Smoked</string>
+    <string name="label_coffee">Coffee</string>
+    <string name="btn_plus">+1</string>
+
+    <!-- Widget Config -->
+    <string name="config_title">Habitikami Widget</string>
+    <string name="config_subtitle">Enter your server URL and API token to connect the widget</string>
+    <string name="hint_server_url">Server URL</string>
+    <string name="hint_api_token">API Key</string>
+    <string name="api_key_info">ℹ️ Generate your API key in Habitikami web app → Settings → API Key section</string>
+    <string name="btn_save">Save &amp; Connect</string>
+
+    <!-- Stats Widget -->
+    <string name="widget_stats_description">Habit completion heatmap with legend</string>
+    <string name="btn_refresh">Refresh</string>
+
+    <!-- Help Widget -->
+    <string name="widget_help_description">Quick button to open Habitikami Help</string>
+    <string name="label_help">Help</string>
+    <string name="label_ai_help">AI Help</string>
 </resources>

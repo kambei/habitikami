@@ -1,3 +1,2 @@
-# Default ProGuard rules for Habitikami
--keepattributes SourceFile,LineNumberTable
--renamesourcefileattribute SourceFile
+# Keep widget provider
+-keep class dev.kambei.habitikami.widget.** { *; }

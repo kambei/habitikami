@@ -1,0 +1,37 @@
+# Android build
+build/
+app/build/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Gradle
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+local.properties
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Signing
+*.jks
+*.keystore
+habitikami-release.*
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Misc
+*.log
+*.tmp
+*.bak
+captures/
+.externalNativeBuild/
+.cxx/

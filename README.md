@@ -21,14 +21,16 @@ A **React + Vite + TypeScript** progressive web app for daily habit tracking, po
 
 ### [habitikami-android-and-widgets](./habitikami-android-and-widgets)
 
-A native **Android** app that wraps the Habitikami PWA (`habitikami.kambei.dev`) in a WebView, providing a native app experience with home screen widgets for quick habit tracking.
+A native **Android** app using Trusted Web Activity (TWA) to deliver the Habitikami PWA (`habitikami.kambei.dev`) as a full-screen native experience, with home screen widgets for quick habit tracking.
 
 **Features:**
-- Native Android wrapper for the Habitikami web app
-- Home screen widgets for at-a-glance habit status
-- Seamless Google authentication flow
+- TWA-based launcher with Digital Asset Links verification
+- Counter widget — increment daily counters (resist, smoked, coffee) from the home screen
+- Stats widget — habit completion heatmap with configurable habit picker
+- Help widget — quick access to Habitikami help and AI assistance
+- Widget configuration with server URL and API key authentication
 
-**Tech stack:** Kotlin, Android SDK, Gradle
+**Tech stack:** Kotlin, Android SDK, Gradle, AndroidBrowserHelper, Coroutines
 
 ## Getting Started
 

@@ -1,4 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Habitikami" parent="Theme.MaterialComponents.DayNight.NoActionBar" />
+
+    <style name="Theme.Habitikami" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:statusBarColor">@color/background</item>
+        <item name="android:navigationBarColor">@color/background</item>
+    </style>
+
+    <!-- Splash/launch theme for TWA -->
+    <style name="Theme.Habitikami.Launch" parent="Theme.Habitikami">
+        <item name="android:windowBackground">@color/background</item>
+    </style>
+
+    <!-- Widget button style -->
+    <style name="Widget.Habitikami.WidgetButton" parent="android:Widget.Button">
+        <item name="android:background">@drawable/widget_button</item>
+        <item name="android:textColor">#FFFFFFFF</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:gravity">center</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:minWidth">0dp</item>
+    </style>
+
 </resources>

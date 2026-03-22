@@ -25,6 +25,52 @@ const LoaderFallback = () => (
   </div>
 );
 
+function GitHubDropdown() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 flex items-center justify-center transition-colors shadow-sm shrink-0"
+        title="GitHub"
+      >
+        <Github width={16} height={16} />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 flex flex-col bg-card border border-border rounded-lg shadow-lg p-2 min-w-[180px] z-50">
+          <a
+            href="https://github.com/kambei/habitikami"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 rounded hover:bg-secondary/50 transition-colors"
+          >
+            View on GitHub
+          </a>
+          <a
+            href="https://github.com/kambei/habitikami/issues/new"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 rounded hover:bg-secondary/50 transition-colors"
+          >
+            Report an issue
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const ALL_TABS: ViewType[] = ['Weekdays', 'Weekend', 'Focus', 'Graphs', 'MobNotes', 'SmokeTemptation', 'Counters', 'Help'];
 
 const TAB_LABEL_KEYS: Record<ViewType, string> = {
@@ -308,32 +354,7 @@ function App() {
                 >
                   <Heart width={16} height={16} />
                 </a>
-                <div className="relative group">
-                  <button
-                    className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 flex items-center justify-center transition-colors shadow-sm shrink-0"
-                    title="GitHub"
-                  >
-                    <Github width={16} height={16} />
-                  </button>
-                  <div className="absolute left-0 top-full mt-1 hidden group-hover:flex flex-col bg-card border border-border rounded-lg shadow-lg p-2 min-w-[180px] z-50">
-                    <a
-                      href="https://github.com/kambei/habitikami"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 rounded hover:bg-secondary/50 transition-colors"
-                    >
-                      View on GitHub
-                    </a>
-                    <a
-                      href="https://github.com/kambei/habitikami/issues/new"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 rounded hover:bg-secondary/50 transition-colors"
-                    >
-                      Report an issue
-                    </a>
-                  </div>
-                </div>
+                <GitHubDropdown />
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 w-full md:w-auto">

@@ -1,0 +1,45 @@
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE / Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# === Web (habitikami-web) ===
+habitikami-web/node_modules/
+habitikami-web/dist/
+habitikami-web/dist-ssr/
+habitikami-web/.env
+habitikami-web/.env.*
+!habitikami-web/.env.example
+habitikami-web/data/
+habitikami-web/*.local
+habitikami-web/eslint_report.json
+habitikami-web/lint_out.json
+habitikami-web/lint_output.txt
+habitikami-web/lint_errors.txt
+
+# === Android (habitikami-android-and-widgets) ===
+habitikami-android-and-widgets/.gradle/
+habitikami-android-and-widgets/.kotlin/
+habitikami-android-and-widgets/.idea/
+habitikami-android-and-widgets/build/
+habitikami-android-and-widgets/app/build/
+habitikami-android-and-widgets/app/release/
+habitikami-android-and-widgets/local.properties
+habitikami-android-and-widgets/captures/
+habitikami-android-and-widgets/*.iml
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

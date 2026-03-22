@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Allow: /privacy
+Allow: /terms
+
+Sitemap: https://habitikami.kambei.dev/sitemap.xml

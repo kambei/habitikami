@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 200" fill="none">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="480" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1a1a2e"/>
+      <stop offset="1" stop-color="#16213e"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="200" rx="12" fill="url(#bg2)"/>
+  <!-- Modal overlay -->
+  <rect width="480" height="200" rx="12" fill="black" opacity="0.4"/>
+  <!-- Modal dialog -->
+  <rect x="90" y="25" width="300" height="150" rx="12" fill="#2a2a4a" stroke="#444" stroke-width="1"/>
+  <!-- Modal title -->
+  <text x="140" y="55" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#e0e0e0">Create API Key</text>
+  <!-- Project selector -->
+  <text x="120" y="80" font-family="Arial, sans-serif" font-size="11" fill="#888">Select a Google Cloud project:</text>
+  <rect x="120" y="88" width="240" height="30" rx="6" fill="#1a1a2e" stroke="#4fc3f7" stroke-width="1.5"/>
+  <text x="135" y="108" font-family="Arial, sans-serif" font-size="11" fill="#ccc">My First Project</text>
+  <text x="340" y="108" font-family="Arial, sans-serif" font-size="10" fill="#4fc3f7">▼</text>
+  <!-- Highlighted arrow -->
+  <path d="M95 103 L115 103" stroke="#ff6b6b" stroke-width="2.5" marker-end="url(#arr2)"/>
+  <!-- Create button -->
+  <rect x="260" y="130" width="110" height="30" rx="15" fill="#4285f4"/>
+  <text x="315" y="150" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white" text-anchor="middle">Create key</text>
+  <!-- Arrow to create -->
+  <path d="M235 145 L255 145" stroke="#ff6b6b" stroke-width="2.5" marker-end="url(#arr2)"/>
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff6b6b"/>
+    </marker>
+  </defs>
+  <!-- Step number -->
+  <circle cx="440" cy="45" r="16" fill="#4285f4"/>
+  <text x="440" y="50" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">2</text>
+</svg>

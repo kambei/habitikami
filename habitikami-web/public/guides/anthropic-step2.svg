@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 200" fill="none">
+  <defs>
+    <linearGradient id="abg2" x1="0" y1="0" x2="480" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1a1a2e"/>
+      <stop offset="1" stop-color="#1a1028"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="200" rx="12" fill="url(#abg2)"/>
+  <!-- Header area -->
+  <text x="30" y="35" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#e0e0e0">API Keys</text>
+  <!-- Create Key button - highlighted -->
+  <rect x="340" y="15" width="120" height="32" rx="8" fill="#c084fc"/>
+  <text x="400" y="36" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">+ Create Key</text>
+  <!-- Arrow -->
+  <path d="M315 31 L335 31" stroke="#ff6b6b" stroke-width="2.5" marker-end="url(#aarr2)"/>
+  <!-- Modal overlay -->
+  <rect x="0" y="55" width="480" height="145" rx="0" fill="black" opacity="0.3"/>
+  <!-- Modal -->
+  <rect x="90" y="65" width="300" height="120" rx="12" fill="#2a2a4a" stroke="#c084fc" stroke-width="1"/>
+  <text x="240" y="92" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#e0e0e0" text-anchor="middle">Create a new API key</text>
+  <!-- Name input -->
+  <text x="120" y="115" font-family="Arial, sans-serif" font-size="10" fill="#888">Key name</text>
+  <rect x="120" y="120" width="240" height="28" rx="6" fill="#1a1a2e" stroke="#555" stroke-width="1"/>
+  <text x="135" y="139" font-family="monospace" font-size="10" fill="#666">habitikami-key</text>
+  <!-- Create button -->
+  <rect x="260" y="155" width="90" height="24" rx="12" fill="#c084fc"/>
+  <text x="305" y="171" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white" text-anchor="middle">Create Key</text>
+  <defs>
+    <marker id="aarr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff6b6b"/>
+    </marker>
+  </defs>
+  <!-- Step number -->
+  <circle cx="440" cy="75" r="16" fill="#c084fc"/>
+  <text x="440" y="80" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">2</text>
+</svg>

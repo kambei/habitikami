@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/habitikami.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO: Title & Description (English primary, Italian alternate) -->
+  <title>Habitikami – Build Better Habits & Track Your Daily Progress</title>
+  <meta name="description" content="Habitikami is your smart habit tracker. Build positive habits, track daily progress with charts & streaks, and level up your routine. Free, powered by Google Sheets. | Habitikami è il tuo tracker di abitudini intelligente. Costruisci abitudini positive, monitora i progressi con grafici e streak, e migliora la tua routine quotidiana." />
+  <meta name="keywords" content="habit tracker, track habits, daily routine, productivity, streak, focus, build habits, tracciamento abitudini, abitudini quotidiane, produttività, routine, concentrazione" />
+  <meta name="author" content="Kambei" />
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://habitikami.kambei.dev/" />
+
+  <!-- Hreflang: tell Google this page serves both English and Italian -->
+  <link rel="alternate" hreflang="en" href="https://habitikami.kambei.dev/" />
+  <link rel="alternate" hreflang="it" href="https://habitikami.kambei.dev/" />
+  <link rel="alternate" hreflang="x-default" href="https://habitikami.kambei.dev/" />
+
+  <!-- Open Graph (Facebook, WhatsApp, Telegram, etc.) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://habitikami.kambei.dev/" />
+  <meta property="og:title" content="Habitikami – Build Better Habits & Track Your Progress" />
+  <meta property="og:description" content="Your smart habit tracker powered by Google Sheets. Track daily habits, visualize streaks, and stay focused." />
+  <meta property="og:image" content="https://habitikami.kambei.dev/habitikami.png" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale:alternate" content="it_IT" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Habitikami – Build Better Habits" />
+  <meta name="twitter:description" content="Your smart habit tracker. Track daily progress, visualize streaks, and level up your routine." />
+  <meta name="twitter:image" content="https://habitikami.kambei.dev/habitikami.png" />
+
+  <!-- Theme Color (for mobile browser chrome) -->
+  <meta name="theme-color" content="#7c3aed" />
+
+  <script src="/config.js"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('SW registered:', reg.scope))
+          .catch(err => console.log('SW registration failed:', err));
+      });
+    }
+  </script>
+  <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "9fc649416dd44264b14fff84fd4fa9c4"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+
+</html>

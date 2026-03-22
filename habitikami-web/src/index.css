@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: hsl(0 0% 10%);
+  --color-foreground: hsl(0 0% 95%);
+  --color-card: hsl(0 0% 15%);
+  --color-card-foreground: hsl(0 0% 95%);
+  --color-primary: hsl(265 80% 60%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(0 0% 20%);
+  --color-secondary-foreground: hsl(0 0% 95%);
+  --color-muted: hsl(0 0% 20%);
+  --color-muted-foreground: hsl(0 0% 95%);
+  --color-accent: hsl(0 0% 20%);
+  --color-accent-foreground: hsl(0 0% 95%);
+  --color-border: hsl(0 0% 20%);
+  --color-input: hsl(0 0% 20%);
+  --color-ring: hsl(265 80% 60%);
+  --radius: 0.5rem;
+}
+
+/* Custom Utilities mimicking the previous CSS variables logic but allowing usage with bg-background etc */
+/* Actually, Tailwind v4 maps theme keys to --color-* automatically. */
+/* But we need to define the CSS variables for the app usages that might rely on var(--background) if any? */
+/* In v4, defining in @theme makes them available as utilities. */
+/* But shadcn/ui components usually use `bg-background` class which resolves to `var(--color-background)`. */
+/* Let's double check if I need to inject them into :root explicitly or if @theme does it. */
+/* @theme pushes them to :root. */
+
+@layer base {
+  :root {
+    /* Re-declare for direct var usage if needed, or rely on @theme */
+    --background: 0 0% 10%;
+    --foreground: 0 0% 95%;
+  }
+
+  body {
+    @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))];
+    /* Fallback/Mix */
+    /* Or better, just use the theme colors defined above if properly mapped. */
+    /* Let's stick to the v4 simple import and standard CSS vars */
+  }
+}
+
+/* Let's try to keep it simple and closer to the original v3 config logic but compatible with v4 */
+/* If I use @import "tailwindcss"; it pulls in defaults. */
+
+/* CORRECT V4 APPROACH FOR SHADCN-LIKE setup: */
+/* We can define the CSS variables in :root normally, and then tell Tailwind to use them. */
+
+:root {
+  --background: 0 0% 10%;
+  --foreground: 0 0% 95%;
+  --card: 0 0% 15%;
+  --card-foreground: 0 0% 95%;
+  --primary: 265 80% 60%;
+  --primary-foreground: 0 0% 100%;
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --ring: 265 80% 60%;
+  --radius: 0.5rem;
+}
+
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--input));
+  --color-secondary-foreground: hsl(var(--foreground));
+  --color-muted: hsl(var(--input));
+  --color-muted-foreground: hsl(var(--foreground));
+  --color-accent: hsl(var(--input));
+  --color-accent-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--input));
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--primary) / 0.5);
+}

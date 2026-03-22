@@ -1,0 +1,40 @@
+services:
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik
+    restart: always
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}" # Set in .env
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      # - "8080:8080" # Traefik Dashboard
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  habitikami:
+    image: registry.gitlab.com/kambei/habitikami:latest
+    container_name: habitikami
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.habitikami.rule=Host(`habitikami.kambei.dev`)"
+      - "traefik.http.routers.habitikami.entrypoints=websecure"
+      - "traefik.http.routers.habitikami.tls.certresolver=myresolver"
+      # HTTP -> HTTPS redirect
+      - "traefik.http.routers.habitikami-http.rule=Host(`habitikami.kambei.dev`)"
+      - "traefik.http.routers.habitikami-http.entrypoints=web"
+      - "traefik.http.routers.habitikami-http.middlewares=https-redirect"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"

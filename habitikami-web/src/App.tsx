@@ -5,7 +5,7 @@ import { habitService } from './services/HabitService'
 import { Toaster, toast } from 'sonner'
 import { BottomNav } from './components/BottomNav'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LayoutDashboard, Coffee, Settings, Github, Menu, LogOut, RefreshCcw, Languages } from 'lucide-react'
+import { LayoutDashboard, Settings, Github, Menu, LogOut, RefreshCcw, Languages } from 'lucide-react'
 import { useTranslation } from './i18n'
 
 const HabitTable = React.lazy(() => import('./components/HabitTable').then(m => ({ default: m.HabitTable })))
@@ -356,24 +356,80 @@ function App() {
           className="h-screen bg-background text-foreground flex flex-col font-sans overflow-hidden"
         >
           <header className="p-2 md:p-4 border-b border-border bg-card/50 backdrop-blur shrink-0 z-20">
-            <div className="w-full max-w-7xl mx-auto px-2 md:px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
-                  Habitikami
-                </h1>
-                <a
-                  href="https://ko-fi.com/kambei"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-secondary text-amber-400 hover:bg-amber-500/20 flex items-center justify-center transition-colors shadow-sm shrink-0"
-                  title={t('tooltipKofi')}
-                >
-                  <Coffee width={16} height={16} />
-                </a>
-                <GitHubDropdown />
-              </div>
+              <div className="w-full max-w-7xl mx-auto px-2 md:px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center w-full md:w-auto justify-between md:justify-start gap-4">
+                  <div className="flex items-center gap-2">
+                    {/* Hamburger Menu */}
+                    <div className="relative" ref={menuRef}>
+                      <button
+                        onClick={() => setMenuOpen(o => !o)}
+                        className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 flex items-center justify-center transition-colors shadow-sm shrink-0"
+                        title="Menu"
+                      >
+                        <Menu width={16} height={16} />
+                      </button>
+                      {menuOpen && (
+                        <div className="absolute left-0 top-full mt-1 flex flex-col bg-card border border-border rounded-lg shadow-lg p-1.5 min-w-[200px] z-50">
+                          <button
+                            onClick={() => { setOpenSettings(true); setActiveSheet('Help'); setMenuOpen(false); }}
+                            className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
+                          >
+                            <Settings className="w-4 h-4 shrink-0" />
+                            {t('tooltipSettings')}
+                          </button>
+                          <button
+                            onClick={() => { toggleLanguage(); setMenuOpen(false); }}
+                            className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
+                          >
+                            <Languages className="w-4 h-4 shrink-0" />
+                            {t('tooltipLanguage')} <span className="ml-auto text-[10px] font-bold opacity-60">{language.toUpperCase()}</span>
+                          </button>
+                          <button
+                            onClick={() => { setIsEditingTabs(true); history.pushState({ editingTabs: true }, '', '#edit-tabs'); setMenuOpen(false); }}
+                            className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
+                          >
+                            <LayoutDashboard className="w-4 h-4 shrink-0" />
+                            {t('tooltipCustomize')}
+                          </button>
+                          <button
+                            onClick={() => { handleRefresh(); setMenuOpen(false); }}
+                            className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
+                          >
+                            <RefreshCcw className="w-4 h-4 shrink-0" />
+                            {t('tooltipRefresh')}
+                          </button>
+                          <div className="border-t border-border/50 my-1" />
+                          <button
+                            onClick={() => { handleLogout(); setMenuOpen(false); }}
+                            className="flex items-center gap-3 text-xs text-red-400 hover:text-red-300 px-3 py-2 rounded hover:bg-red-500/10 transition-colors w-full text-left"
+                          >
+                            <LogOut className="w-4 h-4 shrink-0" />
+                            {t('tooltipSignOut')}
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 w-full md:w-auto">
+                    <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
+                      Habitikami
+                    </h1>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <a
+                      href="https://ko-fi.com/kambei"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-8 h-8 rounded-full bg-secondary hover:bg-amber-500/20 flex items-center justify-center transition-colors shadow-sm shrink-0"
+                      title={t('tooltipKofi')}
+                    >
+                      <img src="https://storage.ko-fi.com/cdn/logomarkLogo.png" alt="Ko-fi" width={20} height={20} className="object-contain" />
+                    </a>
+                    <GitHubDropdown />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 w-full md:w-auto">
                 {/* Top Nav - Hidden on Mobile */}
                 <div className="hidden md:flex bg-secondary/20 p-1 rounded-lg border border-border overflow-x-auto max-w-full">
                   {visibleTabs.map((tab) => (
@@ -393,65 +449,13 @@ function App() {
                   ))}
                 </div>
 
-                <div className="flex items-center gap-2">
                   {email && (
                     <span className="hidden md:block text-xs text-muted-foreground truncate max-w-[160px]" title={email}>
                       {email}
                     </span>
                   )}
-                  {/* Hamburger Menu */}
-                  <div className="relative" ref={menuRef}>
-                    <button
-                      onClick={() => setMenuOpen(o => !o)}
-                      className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 flex items-center justify-center transition-colors shadow-sm shrink-0"
-                      title="Menu"
-                    >
-                      <Menu width={16} height={16} />
-                    </button>
-                    {menuOpen && (
-                      <div className="absolute right-0 top-full mt-1 flex flex-col bg-card border border-border rounded-lg shadow-lg p-1.5 min-w-[200px] z-50">
-                        <button
-                          onClick={() => { setOpenSettings(true); setActiveSheet('Help'); setMenuOpen(false); }}
-                          className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
-                        >
-                          <Settings className="w-4 h-4 shrink-0" />
-                          {t('tooltipSettings')}
-                        </button>
-                        <button
-                          onClick={() => { toggleLanguage(); setMenuOpen(false); }}
-                          className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
-                        >
-                          <Languages className="w-4 h-4 shrink-0" />
-                          {t('tooltipLanguage')} <span className="ml-auto text-[10px] font-bold opacity-60">{language.toUpperCase()}</span>
-                        </button>
-                        <button
-                          onClick={() => { setIsEditingTabs(true); history.pushState({ editingTabs: true }, '', '#edit-tabs'); setMenuOpen(false); }}
-                          className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
-                        >
-                          <LayoutDashboard className="w-4 h-4 shrink-0" />
-                          {t('tooltipCustomize')}
-                        </button>
-                        <button
-                          onClick={() => { handleRefresh(); setMenuOpen(false); }}
-                          className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
-                        >
-                          <RefreshCcw className="w-4 h-4 shrink-0" />
-                          {t('tooltipRefresh')}
-                        </button>
-                        <div className="border-t border-border/50 my-1" />
-                        <button
-                          onClick={() => { handleLogout(); setMenuOpen(false); }}
-                          className="flex items-center gap-3 text-xs text-red-400 hover:text-red-300 px-3 py-2 rounded hover:bg-red-500/10 transition-colors w-full text-left"
-                        >
-                          <LogOut className="w-4 h-4 shrink-0" />
-                          {t('tooltipSignOut')}
-                        </button>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
-            </div>
           </header>
 
           <main className="flex-1 p-4 w-full h-full overflow-hidden flex flex-col pb-24 md:pb-4">

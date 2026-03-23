@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { HeartHandshake, Key, Send, Loader2, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff } from 'lucide-react';
+import { HeartHandshake, Key, Loader2, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import type { GuidedStep } from '../types';
@@ -76,17 +76,7 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
         }
     }, [history, currentStep, isLoading]);
 
-    const handleSaveKeys = (e: React.FormEvent) => {
-        e.preventDefault();
-        const gemini = tempGeminiKey.trim();
-        const anthropic = tempAnthropicKey.trim();
-        if (!gemini && !anthropic) return;
-        setGeminiKey(gemini);
-        setAnthropicKey(anthropic);
-        const active = getActiveProvider();
-        setProviderConfig(active);
-        setIsKeySetup(!!active);
-    };
+
 
     const loadApiKeyInfo = async () => {
         const result = await habitService.getApiKeyInfo();
@@ -199,6 +189,10 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     };
 
     const handleSelectScheda = (scheda: SchedaTemplate) => {
+        if (!isKeySetup) {
+            handleOpenSettings();
+            return;
+        }
         setSelectedScheda(scheda);
         setMode('scheda');
     };
@@ -243,6 +237,10 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     };
 
     const handleStartChat = () => {
+        if (!isKeySetup) {
+            handleOpenSettings();
+            return;
+        }
         setMode('chat');
     };
 
@@ -415,46 +413,6 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
             </motion.p>
         ) : null
     );
-
-    // ── API Key setup screen ──
-    if (!isKeySetup) {
-        return (
-            <div className="flex-1 flex items-start justify-center p-4 overflow-y-auto">
-                <div className="max-w-lg w-full bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 p-6 md:p-8 shadow-xl space-y-6 my-auto">
-                    <div className="text-center space-y-3">
-                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                            <Key className="w-8 h-8 text-primary" />
-                        </div>
-                        <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
-                            {t('helpConfigTitle')}
-                        </h2>
-                        <p className="text-muted-foreground text-sm" dangerouslySetInnerHTML={{ __html: t('helpConfigDesc') }} />
-                    </div>
-
-                    <form onSubmit={handleSaveKeys} className="space-y-5">
-                        {renderAnthropicCard('setup')}
-                        {renderGeminiCard('setup')}
-                        {renderPriorityNote()}
-
-                        {!canSave && (
-                            <p className="text-xs text-muted-foreground text-center">
-                                {t('helpAtLeastOneKey')}
-                            </p>
-                        )}
-
-                        <button
-                            type="submit"
-                            disabled={!canSave}
-                            className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-medium px-4 py-3 rounded-xl hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                            <Send className="w-4 h-4" />
-                            {t('helpSaveAndStart')}
-                        </button>
-                    </form>
-                </div>
-            </div>
-        );
-    }
 
     // ── Scheda compilation mode ──
     if (mode === 'scheda' && selectedScheda && providerConfig) {

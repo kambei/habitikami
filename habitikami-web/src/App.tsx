@@ -103,14 +103,18 @@ function VersionDropdown() {
               <div className="text-[10px] text-muted-foreground">v{__APP_VERSION_WEB__}</div>
             </div>
           </div>
-          <div className="border-t border-border/50" />
-          <div className="flex items-center gap-2 px-1">
-            <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
-            <div>
-              <div className="text-xs font-medium text-foreground">Android App</div>
-              <div className="text-[10px] text-muted-foreground">v{__APP_VERSION_ANDROID__}</div>
-            </div>
-          </div>
+          {__APP_VERSION_ANDROID__ !== 'unknown' && (
+            <>
+              <div className="border-t border-border/50" />
+              <div className="flex items-center gap-2 px-1">
+                <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div>
+                  <div className="text-xs font-medium text-foreground">Android App</div>
+                  <div className="text-[10px] text-muted-foreground">v{__APP_VERSION_ANDROID__}</div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

@@ -173,7 +173,7 @@ object HabitApiClient {
             result.add(
                 CounterEntry(
                     date = normalizeDate(obj.optString(dateKey, "")),
-                    smoke = findVal("smoke", "resist"),
+                    smoke = findVal("resisted", "smoke", "resist"),
                     smoked = findVal("smoked"),
                     coffee = findVal("coffee", "caffè"),
                 )

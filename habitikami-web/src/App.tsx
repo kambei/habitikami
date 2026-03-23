@@ -5,7 +5,7 @@ import { habitService } from './services/HabitService'
 import { Toaster, toast } from 'sonner'
 // import { BottomNav } from './components/BottomNav'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LayoutDashboard, Settings, Github, Menu, LogOut, RefreshCcw, Languages } from 'lucide-react'
+import { LayoutDashboard, Settings, Github, Menu, LogOut, RefreshCcw, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake } from 'lucide-react'
 import { useTranslation } from './i18n'
 
 const HabitTable = React.lazy(() => import('./components/HabitTable').then(m => ({ default: m.HabitTable })))
@@ -83,6 +83,18 @@ const TAB_LABEL_KEYS: Record<ViewType, string> = {
   MobNotes: 'tabNotes',
   SmokeTemptation: 'tabSmokeTemptation',
   Help: 'tabHelp',
+};
+
+const TAB_ICONS: Record<ViewType, React.ElementType> = {
+  Weekdays: Home,
+  Weekend: Coffee,
+  Notes: StickyNote,
+  Focus: CheckSquare,
+  Graphs: BarChart2,
+  MobNotes: StickyNote,
+  SmokeTemptation: Flame,
+  Counters: Hash,
+  Help: HeartHandshake,
 };
 
 function App() {
@@ -357,7 +369,7 @@ function App() {
         >
           <header className="p-2 md:p-4 border-b border-border bg-card/50 backdrop-blur shrink-0 z-20">
               <div className="w-full max-w-7xl mx-auto px-2 md:px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center w-full md:w-auto justify-between md:justify-start gap-4">
+                <div className="flex items-center w-full md:w-auto justify-between md:justify-start gap-4 relative">
                   <div className="flex items-center gap-2">
                     {/* Hamburger Menu */}
                     <div className="relative" ref={menuRef}>
@@ -372,26 +384,28 @@ function App() {
                         <div className="absolute left-0 top-full mt-1 flex flex-col bg-card border border-border rounded-lg shadow-lg p-1.5 min-w-[200px] z-50">
                           {/* Tabs (Mobile Only) */}
                           <div className="md:hidden flex flex-col mb-1 pb-1 border-b border-border/50">
-                            {visibleTabs.map((tab) => (
-                              <button
-                                key={`menu-${tab}`}
-                                onClick={() => { setActiveSheet(tab); setMenuOpen(false); }}
-                                className={cn(
-                                  "flex items-center gap-3 text-xs px-3 py-2 rounded transition-colors w-full text-left",
-                                  activeSheet === tab
-                                    ? "bg-primary/10 text-primary font-medium"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                                )}
-                              >
-                                {activeSheet === tab ? (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mr-1" />
-                                ) : (
-                                  <div className="w-1.5 h-1.5 shrink-0 mr-1" />
-                                )}
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                {t(TAB_LABEL_KEYS[tab] as any)}
-                              </button>
-                            ))}
+                            {visibleTabs.map((tab) => {
+                              const Icon = TAB_ICONS[tab];
+                              return (
+                                <button
+                                  key={`menu-${tab}`}
+                                  onClick={() => { setActiveSheet(tab); setMenuOpen(false); }}
+                                  className={cn(
+                                    "flex items-center gap-3 text-xs px-3 py-2 rounded transition-colors w-full text-left",
+                                    activeSheet === tab
+                                      ? "bg-primary/10 text-primary font-medium"
+                                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                                  )}
+                                >
+                                  {Icon && <Icon className="w-4 h-4 shrink-0" />}
+                                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                  <span className="flex-1">{t(TAB_LABEL_KEYS[tab] as any)}</span>
+                                  {activeSheet === tab && (
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                                  )}
+                                </button>
+                              );
+                            })}
                           </div>
 
                           <button
@@ -433,11 +447,11 @@ function App() {
                         </div>
                       )}
                     </div>
-
-                    <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
-                      Habitikami
-                    </h1>
                   </div>
+
+                  <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
+                    Habitikami
+                  </h1>
 
                   <div className="flex items-center gap-2">
                     <a
@@ -482,7 +496,7 @@ function App() {
               </div>
           </header>
 
-          <main className="flex-1 p-4 w-full h-full overflow-hidden flex flex-col pb-24 md:pb-4">
+          <main className="flex-1 p-4 w-full h-full overflow-hidden flex flex-col pb-4">
             <div className="bg-card rounded-xl border border-border shadow-2xl overflow-hidden flex-1 flex flex-col relative">
               <Suspense fallback={<LoaderFallback />}>
                 {activeSheet === 'Graphs' ? (

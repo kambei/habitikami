@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "dev.kambei.habitikami"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "dev.kambei.habitikami"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 12
         versionName = "4.0.2"
 

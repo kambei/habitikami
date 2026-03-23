@@ -78,11 +78,14 @@ class StatsWidgetProvider : AppWidgetProvider() {
                         )
                     } else export
 
+                    // Load custom habit order
+                    val habitOrder = StatsWidgetConfigActivity.getOrderedHabits(context, widgetId)
+
                     // Render chart bitmap scaled for screen density
                     val dm = context.resources.displayMetrics
                     val bitmapW = (320 * dm.density).toInt()
                     val bitmapH = (380 * dm.density).toInt()
-                    val bitmap = ChartRenderer.renderComposite(filteredExport, bitmapW, bitmapH)
+                    val bitmap = ChartRenderer.renderComposite(filteredExport, bitmapW, bitmapH, habitOrder)
 
                     views.setImageViewBitmap(R.id.iv_chart, bitmap)
                     views.setTextViewText(R.id.tv_status, "")

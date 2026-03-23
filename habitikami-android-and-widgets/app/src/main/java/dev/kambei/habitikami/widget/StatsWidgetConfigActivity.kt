@@ -4,9 +4,11 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.Gravity
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
@@ -19,12 +21,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 
 class StatsWidgetConfigActivity : AppCompatActivity() {
 
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val habitCheckboxes = mutableListOf<Pair<String, CheckBox>>()
+    // Each entry: habit name, checkbox, and the row layout (for reordering)
+    private val habitRows = mutableListOf<HabitRow>()
+
+    private data class HabitRow(val name: String, val checkbox: CheckBox, val row: LinearLayout)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +63,8 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
             etToken.setText(existing.second)
         }
 
-        // Load previously selected habits for this widget
+        // Load previously saved order and selection for this widget
+        val savedOrder = getOrderedHabits(this, appWidgetId)
         val savedHabits = getSelectedHabits(this, appWidgetId)
 
         btnLoad.setOnClickListener {
@@ -79,19 +86,28 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
             progressBar.visibility = android.view.View.VISIBLE
             btnLoad.isEnabled = false
             habitsContainer.removeAllViews()
-            habitCheckboxes.clear()
+            habitRows.clear()
 
             scope.launch {
                 try {
                     val export = HabitApiClient.fetchExport(baseUrl, apiToken, 30)
                     val allDays = export.weekdays + export.weekend
-                    val allHabits = allDays.flatMap { it.habits.keys }.distinct().sorted()
+                    val allHabitsAlpha = allDays.flatMap { it.habits.keys }.distinct().sorted()
+
+                    // Use saved order if available, appending any new habits at the end
+                    val orderedHabits = if (savedOrder.isNotEmpty()) {
+                        val ordered = savedOrder.filter { it in allHabitsAlpha }.toMutableList()
+                        val newHabits = allHabitsAlpha.filter { it !in ordered }
+                        ordered + newHabits
+                    } else {
+                        allHabitsAlpha
+                    }
 
                     withContext(Dispatchers.Main) {
                         progressBar.visibility = android.view.View.GONE
                         btnLoad.isEnabled = true
 
-                        if (allHabits.isEmpty()) {
+                        if (orderedHabits.isEmpty()) {
                             Toast.makeText(this@StatsWidgetConfigActivity, "No habits found", Toast.LENGTH_SHORT).show()
                             return@withContext
                         }
@@ -109,32 +125,32 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
                             text = "Select All"
                             textSize = 12f
                             setOnClickListener {
-                                habitCheckboxes.forEach { it.second.isChecked = true }
+                                habitRows.forEach { it.checkbox.isChecked = true }
                             }
                         }
                         val btnNone = Button(this@StatsWidgetConfigActivity).apply {
                             text = "Select None"
                             textSize = 12f
                             setOnClickListener {
-                                habitCheckboxes.forEach { it.second.isChecked = false }
+                                habitRows.forEach { it.checkbox.isChecked = false }
                             }
                         }
                         btnRow.addView(btnAll, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
                         btnRow.addView(btnNone, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
                         habitsContainer.addView(btnRow)
 
-                        // Create a checkbox for each habit
-                        for (habit in allHabits) {
-                            val cb = CheckBox(this@StatsWidgetConfigActivity).apply {
-                                text = habit
-                                setTextColor(0xFFE0E0E0.toInt())
-                                textSize = 16f
-                                // Check by default if no saved selection, or if it was previously selected
-                                isChecked = savedHabits.isEmpty() || savedHabits.contains(habit)
-                                setPadding(8, 12, 8, 12)
-                            }
-                            habitCheckboxes.add(habit to cb)
-                            habitsContainer.addView(cb)
+                        // Hint text
+                        val hint = TextView(this@StatsWidgetConfigActivity).apply {
+                            text = "Use arrows to reorder habits in the heatmap"
+                            setTextColor(0x99FFFFFF.toInt())
+                            textSize = 12f
+                            setPadding(4, 0, 4, 12)
+                        }
+                        habitsContainer.addView(hint)
+
+                        // Create a row for each habit: [checkbox] [▲] [▼]
+                        for (habit in orderedHabits) {
+                            addHabitRow(habitsContainer, habit, savedHabits)
                         }
                     }
                 } catch (e: Exception) {
@@ -148,15 +164,17 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
         }
 
         btnSave.setOnClickListener {
-            val selected = habitCheckboxes.filter { it.second.isChecked }.map { it.first }
+            val selected = habitRows.filter { it.checkbox.isChecked }.map { it.name }
+            val allOrdered = habitRows.map { it.name }
 
             if (selected.isEmpty()) {
                 Toast.makeText(this, "Select at least one habit", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            // Save selected habits for this widget
+            // Save selected habits and their order
             saveSelectedHabits(this, appWidgetId, selected)
+            saveHabitOrder(this, appWidgetId, allOrdered)
 
             // Trigger widget update
             val mgr = AppWidgetManager.getInstance(this)
@@ -172,6 +190,68 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
         }
     }
 
+    private fun addHabitRow(container: LinearLayout, habit: String, savedHabits: Set<String>) {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, 4, 0, 4)
+        }
+
+        val cb = CheckBox(this).apply {
+            text = habit
+            setTextColor(0xFFE0E0E0.toInt())
+            textSize = 16f
+            isChecked = savedHabits.isEmpty() || savedHabits.contains(habit)
+            setPadding(8, 8, 8, 8)
+        }
+        row.addView(cb, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+
+        val btnUp = ImageButton(this).apply {
+            setImageResource(android.R.drawable.arrow_up_float)
+            setBackgroundColor(0x00000000)
+            contentDescription = "Move up"
+            setPadding(16, 8, 16, 8)
+            setOnClickListener { moveHabit(container, habit, -1) }
+        }
+        row.addView(btnUp, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
+
+        val btnDown = ImageButton(this).apply {
+            setImageResource(android.R.drawable.arrow_down_float)
+            setBackgroundColor(0x00000000)
+            contentDescription = "Move down"
+            setPadding(16, 8, 16, 8)
+            setOnClickListener { moveHabit(container, habit, 1) }
+        }
+        row.addView(btnDown, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
+
+        habitRows.add(HabitRow(habit, cb, row))
+        container.addView(row)
+    }
+
+    private fun moveHabit(container: LinearLayout, habit: String, direction: Int) {
+        val idx = habitRows.indexOfFirst { it.name == habit }
+        if (idx < 0) return
+        val newIdx = idx + direction
+        if (newIdx < 0 || newIdx >= habitRows.size) return
+
+        // Swap in the list
+        val item = habitRows.removeAt(idx)
+        habitRows.add(newIdx, item)
+
+        // Rebuild the container views (keep the first 2 children: button row + hint)
+        val fixedChildren = 2
+        for (i in habitRows.indices) {
+            container.removeView(habitRows[i].row)
+        }
+        for (i in habitRows.indices) {
+            container.addView(habitRows[i].row, fixedChildren + i)
+        }
+    }
+
     companion object {
         private const val PREFS_NAME = "habitikami_stats_widget"
 
@@ -182,9 +262,28 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
                 .apply()
         }
 
+        fun saveHabitOrder(context: Context, widgetId: Int, habits: List<String>) {
+            val json = JSONArray(habits).toString()
+            context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                .edit()
+                .putString("order_$widgetId", json)
+                .apply()
+        }
+
         fun getSelectedHabits(context: Context, widgetId: Int): Set<String> {
             return context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                 .getStringSet("habits_$widgetId", emptySet()) ?: emptySet()
+        }
+
+        fun getOrderedHabits(context: Context, widgetId: Int): List<String> {
+            val json = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                .getString("order_$widgetId", null) ?: return emptyList()
+            return try {
+                val arr = JSONArray(json)
+                (0 until arr.length()).map { arr.getString(it) }
+            } catch (_: Exception) {
+                emptyList()
+            }
         }
 
         /** Get selected habits for any stats widget (uses first widget's selection as default). */

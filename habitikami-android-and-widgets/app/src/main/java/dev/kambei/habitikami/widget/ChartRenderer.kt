@@ -52,6 +52,7 @@ object ChartRenderer {
         width: Int,
         height: Int,
         habitColors: Map<String, Int> = emptyMap(),
+        habitOrder: List<String> = emptyList(),
     ): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -62,8 +63,15 @@ object ChartRenderer {
             return bitmap
         }
 
-        // Collect ALL habits, sorted alphabetically for consistent ordering
-        val allHabits = data.flatMap { it.habits.keys }.distinct().sorted()
+        // Use custom order if provided, otherwise alphabetical
+        val available = data.flatMap { it.habits.keys }.distinct().toSet()
+        val allHabits = if (habitOrder.isNotEmpty()) {
+            val ordered = habitOrder.filter { it in available }.toMutableList()
+            val remaining = available.filter { it !in ordered }.sorted()
+            ordered + remaining
+        } else {
+            available.sorted()
+        }
         if (allHabits.isEmpty()) {
             drawCenteredText(canvas, "No habits found", width, height)
             return bitmap
@@ -381,6 +389,7 @@ object ChartRenderer {
         export: ExportData,
         width: Int,
         height: Int,
+        habitOrder: List<String> = emptyList(),
     ): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -388,7 +397,7 @@ object ChartRenderer {
 
         val allDays = export.weekdays + export.weekend
 
-        val heatmap = renderHeatmap(allDays, width, height, export.colors)
+        val heatmap = renderHeatmap(allDays, width, height, export.colors, habitOrder)
         canvas.drawBitmap(heatmap, 0f, 0f, null)
         heatmap.recycle()
 

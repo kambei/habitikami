@@ -15,21 +15,7 @@ import kotlinx.coroutines.launch
 
 class HabitStatsWidgetProvider : AppWidgetProvider() {
 
-    companion object {
-        private const val ACTION_REFRESH = "dev.kambei.habitikami.REFRESH_HABIT_STATS"
-
-        fun refreshAll(context: Context) {
-            val intent = Intent(context, HabitStatsWidgetProvider::class.java).apply {
-                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                val mgr = AppWidgetManager.getInstance(context)
-                val ids = mgr.getAppWidgetIds(
-                    ComponentName(context, HabitStatsWidgetProvider::class.java)
-                )
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
-            }
-            context.sendBroadcast(intent)
-        }
-    }
+    // ACTION_REFRESH and refreshAll are in the companion object below
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -77,8 +63,8 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
                     val (baseUrl, apiToken) = config
                     val export = HabitApiClient.fetchExport(baseUrl, apiToken, 365)
 
-                    // Merge weekday + weekend, deduplicate by date (prefer true)
-                    val merged = mergeEntries(export.weekdays + export.weekend, habitName)
+                    // Smart merge: only include sheets where the habit is active
+                    val merged = smartMerge(export.weekdays, export.weekend, habitName)
                     val stats = calculateStats(merged)
                     val habitColor = export.colors[habitName]
 
@@ -114,18 +100,49 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    /** Merge weekday + weekend entries for a single habit, deduplicate by date. */
-    private fun mergeEntries(
-        allDays: List<DayEntry>,
-        habit: String
-    ): List<Pair<String, Boolean>> {
-        val byDate = mutableMapOf<String, Boolean>()
-        for (day in allDays) {
-            val status = day.habits[habit] ?: continue
-            // If habit appears in both weekday and weekend for same date, prefer true
-            byDate[day.date] = byDate.getOrDefault(day.date, false) || status
+    companion object {
+        private const val ACTION_REFRESH = "dev.kambei.habitikami.REFRESH_HABIT_STATS"
+
+        fun refreshAll(context: Context) {
+            val intent = Intent(context, HabitStatsWidgetProvider::class.java).apply {
+                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                val mgr = AppWidgetManager.getInstance(context)
+                val ids = mgr.getAppWidgetIds(
+                    ComponentName(context, HabitStatsWidgetProvider::class.java)
+                )
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+            }
+            context.sendBroadcast(intent)
         }
-        return byDate.entries.sortedBy { it.key }.map { it.key to it.value }
+
+        /**
+         * Smart merge: only include data from sheets where the habit has TRUE entries.
+         * This prevents a weekday-only habit from getting FALSE entries on weekends
+         * (which would break the streak).
+         */
+        fun smartMerge(
+            weekdays: List<DayEntry>,
+            weekend: List<DayEntry>,
+            habit: String
+        ): List<Pair<String, Boolean>> {
+            val weekdayHasTrue = weekdays.any { it.habits[habit] == true }
+            val weekendHasTrue = weekend.any { it.habits[habit] == true }
+
+            val sources = mutableListOf<List<DayEntry>>()
+            if (weekdayHasTrue) sources.add(weekdays)
+            if (weekendHasTrue) sources.add(weekend)
+            // If neither has TRUE, use both (habit just started or all false)
+            if (sources.isEmpty()) sources.addAll(listOf(weekdays, weekend))
+
+            val byDate = mutableMapOf<String, Boolean>()
+            for (days in sources) {
+                for (day in days) {
+                    val status = day.habits[habit] ?: continue
+                    byDate[day.date] = byDate.getOrDefault(day.date, false) || status
+                }
+            }
+            return byDate.entries.sortedBy { it.key }.map { it.key to it.value }
+        }
     }
 
     data class HabitStats(

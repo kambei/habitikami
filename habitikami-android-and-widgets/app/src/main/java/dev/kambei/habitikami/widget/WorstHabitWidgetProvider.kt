@@ -65,21 +65,18 @@ class WorstHabitWidgetProvider : AppWidgetProvider() {
                 try {
                     val (baseUrl, apiToken) = config
                     val export = HabitApiClient.fetchExport(baseUrl, apiToken, 30)
-                    val allDays = export.weekdays + export.weekend
-                    val allHabits = allDays.flatMap { it.habits.keys }.distinct()
+                    val allHabits = (export.weekdays + export.weekend)
+                        .flatMap { it.habits.keys }.distinct()
 
                     var worstRate = 101
                     var worstHabit = ""
 
                     for (habit in allHabits) {
-                        val byDate = mutableMapOf<String, Boolean>()
-                        for (day in allDays) {
-                            val status = day.habits[habit] ?: continue
-                            byDate[day.date] = byDate.getOrDefault(day.date, false) || status
-                        }
-                        val entries = byDate.values.toList()
-                        if (entries.isEmpty()) continue
-                        val rate = (entries.count { it } * 100) / entries.size
+                        val merged = HabitStatsWidgetProvider.smartMerge(
+                            export.weekdays, export.weekend, habit
+                        )
+                        if (merged.isEmpty()) continue
+                        val rate = (merged.count { it.second } * 100) / merged.size
                         if (rate < worstRate) {
                             worstRate = rate
                             worstHabit = habit

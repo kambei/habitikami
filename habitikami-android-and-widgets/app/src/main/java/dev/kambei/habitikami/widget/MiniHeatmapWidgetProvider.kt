@@ -72,15 +72,11 @@ class MiniHeatmapWidgetProvider : AppWidgetProvider() {
                 try {
                     val (baseUrl, apiToken) = config
                     val export = HabitApiClient.fetchExport(baseUrl, apiToken, 14)
-                    val allDays = export.weekdays + export.weekend
-
-                    // Merge by date for this habit
-                    val byDate = mutableMapOf<String, Boolean>()
-                    for (day in allDays) {
-                        val status = day.habits[habitName] ?: continue
-                        byDate[day.date] = byDate.getOrDefault(day.date, false) || status
-                    }
-                    val sorted = byDate.entries.sortedBy { it.key }.takeLast(14)
+                    // Smart merge: only use sheets where habit is active
+                    val merged = HabitStatsWidgetProvider.smartMerge(
+                        export.weekdays, export.weekend, habitName
+                    )
+                    val sorted = merged.takeLast(14)
 
                     val habitColor = export.colors[habitName]
 
@@ -88,7 +84,7 @@ class MiniHeatmapWidgetProvider : AppWidgetProvider() {
                     val bitmapW = (220 * dm.density).toInt()
                     val bitmapH = (36 * dm.density).toInt()
                     val bitmap = ChartRenderer.renderMiniHeatmap(
-                        sorted.map { it.value }, bitmapW, bitmapH, habitColor
+                        sorted.map { it.second }, bitmapW, bitmapH, habitColor
                     )
 
                     views.setTextViewText(R.id.tv_mini_habit_name, habitName)

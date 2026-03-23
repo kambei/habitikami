@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 class ChecklistWidgetProvider : AppWidgetProvider() {
 
@@ -59,10 +60,12 @@ class ChecklistWidgetProvider : AppWidgetProvider() {
                     val (baseUrl, apiToken) = config
                     val export = HabitApiClient.fetchExport(baseUrl, apiToken, 1)
 
-                    // Merge weekday + weekend for today, deduplicate
-                    val allDays = export.weekdays + export.weekend
+                    // Use the right sheet: weekdays Mon-Fri, weekend Sat-Sun
+                    val today = LocalDate.now()
+                    val isWeekend = today.dayOfWeek.value >= 6
+                    val todayDays = if (isWeekend) export.weekend else export.weekdays
                     val todayHabits = mutableMapOf<String, Boolean>()
-                    for (day in allDays) {
+                    for (day in todayDays) {
                         for ((habit, done) in day.habits) {
                             todayHabits[habit] = todayHabits.getOrDefault(habit, false) || done
                         }

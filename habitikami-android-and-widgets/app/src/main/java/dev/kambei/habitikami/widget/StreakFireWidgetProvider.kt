@@ -63,15 +63,17 @@ class StreakFireWidgetProvider : AppWidgetProvider() {
                 try {
                     val (baseUrl, apiToken) = config
                     val export = HabitApiClient.fetchExport(baseUrl, apiToken, 90)
-                    val allDays = export.weekdays + export.weekend
-                    val allHabits = allDays.flatMap { it.habits.keys }.distinct()
+                    val allHabits = (export.weekdays + export.weekend)
+                        .flatMap { it.habits.keys }.distinct()
 
                     var bestStreak = 0
                     var bestHabit = ""
 
                     for (habit in allHabits) {
-                        val merged = mergeForHabit(allDays, habit)
-                        val streak = currentStreak(merged)
+                        val merged = HabitStatsWidgetProvider.smartMerge(
+                            export.weekdays, export.weekend, habit
+                        )
+                        val streak = currentStreak(merged.map { it.second })
                         if (streak > bestStreak) {
                             bestStreak = streak
                             bestHabit = habit
@@ -106,15 +108,6 @@ class StreakFireWidgetProvider : AppWidgetProvider() {
             setupIntents(context, views, widgetId)
             manager.updateAppWidget(widgetId, views)
         }
-    }
-
-    private fun mergeForHabit(allDays: List<DayEntry>, habit: String): List<Boolean> {
-        val byDate = mutableMapOf<String, Boolean>()
-        for (day in allDays) {
-            val status = day.habits[habit] ?: continue
-            byDate[day.date] = byDate.getOrDefault(day.date, false) || status
-        }
-        return byDate.entries.sortedBy { it.key }.map { it.value }
     }
 
     private fun currentStreak(entries: List<Boolean>): Int {

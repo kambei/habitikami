@@ -219,6 +219,8 @@ export function Graphs() {
                             data={filteredStats}
                             layout="vertical"
                             margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                            barSize={32}
+                            barGap={-32} // Overlap bars
                         >
                             <defs>
                                 <pattern id="no-completion-pattern" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
@@ -239,25 +241,47 @@ export function Graphs() {
                                 itemStyle={{ color: '#f3f4f6' }}
                                 formatter={(value: any) => [`${value}%`, t('graphsCompletion')]}
                             />
-                            {/* Background Bar for 0% and structure */}
+                            {/* Background / Zero Completion Bar (Always 100%) */}
                             <Bar 
                                 dataKey={() => 100} 
-                                barSize={32} 
-                                isAnimationActive={false}
                                 radius={4}
+                                isAnimationActive={false}
                             >
                                 {filteredStats.map((entry, index) => (
                                     <Cell 
                                         key={`bg-${index}`} 
-                                        fill={entry.percentage === 0 ? 'url(#no-completion-pattern)' : 'transparent'} 
+                                        fill={entry.percentage === 0 ? 'url(#no-completion-pattern)' : 'rgba(255,255,255,0.05)'} 
                                     />
                                 ))}
+                                <LabelList
+                                    dataKey="name"
+                                    content={(props: any) => {
+                                        const { x, y, height, value, index } = props;
+                                        const entry = filteredStats[index];
+                                        if (!entry) return null;
+                                        
+                                        const isWide = entry.percentage > 40;
+                                        const isZero = entry.percentage === 0;
+
+                                        return (
+                                            <text
+                                                x={x + 10} // Relative to the 100% wide bar start
+                                                y={y + height / 2}
+                                                fill={isWide || isZero ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.9)"}
+                                                textAnchor="start"
+                                                dominantBaseline="central"
+                                                style={{ fontSize: 13, fontWeight: 700, pointerEvents: 'none' }}
+                                            >
+                                                {value}
+                                            </text>
+                                        );
+                                    }}
+                                />
                             </Bar>
-                            {/* Actual Data Bar */}
+                            {/* Actual Completion Bar (Drawn on top) */}
                             <Bar 
                                 dataKey="percentage" 
-                                radius={4} 
-                                barSize={32}
+                                radius={4}
                             >
                                 {filteredStats.map((entry, index) => (
                                     <Cell 
@@ -265,29 +289,6 @@ export function Graphs() {
                                         fill={entry.percentage === 0 ? 'transparent' : getColor(entry.name)} 
                                     />
                                 ))}
-                                <LabelList
-                                    dataKey="name"
-                                    position="insideLeft"
-                                    fill="#000"
-                                    content={(props: any) => {
-                                        const { x, y, width, height, value } = props;
-                                        // If bar is too short, or it is a 0% bar (where we used bg bar), 
-                                        // we still want to show the text.
-                                        // The background bar is 100% width, so we can always show text inside it.
-                                        return (
-                                            <text
-                                                x={x + 10}
-                                                y={y + height / 2}
-                                                fill={width > 100 || filteredStats.find(s => s.name === value)?.percentage === 0 ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.9)"}
-                                                textAnchor="start"
-                                                dominantBaseline="central"
-                                                style={{ fontSize: 12, fontWeight: 700, pointerEvents: 'none' }}
-                                            >
-                                                {value}
-                                            </text>
-                                        );
-                                    }}
-                                />
                             </Bar>
                         </BarChart>
                     </ResponsiveContainer>

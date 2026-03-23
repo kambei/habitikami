@@ -271,6 +271,9 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                             onToggle={handleToggle}
                             isPending={mutations.updateCell.isPending}
                             optimisticOverrides={optimisticOverrides}
+                            sheetName={sheetName}
+                            year={year}
+                            month={month}
                         />
                         <div className="p-4">
                             <button

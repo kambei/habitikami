@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { HabitData } from '../types';
 import { useTranslation } from '../i18n';
 import { translateDay } from '../utils/dayTranslation';
+import { useSheetData } from '../hooks/useSheetData';
 
 interface CheckboxGridViewProps {
     headers: string[];
@@ -13,6 +14,9 @@ interface CheckboxGridViewProps {
     onToggle: (rowIndex: number, habit: string, currentValue: boolean) => void;
     isPending: boolean;
     optimisticOverrides: Record<string, boolean>;
+    sheetName: string;
+    year: number;
+    month: number;
 }
 
 export function CheckboxGridView({
@@ -22,10 +26,18 @@ export function CheckboxGridView({
     onToggle,
     isPending,
     optimisticOverrides,
+    sheetName,
+    year,
+    month,
 }: CheckboxGridViewProps) {
     const { t, tArray } = useTranslation();
     const todayColRef = useRef<HTMLDivElement>(null);
     const [selectedHabit, setSelectedHabit] = useState<string | null>(null);
+
+    // Fetch the other sheet (Weekdays↔Weekend) for merged stats
+    const otherSheet = sheetName === 'Weekdays' ? 'Weekend' : sheetName === 'Weekend' ? 'Weekdays' : null;
+    const { data: otherSheetData } = useSheetData(otherSheet ?? '', year, month);
+    const otherData: HabitData[] = otherSheetData?.data ?? [];
 
     const parseDate = useCallback((dateStr: string) => {
         const parts = dateStr.split(/[-/]/);
@@ -52,19 +64,42 @@ export function CheckboxGridView({
 
     const habitStats = useMemo(() => {
         if (!selectedHabit) return null;
-        const total = data.length;
-        let completed = 0;
-        let currentStreak = 0;
-        let bestStreak = 0;
-        let streak = 0;
 
-        // Count completed and best streak (oldest to newest)
+        // Merge current sheet data with other sheet data, sorted by date
+        const hasOtherSheet = otherSheet && otherData.length > 0 && selectedHabit in (otherData[0]?.habits ?? {});
+
+        type DayEntry = { checked: boolean; dateMs: number };
+        const entries: DayEntry[] = [];
+
+        // Add current sheet entries
         for (let i = 0; i < data.length; i++) {
             const overrideKey = `${i}:${selectedHabit}`;
             const checked = overrideKey in optimisticOverrides
                 ? optimisticOverrides[overrideKey]
                 : data[i].habits[selectedHabit];
-            if (checked) {
+            const dateMs = parseDate(data[i].date)?.getTime() ?? 0;
+            entries.push({ checked, dateMs });
+        }
+
+        // Add other sheet entries if habit exists there
+        if (hasOtherSheet) {
+            for (let i = 0; i < otherData.length; i++) {
+                const checked = otherData[i].habits[selectedHabit];
+                const dateMs = parseDate(otherData[i].date)?.getTime() ?? 0;
+                entries.push({ checked, dateMs });
+            }
+        }
+
+        // Sort by date ascending
+        entries.sort((a, b) => a.dateMs - b.dateMs);
+
+        const total = entries.length;
+        let completed = 0;
+        let bestStreak = 0;
+        let streak = 0;
+
+        for (const entry of entries) {
+            if (entry.checked) {
                 completed++;
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
@@ -73,25 +108,22 @@ export function CheckboxGridView({
             }
         }
 
-        // Current streak: from most recent day backwards, skip trailing unchecked days
-        currentStreak = 0;
+        // Current streak: from most recent backwards, skip trailing unchecked
+        let currentStreak = 0;
         let started = false;
-        for (let i = data.length - 1; i >= 0; i--) {
-            const overrideKey = `${i}:${selectedHabit}`;
-            const checked = overrideKey in optimisticOverrides
-                ? optimisticOverrides[overrideKey]
-                : data[i].habits[selectedHabit];
+        for (let i = entries.length - 1; i >= 0; i--) {
             if (!started) {
-                if (checked) { started = true; currentStreak = 1; }
+                if (entries[i].checked) { started = true; currentStreak = 1; }
             } else {
-                if (checked) currentStreak++;
+                if (entries[i].checked) currentStreak++;
                 else break;
             }
         }
 
         const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-        return { total, completed, percentage, currentStreak, bestStreak };
-    }, [selectedHabit, data, optimisticOverrides]);
+        const merged = !!hasOtherSheet;
+        return { total, completed, percentage, currentStreak, bestStreak, merged };
+    }, [selectedHabit, data, otherData, otherSheet, optimisticOverrides, parseDate]);
 
     return (
         <div className="flex-1 flex overflow-y-auto p-4">
@@ -208,7 +240,12 @@ export function CheckboxGridView({
                                     className="w-4 h-4 rounded-full shrink-0"
                                     style={{ backgroundColor: colors[selectedHabit] || defaultColor }}
                                 />
-                                <h3 className="text-base font-semibold break-words">{selectedHabit}</h3>
+                                <div>
+                                    <h3 className="text-base font-semibold break-words">{selectedHabit}</h3>
+                                    {habitStats.merged && (
+                                        <span className="text-[10px] text-muted-foreground">{t('statsMerged')}</span>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Progress bar */}

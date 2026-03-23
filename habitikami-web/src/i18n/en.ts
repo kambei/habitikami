@@ -285,6 +285,7 @@ export const en = {
   statsDays: 'Days',
   statsCurrentStreak: 'Current Streak',
   statsBestStreak: 'Best Streak',
+  statsMerged: 'Weekdays + Weekend combined',
   close: 'Close',
 } as const;
 

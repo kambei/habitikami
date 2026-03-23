@@ -286,5 +286,6 @@ export const it: Record<TranslationKey, string | string[]> = {
   statsDays: 'Giorni',
   statsCurrentStreak: 'Streak Attuale',
   statsBestStreak: 'Streak Migliore',
+  statsMerged: 'Feriali + Weekend combinati',
   close: 'Chiudi',
 } as const;

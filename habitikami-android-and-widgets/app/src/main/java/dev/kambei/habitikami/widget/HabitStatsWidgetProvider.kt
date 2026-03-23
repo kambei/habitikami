@@ -133,14 +133,14 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
 
             if (weekdayHasHabit) {
                 for (day in weekdays) {
-                    val status = day.habits[habit] ?: continue
+                    val status = day.habits[habit] ?: false
                     byDate[day.date] = byDate.getOrDefault(day.date, false) || status
                 }
             }
 
             if (weekendHasHabit) {
                 for (day in weekend) {
-                    val status = day.habits[habit] ?: continue
+                    val status = day.habits[habit] ?: false
                     byDate[day.date] = byDate.getOrDefault(day.date, false) || status
                 }
             }

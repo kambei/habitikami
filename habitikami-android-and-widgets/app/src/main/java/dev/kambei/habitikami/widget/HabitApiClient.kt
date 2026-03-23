@@ -154,9 +154,16 @@ object HabitApiClient {
             val dateKey = obj.keys().asSequence().find {
                 it.lowercase().let { k -> k == "date" || k == "data" || k == "giorno" }
             } ?: continue
-            // Find counter columns (case-insensitive, flexible matching)
+            // Find counter columns (case-insensitive, exact match first to avoid ambiguity)
             val keys = obj.keys().asSequence().toList()
             fun findVal(vararg patterns: String): Int {
+                // First try exact match (e.g. "smoke" should not match "smoked")
+                val exactKey = keys.find { k ->
+                    val lower = k.lowercase()
+                    patterns.any { lower == it }
+                }
+                if (exactKey != null) return obj.optString(exactKey, "0").toIntOrNull() ?: 0
+                // Then try substring match as fallback
                 val key = keys.find { k ->
                     val lower = k.lowercase()
                     patterns.any { lower.contains(it) }
@@ -166,7 +173,7 @@ object HabitApiClient {
             result.add(
                 CounterEntry(
                     date = normalizeDate(obj.optString(dateKey, "")),
-                    smoke = findVal("smoke(", "resist"),
+                    smoke = findVal("smoke", "resist"),
                     smoked = findVal("smoked"),
                     coffee = findVal("coffee", "caffè"),
                 )

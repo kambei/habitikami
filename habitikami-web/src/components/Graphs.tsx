@@ -213,14 +213,14 @@ export function Graphs() {
                         </select>
                     </div>
                 </div>
-                <div className="w-full h-[400px] min-h-0">
+                <div className="w-full min-h-0 overflow-x-hidden" style={{ height: `${Math.max(400, filteredStats.length * 56)}px` }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                             data={filteredStats}
                             layout="vertical"
                             margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-                            barSize={32}
-                            barGap={-32} // Overlap bars
+                            barSize={45} // More "cicciotte"
+                            barGap={-45} // Maintain overlap
                         >
                             <defs>
                                 <pattern id="no-completion-pattern" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
@@ -282,16 +282,16 @@ export function Graphs() {
                                         return (
                                             <g>
                                                 <rect
-                                                    x={x + 8}
-                                                    y={y + (height - 22) / 2}
+                                                    x={x + 10}
+                                                    y={y + (height - 30) / 2}
                                                     width={textWidth}
-                                                    height={22}
+                                                    height={30} // Fit text comfortably
                                                     fill="white"
-                                                    rx={4}
-                                                    ry={4}
+                                                    rx={6}
+                                                    ry={6}
                                                 />
                                                 <text
-                                                    x={x + 14} 
+                                                    x={x + 16} 
                                                     y={y + height / 2}
                                                     fill="black"
                                                     textAnchor="start"

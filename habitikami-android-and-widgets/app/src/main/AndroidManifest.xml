@@ -37,10 +37,10 @@
             </intent-filter>
         </activity>
 
-        <!-- TWA Activity (launched internally by MainActivity) -->
+        <!-- TWA Activity (launched by MainActivity, exported for Chrome TWA verification) -->
         <activity
             android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
-            android:exported="false"
+            android:exported="true"
             android:theme="@style/Theme.Habitikami.Launch">
 
             <meta-data

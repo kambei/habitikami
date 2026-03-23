@@ -50,7 +50,7 @@ object UpdateChecker {
     }
 
     /** Compare semver strings, return true if remote > current. */
-    private fun isNewer(remote: String, current: String): Boolean {
+    fun isNewer(remote: String, current: String): Boolean {
         val r = remote.split(".").mapNotNull { it.toIntOrNull() }
         val c = current.split(".").mapNotNull { it.toIntOrNull() }
         for (i in 0 until maxOf(r.size, c.size)) {

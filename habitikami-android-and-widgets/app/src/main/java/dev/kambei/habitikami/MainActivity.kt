@@ -11,8 +11,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * Thin launcher that checks for app updates on GitHub, then forwards to the TWA.
- * If an update is available (and not previously skipped), shows a dialog first.
+ * Thin launcher that shows a cached update prompt (if any), then forwards to the TWA.
+ * The actual update check runs in the background so it never blocks app startup —
+ * results are shown on the *next* launch.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -21,32 +22,58 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Check for a cached update from a previous background check
+        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+        val cachedVersion = prefs.getString("cached_version", null)
+        val cachedApkUrl = prefs.getString("cached_apk_url", null)
+        val cachedHtmlUrl = prefs.getString("cached_html_url", null)
+        val skippedVersion = prefs.getString("skipped_version", null)
+
+        if (cachedVersion != null && cachedVersion != skippedVersion
+            && UpdateChecker.isNewer(cachedVersion, BuildConfig.VERSION_NAME)
+        ) {
+            showUpdateDialog(cachedVersion, cachedApkUrl, cachedHtmlUrl)
+        } else {
+            launchTwa()
+        }
+
+        // Always refresh the cache in the background for next launch
         scope.launch {
             val release = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME)
-
-            if (release != null && !wasSkipped(release.tagName)) {
-                showUpdateDialog(release)
+            val editor = prefs.edit()
+            if (release != null) {
+                editor.putString("cached_version", release.tagName)
+                editor.putString("cached_apk_url", release.apkUrl)
+                editor.putString("cached_html_url", release.htmlUrl)
             } else {
-                launchTwa()
+                // No update or couldn't reach GitHub — clear cache
+                editor.remove("cached_version")
+                editor.remove("cached_apk_url")
+                editor.remove("cached_html_url")
             }
+            editor.apply()
         }
     }
 
-    private fun showUpdateDialog(release: UpdateChecker.Release) {
+    private fun showUpdateDialog(version: String, apkUrl: String?, htmlUrl: String?) {
         AlertDialog.Builder(this, R.style.Theme_Habitikami_Dialog)
             .setTitle("Update Available")
-            .setMessage("A new version (v${release.tagName}) is available.\nYou are on v${BuildConfig.VERSION_NAME}.")
+            .setMessage("A new version (v$version) is available.\nYou are on v${BuildConfig.VERSION_NAME}.")
             .setPositiveButton("Update") { _, _ ->
-                // Prefer direct APK download, fallback to release page
-                val url = release.apkUrl ?: release.htmlUrl
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                val url = apkUrl ?: htmlUrl
+                if (url != null) {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                }
                 launchTwa()
             }
             .setNegativeButton("Later") { _, _ ->
                 launchTwa()
             }
             .setNeutralButton("Skip this version") { _, _ ->
-                skipVersion(release.tagName)
+                getSharedPreferences(PREFS, MODE_PRIVATE)
+                    .edit()
+                    .putString("skipped_version", version)
+                    .apply()
                 launchTwa()
             }
             .setCancelable(false)
@@ -54,25 +81,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun launchTwa() {
-        val intent = Intent()
-        intent.setClassName(this, "com.google.androidbrowserhelper.trusted.LauncherActivity")
-        // Forward any deep-link data
-        if (getIntent().data != null) {
-            intent.data = getIntent().data
+        val twaIntent = Intent().apply {
+            setClassName(
+                this@MainActivity,
+                "com.google.androidbrowserhelper.trusted.LauncherActivity"
+            )
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            // Forward any deep-link
+            this@MainActivity.intent?.data?.let { data = it }
         }
-        startActivity(intent)
+        startActivity(twaIntent)
         finish()
     }
 
-    private fun wasSkipped(version: String): Boolean {
-        val prefs = getSharedPreferences("habitikami_updates", MODE_PRIVATE)
-        return prefs.getString("skipped_version", null) == version
-    }
-
-    private fun skipVersion(version: String) {
-        getSharedPreferences("habitikami_updates", MODE_PRIVATE)
-            .edit()
-            .putString("skipped_version", version)
-            .apply()
+    companion object {
+        private const val PREFS = "habitikami_updates"
     }
 }

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_mini_heatmap_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:padding="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tv_mini_habit_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Habit"
+            android:textColor="#FF7C3AED"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:paddingEnd="6dp" />
+
+        <ImageView
+            android:id="@+id/iv_mini_heatmap"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:scaleType="fitCenter"
+            android:contentDescription="Mini heatmap" />
+
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/btn_refresh_mini"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_gravity="top|end"
+        android:background="@drawable/widget_button"
+        android:src="@android:drawable/ic_popup_sync"
+        android:scaleType="centerInside"
+        android:contentDescription="@string/btn_refresh"
+        android:padding="2dp" />
+
+</FrameLayout>

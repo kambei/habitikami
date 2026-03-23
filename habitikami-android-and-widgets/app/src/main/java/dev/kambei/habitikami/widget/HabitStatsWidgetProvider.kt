@@ -140,17 +140,34 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
 
         val totalDone = entries.count { it.second }
 
-        // Current streak: count from the end backwards
+        // Current streak: count backwards from the most recent entry.
+        // Allow date gaps of up to 3 days (handles weekday-only or weekend-only habits).
+        // If the most recent entry itself is false, streak is 0.
         var currentStreak = 0
         for (i in entries.indices.reversed()) {
-            if (entries[i].second) currentStreak++ else break
+            val (date, done) = entries[i]
+            if (!done) break
+            // Check for large date gap (habit stopped being tracked)
+            if (i < entries.size - 1) {
+                val prevDate = entries[i + 1].first
+                val gapDays = daysBetween(date, prevDate)
+                if (gapDays > 3) break
+            }
+            currentStreak++
         }
 
-        // Best streak
+        // Best streak: same gap tolerance
         var bestStreak = 0
         var streak = 0
-        for ((_, done) in entries) {
+        for (i in entries.indices) {
+            val (date, done) = entries[i]
             if (done) {
+                // Check gap from previous entry
+                if (i > 0 && streak > 0) {
+                    val prevDate = entries[i - 1].first
+                    val gapDays = daysBetween(prevDate, date)
+                    if (gapDays > 3) streak = 0
+                }
                 streak++
                 if (streak > bestStreak) bestStreak = streak
             } else {
@@ -158,13 +175,25 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        // 30-day rate
-        val last30 = entries.takeLast(30)
+        // 30-day rate: filter to entries within the last 30 calendar days
+        val cutoff = java.time.LocalDate.now().minusDays(30).toString()
+        val last30 = entries.filter { it.first >= cutoff }
         val rate30d = if (last30.isNotEmpty()) {
             (last30.count { it.second } * 100) / last30.size
         } else 0
 
         return HabitStats(currentStreak, bestStreak, rate30d, totalDone)
+    }
+
+    /** Calculate days between two YYYY-MM-DD date strings. */
+    private fun daysBetween(from: String, to: String): Long {
+        return try {
+            val d1 = java.time.LocalDate.parse(from)
+            val d2 = java.time.LocalDate.parse(to)
+            java.time.temporal.ChronoUnit.DAYS.between(d1, d2).let { kotlin.math.abs(it) }
+        } catch (_: Exception) {
+            0L
+        }
     }
 
     private fun setupIntents(context: Context, views: RemoteViews, widgetId: Int) {

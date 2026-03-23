@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:padding="8dp">
+
+    <ImageView
+        android:id="@+id/iv_weekly"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:contentDescription="Weekly summary" />
+
+    <TextView
+        android:id="@+id/tv_weekly_status"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:textColor="#99FFFFFF"
+        android:textSize="12sp" />
+
+    <ImageButton
+        android:id="@+id/btn_refresh_weekly"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="top|end"
+        android:background="@drawable/widget_button"
+        android:src="@android:drawable/ic_popup_sync"
+        android:scaleType="centerInside"
+        android:contentDescription="@string/btn_refresh"
+        android:padding="4dp" />
+
+</FrameLayout>

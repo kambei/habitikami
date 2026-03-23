@@ -104,6 +104,78 @@
                 android:resource="@xml/widget_habit_stats_info" />
         </receiver>
 
+        <!-- Counter Chart Widget -->
+        <receiver
+            android:name=".widget.CounterChartWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_counter_chart_info" />
+        </receiver>
+
+        <!-- Streak Fire Widget -->
+        <receiver
+            android:name=".widget.StreakFireWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_streak_fire_info" />
+        </receiver>
+
+        <!-- Worst Habit Widget -->
+        <receiver
+            android:name=".widget.WorstHabitWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_worst_habit_info" />
+        </receiver>
+
+        <!-- Today's Checklist Widget -->
+        <receiver
+            android:name=".widget.ChecklistWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_checklist_info" />
+        </receiver>
+
+        <!-- Weekly Summary Widget -->
+        <receiver
+            android:name=".widget.WeeklySummaryWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_weekly_summary_info" />
+        </receiver>
+
+        <!-- Mini Heatmap Widget -->
+        <receiver
+            android:name=".widget.MiniHeatmapWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_mini_heatmap_info" />
+        </receiver>
+
         <!-- Help Widget -->
         <receiver
             android:name=".widget.HelpWidgetProvider"
@@ -129,6 +201,16 @@
         <!-- Habit Stats Widget Config Activity (single habit picker) -->
         <activity
             android:name=".widget.HabitStatsConfigActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Habitikami">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <!-- Mini Heatmap Widget Config Activity -->
+        <activity
+            android:name=".widget.MiniHeatmapConfigActivity"
             android:exported="false"
             android:theme="@style/Theme.Habitikami">
             <intent-filter>

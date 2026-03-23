@@ -27,6 +27,24 @@
     <!-- Habit Stats Widget -->
     <string name="widget_habit_stats_description">Streak, rate and total for a single habit</string>
 
+    <!-- Counter Chart Widget -->
+    <string name="widget_counter_chart_description">Bar chart of smoke/smoked/coffee over 14 days</string>
+
+    <!-- Streak Fire Widget -->
+    <string name="widget_streak_fire_description">Your best current streak with motivational fire</string>
+
+    <!-- Worst Habit Widget -->
+    <string name="widget_worst_habit_description">Highlights the habit needing the most attention</string>
+
+    <!-- Checklist Widget -->
+    <string name="widget_checklist_description">Today\'s habits with done/not-done status</string>
+
+    <!-- Weekly Summary Widget -->
+    <string name="widget_weekly_summary_description">This week vs last week completion comparison</string>
+
+    <!-- Mini Heatmap Widget -->
+    <string name="widget_mini_heatmap_description">14-day colored strip for a single habit</string>
+
     <!-- Help Widget -->
     <string name="widget_help_description">Quick button to open Habitikami Help</string>
     <string name="label_help">Help</string>

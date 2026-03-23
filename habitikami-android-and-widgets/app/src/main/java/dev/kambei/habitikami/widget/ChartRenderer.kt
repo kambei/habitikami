@@ -404,6 +404,229 @@ object ChartRenderer {
         return bitmap
     }
 
+    // ── Today's Checklist ─────────────────────────────────────────────────
+    // Renders a list of habits with done/not-done indicators
+
+    fun renderChecklist(
+        habits: Map<String, Boolean>,
+        width: Int,
+        height: Int,
+        habitColors: Map<String, Int> = emptyMap(),
+    ): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(Color.TRANSPARENT)
+
+        if (habits.isEmpty()) {
+            drawCenteredText(canvas, "No habits today", width, height)
+            return bitmap
+        }
+
+        val sorted = habits.entries.sortedBy { it.key }
+        val doneCount = sorted.count { it.value }
+
+        // Title
+        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_PRIMARY
+            textSize = 18f
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        val titleH = 28f
+        canvas.drawText("Today", 12f, titleH - 6f, titlePaint)
+
+        // Counter
+        val counterPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_TEXT_DIM
+            textSize = 14f
+            textAlign = Paint.Align.RIGHT
+        }
+        canvas.drawText("$doneCount/${sorted.size}", width - 12f, titleH - 6f, counterPaint)
+
+        // Auto-scale text size
+        val maxRows = sorted.size
+        val availH = height - titleH - 8f
+        val rowH = (availH / maxRows).coerceIn(16f, 32f)
+        val textSize = (rowH * 0.6f).coerceIn(10f, 18f)
+
+        val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_TEXT
+            this.textSize = textSize
+        }
+        val checkPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.textSize = textSize
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val dotSize = textSize * 0.5f
+
+        for ((i, entry) in sorted.withIndex()) {
+            if (i >= 20) break // cap at 20 visible
+            val y = titleH + 8f + i * rowH
+            val textY = y + rowH * 0.7f
+
+            // Color dot
+            val dotColor = habitColors[entry.key] ?: fallbackColor(entry.key)
+            dotPaint.color = dotColor
+            canvas.drawRoundRect(
+                12f, y + (rowH - dotSize) / 2f,
+                12f + dotSize, y + (rowH + dotSize) / 2f,
+                2f, 2f, dotPaint
+            )
+
+            // Check / cross
+            if (entry.value) {
+                checkPaint.color = 0xFF22C55E.toInt()
+                canvas.drawText("✓", 12f + dotSize + 8f, textY, checkPaint)
+            } else {
+                checkPaint.color = 0xFF555577.toInt()
+                canvas.drawText("○", 12f + dotSize + 8f, textY, checkPaint)
+            }
+
+            // Habit name
+            namePaint.color = if (entry.value) COLOR_TEXT else COLOR_TEXT_DIM
+            val nameX = 12f + dotSize + 8f + checkPaint.measureText("✓") + 8f
+            val maxNameW = width - nameX - 8f
+            var name = entry.key
+            while (namePaint.measureText(name) > maxNameW && name.length > 3) {
+                name = name.dropLast(1)
+            }
+            if (name != entry.key) name += "…"
+            canvas.drawText(name, nameX, textY, namePaint)
+        }
+
+        if (sorted.size > 20) {
+            namePaint.color = COLOR_TEXT_DIM
+            namePaint.textSize = 10f
+            canvas.drawText("and ${sorted.size - 20} more…", 12f, height - 6f, namePaint)
+        }
+
+        return bitmap
+    }
+
+    // ── Weekly Summary ──────────────────────────────────────────────────
+    // Two side-by-side bars comparing this week vs last week
+
+    fun renderWeeklySummary(
+        thisWeekRate: Int,
+        lastWeekRate: Int,
+        width: Int,
+        height: Int,
+    ): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(Color.TRANSPARENT)
+
+        // Title
+        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_PRIMARY
+            textSize = 18f
+            typeface = Typeface.DEFAULT_BOLD
+            textAlign = Paint.Align.CENTER
+        }
+        canvas.drawText("Weekly Summary", width / 2f, 22f, titlePaint)
+
+        val barAreaTop = 36f
+        val barAreaBottom = height - 30f
+        val barAreaH = barAreaBottom - barAreaTop
+        val barWidth = width / 5f
+        val gap = width / 10f
+
+        // Last week bar
+        val lastBarX = width / 2f - gap - barWidth
+        val lastBarH = barAreaH * lastWeekRate / 100f
+        val lastBarTop = barAreaBottom - lastBarH
+
+        val lastPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_TEXT_DIM
+        }
+        canvas.drawRoundRect(lastBarX, lastBarTop, lastBarX + barWidth, barAreaBottom, 6f, 6f, lastPaint)
+
+        // This week bar
+        val thisBarX = width / 2f + gap
+        val thisBarH = barAreaH * thisWeekRate / 100f
+        val thisBarTop = barAreaBottom - thisBarH
+
+        val thisColor = when {
+            thisWeekRate > lastWeekRate -> 0xFF22C55E.toInt() // green = improved
+            thisWeekRate < lastWeekRate -> 0xFFEF4444.toInt() // red = declined
+            else -> 0xFFF59E0B.toInt() // amber = same
+        }
+        val thisPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = thisColor }
+        canvas.drawRoundRect(thisBarX, thisBarTop, thisBarX + barWidth, barAreaBottom, 6f, 6f, thisPaint)
+
+        // Rate labels on bars
+        val ratePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            textSize = 16f
+            typeface = Typeface.DEFAULT_BOLD
+            textAlign = Paint.Align.CENTER
+        }
+        canvas.drawText("$lastWeekRate%", lastBarX + barWidth / 2f, lastBarTop - 6f, ratePaint)
+        ratePaint.color = Color.WHITE
+        canvas.drawText("$thisWeekRate%", thisBarX + barWidth / 2f, thisBarTop - 6f, ratePaint)
+
+        // Labels below
+        val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = COLOR_TEXT_DIM
+            textSize = 12f
+            textAlign = Paint.Align.CENTER
+        }
+        canvas.drawText("Last week", lastBarX + barWidth / 2f, height - 8f, labelPaint)
+        labelPaint.color = COLOR_TEXT
+        canvas.drawText("This week", thisBarX + barWidth / 2f, height - 8f, labelPaint)
+
+        // Delta arrow
+        val delta = thisWeekRate - lastWeekRate
+        if (delta != 0) {
+            val arrow = if (delta > 0) "▲" else "▼"
+            val deltaPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = thisColor
+                textSize = 14f
+                typeface = Typeface.DEFAULT_BOLD
+                textAlign = Paint.Align.CENTER
+            }
+            canvas.drawText("$arrow ${kotlin.math.abs(delta)}%", width / 2f, barAreaTop + barAreaH / 2f, deltaPaint)
+        }
+
+        return bitmap
+    }
+
+    // ── Mini Heatmap ────────────────────────────────────────────────────
+    // Horizontal strip of colored squares for a single habit
+
+    fun renderMiniHeatmap(
+        entries: List<Boolean>,
+        width: Int,
+        height: Int,
+        habitColor: Int? = null,
+    ): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(Color.TRANSPARENT)
+
+        if (entries.isEmpty()) return bitmap
+
+        val color = habitColor ?: COLOR_PRIMARY
+        val n = entries.size
+        val gap = 3f
+        val cellSize = ((width - (n - 1) * gap) / n).coerceAtLeast(4f)
+        val actualW = n * (cellSize + gap) - gap
+        val offsetX = (width - actualW) / 2f
+        val cellH = min(cellSize, height.toFloat() - 4f)
+        val offsetY = (height - cellH) / 2f
+        val cornerR = (cellH / 4f).coerceIn(1f, 4f)
+
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        for (i in entries.indices) {
+            paint.color = if (entries[i]) color else COLOR_MUTED
+            val x = offsetX + i * (cellSize + gap)
+            canvas.drawRoundRect(x, offsetY, x + cellSize, offsetY + cellH, cornerR, cornerR, paint)
+        }
+
+        return bitmap
+    }
+
     private fun drawCenteredText(canvas: Canvas, text: String, w: Int, h: Int) {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = COLOR_TEXT_DIM

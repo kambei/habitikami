@@ -50,25 +50,28 @@ export function CheckboxGridView({
     const defaultColor = '#6b7280';
 
     return (
-        <div className="flex-1 overflow-auto p-4">
-            <div className="inline-block min-w-full">
+        <div className="flex-1 overflow-x-auto overflow-y-auto p-4">
+            <div className="inline-block min-w-full md:block">
                 {/* Day headers row */}
-                <div className="flex items-end gap-1 mb-2 pl-[120px] md:pl-[160px]">
-                    {data.map((row, colIndex) => {
-                        const today = isToday(row.date);
-                        const dayShort = translateDay(row.day, tArray('days')).slice(0, 3);
-                        const dateParts = row.date.split(/[-/]/);
-                        return (
-                            <div
-                                key={row.date + colIndex}
-                                ref={today ? todayColRef : null}
-                                className={`w-6 shrink-0 flex flex-col items-center ${today ? 'text-primary font-bold' : 'text-muted-foreground'}`}
-                            >
-                                <span className="text-[9px] leading-tight hidden md:block">{dayShort}</span>
-                                <span className="text-[10px] leading-tight">{dateParts[0]}</span>
-                            </div>
-                        );
-                    })}
+                <div className="flex items-end gap-1 md:gap-2 mb-2">
+                    <div className="w-[112px] md:w-[152px] shrink-0 sticky left-0 z-10 bg-background" />
+                    <div className="flex gap-1 md:gap-2 md:flex-1">
+                        {data.map((row, colIndex) => {
+                            const today = isToday(row.date);
+                            const dayShort = translateDay(row.day, tArray('days')).slice(0, 3);
+                            const dateParts = row.date.split(/[-/]/);
+                            return (
+                                <div
+                                    key={row.date + colIndex}
+                                    ref={today ? todayColRef : null}
+                                    className={`w-6 md:flex-1 md:min-w-[28px] md:max-w-[48px] shrink-0 md:shrink flex flex-col items-center ${today ? 'text-primary font-bold' : 'text-muted-foreground'}`}
+                                >
+                                    <span className="text-[9px] leading-tight hidden md:block">{dayShort}</span>
+                                    <span className="text-[10px] leading-tight">{dateParts[0]}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 {/* Habit rows */}
@@ -83,9 +86,9 @@ export function CheckboxGridView({
                                 transition={{ delay: hIndex * 0.03 }}
                                 className="flex items-center gap-2"
                             >
-                                {/* Habit label */}
+                                {/* Habit label - sticky on mobile */}
                                 <div
-                                    className="w-[112px] md:w-[152px] shrink-0 flex items-center gap-2 pr-2 truncate"
+                                    className="w-[112px] md:w-[152px] shrink-0 flex items-center gap-2 pr-2 truncate sticky left-0 z-10 bg-background"
                                     title={habit}
                                 >
                                     <div
@@ -96,7 +99,7 @@ export function CheckboxGridView({
                                 </div>
 
                                 {/* Day squares */}
-                                <div className="flex gap-1">
+                                <div className="flex gap-1 md:gap-2 md:flex-1">
                                     {data.map((row, rIndex) => {
                                         const overrideKey = `${rIndex}:${habit}`;
                                         const checked = overrideKey in optimisticOverrides
@@ -110,7 +113,7 @@ export function CheckboxGridView({
                                                 title={`${row.date}: ${checked ? '✓' : '✗'}`}
                                                 disabled={isPending}
                                                 onClick={() => onToggle(rIndex, habit, checked)}
-                                                className={`w-6 h-6 rounded-sm transition-all duration-150 cursor-pointer hover:scale-110 active:scale-95 disabled:cursor-not-allowed shrink-0 ${today ? 'ring-1 ring-primary ring-offset-1 ring-offset-background' : ''}`}
+                                                className={`w-6 h-6 md:h-8 md:flex-1 md:min-w-[28px] md:max-w-[48px] rounded-sm transition-all duration-150 cursor-pointer hover:scale-110 active:scale-95 disabled:cursor-not-allowed shrink-0 md:shrink md:aspect-square ${today ? 'ring-1 ring-primary ring-offset-1 ring-offset-background' : ''}`}
                                                 style={checked
                                                     ? { backgroundColor: color, boxShadow: `0 0 6px ${color}40` }
                                                     : { backgroundColor: 'transparent', border: `2px solid ${color}50` }

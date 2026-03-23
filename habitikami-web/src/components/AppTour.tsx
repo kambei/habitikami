@@ -29,9 +29,10 @@ const TOUR_STEPS: TourStep[] = [
 interface AppTourProps {
     onNavigate: (tab: ViewType) => void;
     onComplete: () => void;
+    onHighlightChange?: (tab: ViewType | null) => void;
 }
 
-export function AppTour({ onNavigate, onComplete }: AppTourProps) {
+export function AppTour({ onNavigate, onComplete, onHighlightChange }: AppTourProps) {
     const { t } = useTranslation();
     const [step, setStep] = useState(0);
 
@@ -42,6 +43,9 @@ export function AppTour({ onNavigate, onComplete }: AppTourProps) {
     useEffect(() => {
         if (current.navigateTo) {
             onNavigate(current.navigateTo);
+            onHighlightChange?.(current.navigateTo);
+        } else {
+            onHighlightChange?.(null);
         }
     }, [step]);
 
@@ -59,6 +63,7 @@ export function AppTour({ onNavigate, onComplete }: AppTourProps) {
 
     const handleComplete = () => {
         localStorage.setItem(TOUR_KEY, 'true');
+        onHighlightChange?.(null);
         onComplete();
     };
 
@@ -71,7 +76,7 @@ export function AppTour({ onNavigate, onComplete }: AppTourProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto"
+                className="absolute inset-0 bg-black/30 pointer-events-auto"
                 onClick={handleComplete}
             />
 

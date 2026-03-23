@@ -142,6 +142,7 @@ function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [openSettings, setOpenSettings] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const [tourHighlight, setTourHighlight] = useState<ViewType | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -491,7 +492,8 @@ function App() {
                         "px-3 py-1.5 md:px-4 md:py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap",
                         activeSheet === tab
                           ? "bg-primary text-primary-foreground shadow-md"
-                          : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                          : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+                        tourHighlight === tab && "ring-2 ring-red-500 ring-offset-1 ring-offset-background"
                       )}
                     >
                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
@@ -543,7 +545,8 @@ function App() {
             <Suspense fallback={null}>
               <AppTour
                 onNavigate={setActiveSheet}
-                onComplete={() => setShowTour(false)}
+                onComplete={() => { setShowTour(false); setTourHighlight(null); }}
+                onHighlightChange={setTourHighlight}
               />
             </Suspense>
           )}

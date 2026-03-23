@@ -48,7 +48,7 @@ function GitHubDropdown() {
         <Github width={16} height={16} />
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 flex flex-col bg-card border border-border rounded-lg shadow-lg p-2 min-w-[180px] z-50">
+        <div className="absolute right-0 top-full mt-1 flex flex-col bg-card border border-border rounded-lg shadow-lg p-2 min-w-[180px] z-50">
           <a
             href="https://github.com/kambei/habitikami"
             target="_blank"

@@ -74,6 +74,8 @@
   --color-muted-foreground: hsl(var(--foreground));
   --color-accent: hsl(var(--input));
   --color-accent-foreground: hsl(var(--foreground));
+  --color-popover: hsl(var(--card));
+  --color-popover-foreground: hsl(var(--card-foreground));
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));

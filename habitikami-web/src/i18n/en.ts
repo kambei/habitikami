@@ -112,6 +112,8 @@ export const en = {
   focusLoading: 'Loading Focus Mode...',
   focusAllDone: 'All Done!',
   focusNoPending: 'No pending habits for today',
+  focusNoData: 'No habits configured for today',
+  focusNoDataHint: 'Go to the Weekdays or Weekend section to add your habits and today\'s row.',
   focusReady: 'Ready to mark this as done?',
   focusSkip: 'Skip',
   focusComplete: 'Complete',
@@ -287,6 +289,29 @@ export const en = {
   statsBestStreak: 'Best Streak',
   statsMerged: 'Weekdays + Weekend combined',
   close: 'Close',
+
+  // App Tour
+  tourWelcomeTitle: 'Welcome to Habitikami!',
+  tourWelcomeDesc: 'Let\'s take a quick tour to discover all the features of the app. You can skip anytime by tapping outside.',
+  tourWeekdaysTitle: 'Weekdays Habits',
+  tourWeekdaysDesc: 'This is your main tracker. Add habits as columns, add a new row each day, and check off what you\'ve done. Weekend has its own separate section.',
+  tourFocusTitle: 'Focus Mode',
+  tourFocusDesc: 'One habit at a time. Focus mode shows your pending habits for today — mark them complete or skip to the next one.',
+  tourStatsTitle: 'Statistics',
+  tourStatsDesc: 'Track your progress over time with completion charts, streaks, and trends. See which habits you\'re nailing and which need attention.',
+  tourNotesTitle: 'Daily Notes',
+  tourNotesDesc: 'Write daily reflections, thoughts, or anything you want to remember. Each day gets its own note with a scrollable timeline.',
+  tourSmokeTitle: 'Smoke & Coffee Tracker',
+  tourSmokeDesc: 'Track your resistance to smoking and coffee consumption. Every time you resist, celebrate it!',
+  tourCountersTitle: 'Counters',
+  tourCountersDesc: 'Custom counters for anything you want to track numerically — glasses of water, pages read, workouts, and more.',
+  tourHelpTitle: 'AI-Guided Help',
+  tourHelpDesc: 'Access guided CBT/ACT sessions with AI, track your mood over time, and fill therapeutic worksheets — all in one place.',
+  tourMenuTitle: 'Hamburger Menu',
+  tourMenuDesc: 'Use the menu icon to access Settings, change language, customize which tabs are visible, refresh data, or sign out.',
+  tourDoneTitle: 'You\'re all set!',
+  tourDoneDesc: 'Start by adding your habits in the Weekdays section. Habitikami stores everything in your own Google Sheet — your data, your control.',
+  tourFinish: 'Get Started',
 } as const;
 
 export type TranslationKey = keyof typeof en;

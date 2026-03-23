@@ -99,7 +99,27 @@ export function CompactHabitView({ refreshKey }: CompactHabitViewProps) {
         return <div className="flex h-full items-center justify-center p-8 animate-pulse text-muted-foreground">{t('focusLoading')}</div>;
     }
 
-    if (!meta || habits.length === 0) {
+    if (!meta) {
+        return (
+            <div className="flex flex-col h-full items-center justify-center p-8 text-center gap-6">
+                <div className="w-24 h-24 bg-muted/20 rounded-full flex items-center justify-center text-muted-foreground">
+                    <Calendar size={48} />
+                </div>
+                <div>
+                    <h2 className="text-2xl font-bold text-foreground">{t('focusNoData')}</h2>
+                    <p className="text-muted-foreground mt-2 max-w-sm">{t('focusNoDataHint')}</p>
+                </div>
+                <button
+                    onClick={fetchData}
+                    className="flex items-center gap-2 px-6 py-3 bg-secondary hover:bg-secondary/80 rounded-full transition-all"
+                >
+                    <RefreshCw size={20} /> {t('refresh')}
+                </button>
+            </div>
+        );
+    }
+
+    if (habits.length === 0) {
         return (
             <div className="flex flex-col h-full items-center justify-center p-8 text-center gap-6">
                 <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center text-primary animate-bounce">

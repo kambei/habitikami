@@ -51,7 +51,7 @@ export function MobiusRing({ days, onWheel, onSave, onSetFocus, onOpenLinkPicker
 
     return (
         <div
-            className="relative w-full max-w-md h-[400px] preserve-3d flex items-center justify-center shrink-0"
+            className="relative w-full max-w-md h-[350px] md:h-[400px] preserve-3d flex items-center justify-center shrink-0"
             onWheel={onWheel}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -70,7 +70,7 @@ export function MobiusRing({ days, onWheel, onSave, onSetFocus, onOpenLinkPicker
                     return (
                         <motion.div
                             key={card.date}
-                            className={`absolute w-64 h-64 bg-card border border-border rounded-xl p-4 shadow-xl flex flex-col gap-2 transition-all duration-500
+                            className={`absolute w-[calc(100%-2rem)] max-w-64 h-56 md:h-64 bg-card border border-border rounded-xl p-3 md:p-4 shadow-xl flex flex-col gap-2 transition-all duration-500
                             ${isActive ? 'z-20 border-primary shadow-primary/20' : 'z-10 bg-card/50 grayscale blur-[1px]'}
                         `}
                             style={{

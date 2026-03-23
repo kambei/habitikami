@@ -162,7 +162,7 @@ export function Graphs() {
     if (stats.length === 0) return <div className="p-8 text-center text-muted-foreground">{t('graphsNoData')}</div>;
 
     return (
-        <div className="p-6 h-full overflow-y-auto">
+        <div className="p-3 md:p-6 h-full overflow-y-auto">
 
             {/* Top Row: Trends & Radar */}
             <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl mb-6 shadow-sm">
@@ -179,15 +179,15 @@ export function Graphs() {
             </div>
 
             {/* Main Stats: Bar Chart */}
-            <div className="bg-card border border-border rounded-xl shadow-sm p-6 mb-8 min-h-[500px] flex flex-col max-w-full overflow-hidden">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 overflow-hidden">
-                    <h2 className="text-xl font-bold truncate pr-4" title={t('graphsHabitCompletion')}>{t('graphsHabitCompletion')}</h2>
+            <div className="bg-card border border-border rounded-xl shadow-sm p-3 md:p-6 mb-8 min-h-[300px] md:min-h-[500px] flex flex-col max-w-full overflow-hidden">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3 md:gap-4">
+                    <h2 className="text-lg md:text-xl font-bold truncate pr-4" title={t('graphsHabitCompletion')}>{t('graphsHabitCompletion')}</h2>
 
-                    <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                    <div className="flex flex-wrap gap-2 w-full md:w-auto">
                         <select
                             value={sortMethod}
                             onChange={(e) => setSortMethod(e.target.value as any)}
-                            className="bg-card text-card-foreground p-2 rounded-md border border-border outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer text-sm min-w-[120px]"
+                            className="bg-card text-card-foreground p-2 rounded-md border border-border outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer text-sm flex-1 min-w-0"
                         >
                             <option value="default">{t('graphsSortDefault')}</option>
                             <option value="alphabetical">{t('graphsSortName')}</option>
@@ -202,7 +202,7 @@ export function Graphs() {
                         <select
                             value={selectedHabit}
                             onChange={(e) => setSelectedHabit(e.target.value)}
-                            className="w-full sm:w-auto bg-card text-card-foreground p-2 rounded-md border border-border outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer min-w-[160px]"
+                            className="w-full sm:w-auto bg-card text-card-foreground p-2 rounded-md border border-border outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer min-w-0"
                         >
                             <option value="ALL" className="bg-card text-card-foreground">{t('graphsAllHabits')}</option>
                             {sortedStats.map(s => (
@@ -218,7 +218,7 @@ export function Graphs() {
                         <BarChart
                             data={filteredStats}
                             layout="vertical"
-                            margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                            margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
                             barSize={45} // More "cicciotte"
                             barGap={-45} // Maintain overlap
                         >

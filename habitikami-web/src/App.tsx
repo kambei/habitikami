@@ -18,6 +18,7 @@ const LandingPage = React.lazy(() => import('./components/LandingPage').then(m =
 const OnboardingPage = React.lazy(() => import('./components/OnboardingPage').then(m => ({ default: m.OnboardingPage })))
 const TabSelectionPage = React.lazy(() => import('./components/TabSelectionPage').then(m => ({ default: m.TabSelectionPage })))
 const HelpView = React.lazy(() => import('./components/HelpView').then(m => ({ default: m.HelpView })))
+const AppTour = React.lazy(() => import('./components/AppTour').then(m => ({ default: m.AppTour })))
 
 const LoaderFallback = () => (
   <div className="absolute inset-0 flex items-center justify-center">
@@ -140,6 +141,7 @@ function App() {
 
   const [refreshKey, setRefreshKey] = useState(0);
   const [openSettings, setOpenSettings] = useState(false);
+  const [showTour, setShowTour] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -276,6 +278,10 @@ function App() {
     // Always ensure 'Help' tab is available
     if (!tabs.includes('Help')) {
       tabs = [...tabs, 'Help'];
+    }
+    // Show tour on first setup (not when editing)
+    if (!isEditingTabs && !localStorage.getItem('habitikami_tour_completed')) {
+      setShowTour(true);
     }
     setEnabledTabs(tabs);
     setDefaultTab(newDefaultTab ?? null);
@@ -526,6 +532,14 @@ function App() {
             enabledTabs={visibleTabs} 
           />
           */}
+          {showTour && (
+            <Suspense fallback={null}>
+              <AppTour
+                onNavigate={setActiveSheet}
+                onComplete={() => setShowTour(false)}
+              />
+            </Suspense>
+          )}
           <Toaster position="top-center" theme="dark" />
         </motion.div>
       )}

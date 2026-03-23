@@ -139,7 +139,7 @@ export const SmokeTemptationView = () => {
                                     onClick={handleResist}
                                     disabled={status === 'loading'}
                                     className={cn(
-                                        "relative group w-48 h-48 rounded-full flex flex-col items-center justify-center gap-2",
+                                        "relative group w-36 h-36 md:w-48 md:h-48 rounded-full flex flex-col items-center justify-center gap-2",
                                         "bg-gradient-to-br from-green-600 to-emerald-700 hover:from-green-500 hover:to-emerald-600",
                                         "text-white shadow-[0_10px_40px_-10px_rgba(16,185,129,0.5)] transition-all",
                                         "border-4 border-green-400/30",
@@ -150,7 +150,7 @@ export const SmokeTemptationView = () => {
                                         <Loader2 className="w-12 h-12 animate-spin" />
                                     ) : (
                                         <>
-                                            <ShieldCheck className="w-16 h-16 drop-shadow-md" />
+                                            <ShieldCheck className="w-12 h-12 md:w-16 md:h-16 drop-shadow-md" />
                                             <span className="text-xl font-bold tracking-tight drop-shadow-md">
                                                 {t('smokeResisted')}
                                             </span>
@@ -160,7 +160,7 @@ export const SmokeTemptationView = () => {
                                     <span className="absolute inset-0 rounded-full animate-ping bg-green-500/20 duration-1000" />
                                 </motion.button>
 
-                                <div className="flex gap-4">
+                                <div className="flex gap-3 md:gap-4">
                                     <motion.button
                                         key="button-smoke"
                                         whileHover={{ scale: 1.05 }}
@@ -168,7 +168,7 @@ export const SmokeTemptationView = () => {
                                         onClick={handleSmoke}
                                         disabled={status === 'loading'}
                                         className={cn(
-                                            "relative group w-32 h-32 rounded-full flex flex-col items-center justify-center gap-1",
+                                            "relative group w-24 h-24 md:w-32 md:h-32 rounded-full flex flex-col items-center justify-center gap-1",
                                             "bg-gradient-to-br from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600",
                                             "text-white shadow-[0_10px_40px_-10px_rgba(225,29,72,0.5)] transition-all",
                                             "border-4 border-red-400/30",
@@ -193,7 +193,7 @@ export const SmokeTemptationView = () => {
                                         onClick={handleCoffee}
                                         disabled={status === 'loading'}
                                         className={cn(
-                                            "relative group w-32 h-32 rounded-full flex flex-col items-center justify-center gap-1",
+                                            "relative group w-24 h-24 md:w-32 md:h-32 rounded-full flex flex-col items-center justify-center gap-1",
                                             "bg-gradient-to-br from-amber-700 to-orange-900 hover:from-amber-600 hover:to-orange-800",
                                             "text-white shadow-[0_10px_40px_-10px_rgba(180,83,9,0.5)] transition-all",
                                             "border-4 border-amber-600/30",

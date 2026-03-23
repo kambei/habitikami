@@ -155,16 +155,16 @@ export function MobiusNotes() {
     };
 
     return (
-        <div className="flex-1 overflow-hidden relative perspective-1000 bg-gradient-to-b from-slate-900 to-black text-white flex flex-col items-center justify-center h-full">
-            <h2 className="absolute top-4 text-xl font-bold text-white/50 z-10">{t('mobiusTitle')}</h2>
-            <div className="absolute top-10 z-10 flex flex-col items-center gap-1">
-                <div className="text-sm text-white/30">{t('mobiusHint')}</div>
+        <div className="flex-1 overflow-hidden relative perspective-1000 bg-gradient-to-b from-slate-900 to-black text-white flex flex-col items-center justify-center h-full" style={{ touchAction: 'none', overscrollBehavior: 'none' }}>
+            <h2 className="absolute top-2 md:top-4 text-lg md:text-xl font-bold text-white/50 z-10">{t('mobiusTitle')}</h2>
+            <div className="absolute top-8 md:top-10 z-10 flex flex-col items-center gap-1">
+                <div className="text-xs md:text-sm text-white/30">{t('mobiusHint')}</div>
                 {saveStatus === 'saving' && <span className="text-xs text-yellow-500 animate-pulse">{t('mobiusSaving')}</span>}
                 {saveStatus === 'saved' && <span className="text-xs text-green-500">{t('mobiusSaved')}</span>}
                 {saveStatus === 'error' && <span className="text-xs text-red-500">{t('mobiusError')}</span>}
             </div>
 
-            <div className="flex w-full h-full items-center justify-center gap-8 px-8">
+            <div className="flex flex-col md:flex-row w-full h-full items-center justify-center gap-4 md:gap-8 px-4 md:px-8 pt-16 md:pt-0">
                 {/* Main Ring */}
                 <MobiusRing
                     days={getDaysAround(focusDate, 5)}

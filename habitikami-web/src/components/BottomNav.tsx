@@ -1,4 +1,4 @@
-import { Home, BarChart2, CheckSquare, Flame, Coffee, StickyNote, Hash, Heart } from 'lucide-react';
+import { Home, BarChart2, CheckSquare, Flame, Coffee, StickyNote, Hash, HeartHandshake } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { ViewType } from '../types';
 import { useTranslation } from '../i18n';
@@ -11,7 +11,7 @@ const ALL_NAV_ITEMS = [
     { id: 'MobNotes' as ViewType, labelKey: 'tabNotes', icon: StickyNote },
     { id: 'SmokeTemptation' as ViewType, labelKey: 'tabSmoke', icon: Flame },
     { id: 'Counters' as ViewType, labelKey: 'tabCounters', icon: Hash },
-    { id: 'Help' as ViewType, labelKey: 'tabHelp', icon: Heart },
+    { id: 'Help' as ViewType, labelKey: 'tabHelp', icon: HeartHandshake },
 ];
 
 interface BottomNavProps {

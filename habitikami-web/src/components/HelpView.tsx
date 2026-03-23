@@ -419,8 +419,8 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     // ── API Key setup screen ──
     if (!isKeySetup) {
         return (
-            <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
-                <div className="max-w-lg w-full bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 p-6 md:p-8 shadow-xl space-y-6">
+            <div className="flex-1 flex items-start justify-center p-4 overflow-y-auto">
+                <div className="max-w-lg w-full bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 p-6 md:p-8 shadow-xl space-y-6 my-auto">
                     <div className="text-center space-y-3">
                         <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                             <Key className="w-8 h-8 text-primary" />
@@ -475,8 +475,8 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     // ── Settings mode ──
     if (mode === 'settings') {
         return (
-            <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
-                <div className="max-w-lg w-full bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 p-6 md:p-8 shadow-xl space-y-6">
+            <div className="flex-1 flex items-start justify-center p-4 overflow-y-auto">
+                <div className="max-w-lg w-full bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 p-6 md:p-8 shadow-xl space-y-6 my-auto">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => { setMode('menu'); onSettingsClosed?.(); }}

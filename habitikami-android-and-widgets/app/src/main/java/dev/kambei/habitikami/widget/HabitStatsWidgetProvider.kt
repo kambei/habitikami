@@ -116,10 +116,10 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
         }
 
         /**
-         * Smart merge: use weekday sheet data for Mon-Fri dates and weekend sheet
-         * data for Sat-Sun dates. Only includes a sheet if the habit is active in it
-         * (has at least one TRUE). This prevents a weekday-only habit from getting
-         * FALSE entries on weekends (which would break the streak).
+         * Merge habit data from weekday + weekend sheets, matching grid view logic:
+         * include all entries from each sheet where the habit column exists.
+         * Weekday sheet has Mon-Fri rows, weekend sheet has Sat-Sun rows,
+         * so no day-of-week filtering needed — just check if column exists.
          */
         fun smartMerge(
             weekdays: List<DayEntry>,
@@ -134,46 +134,18 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
             if (weekdayHasHabit) {
                 for (day in weekdays) {
                     val status = day.habits[habit] ?: continue
-                    // Only use weekday sheet entries for Mon-Fri
-                    if (isWeekday(day.date)) {
-                        byDate[day.date] = byDate.getOrDefault(day.date, false) || status
-                    }
+                    byDate[day.date] = byDate.getOrDefault(day.date, false) || status
                 }
             }
 
             if (weekendHasHabit) {
                 for (day in weekend) {
                     val status = day.habits[habit] ?: continue
-                    // Only use weekend sheet entries for Sat-Sun
-                    if (isWeekend(day.date)) {
-                        byDate[day.date] = byDate.getOrDefault(day.date, false) || status
-                    }
-                }
-            }
-
-            // If neither sheet has the habit, try both unfiltered as fallback
-            if (byDate.isEmpty()) {
-                for (day in weekdays + weekend) {
-                    val status = day.habits[habit] ?: continue
                     byDate[day.date] = byDate.getOrDefault(day.date, false) || status
                 }
             }
 
             return byDate.entries.sortedBy { it.key }.map { it.key to it.value }
-        }
-
-        private fun isWeekday(dateStr: String): Boolean {
-            return try {
-                val dow = java.time.LocalDate.parse(dateStr).dayOfWeek.value
-                dow in 1..5
-            } catch (_: Exception) { true }
-        }
-
-        private fun isWeekend(dateStr: String): Boolean {
-            return try {
-                val dow = java.time.LocalDate.parse(dateStr).dayOfWeek.value
-                dow >= 6
-            } catch (_: Exception) { true }
         }
     }
 
@@ -189,38 +161,27 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
 
         val totalDone = entries.count { it.second }
 
-        // Current streak: count backwards from the most recent entry.
-        // Allow date gaps of up to 3 days (handles weekday-only or weekend-only habits).
-        // If the most recent entry itself is false, streak is 0.
-        var currentStreak = 0
-        for (i in entries.indices.reversed()) {
-            val (date, done) = entries[i]
-            if (!done) break
-            // Check for large date gap (habit stopped being tracked)
-            if (i < entries.size - 1) {
-                val prevDate = entries[i + 1].first
-                val gapDays = daysBetween(date, prevDate)
-                if (gapDays > 3) break
-            }
-            currentStreak++
-        }
-
-        // Best streak: same gap tolerance
+        // Best streak: simple consecutive checked count (matches grid view)
         var bestStreak = 0
         var streak = 0
-        for (i in entries.indices) {
-            val (date, done) = entries[i]
-            if (done) {
-                // Check gap from previous entry
-                if (i > 0 && streak > 0) {
-                    val prevDate = entries[i - 1].first
-                    val gapDays = daysBetween(prevDate, date)
-                    if (gapDays > 3) streak = 0
-                }
+        for (entry in entries) {
+            if (entry.second) {
                 streak++
                 if (streak > bestStreak) bestStreak = streak
             } else {
                 streak = 0
+            }
+        }
+
+        // Current streak: from most recent backwards, skip trailing unchecked (matches grid view)
+        var currentStreak = 0
+        var started = false
+        for (i in entries.indices.reversed()) {
+            if (!started) {
+                if (entries[i].second) { started = true; currentStreak = 1 }
+            } else {
+                if (entries[i].second) currentStreak++
+                else break
             }
         }
 
@@ -232,17 +193,6 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
         } else 0
 
         return HabitStats(currentStreak, bestStreak, rate30d, totalDone)
-    }
-
-    /** Calculate days between two YYYY-MM-DD date strings. */
-    private fun daysBetween(from: String, to: String): Long {
-        return try {
-            val d1 = java.time.LocalDate.parse(from)
-            val d2 = java.time.LocalDate.parse(to)
-            java.time.temporal.ChronoUnit.DAYS.between(d1, d2).let { kotlin.math.abs(it) }
-        } catch (_: Exception) {
-            0L
-        }
     }
 
     private fun setupIntents(context: Context, views: RemoteViews, widgetId: Int) {

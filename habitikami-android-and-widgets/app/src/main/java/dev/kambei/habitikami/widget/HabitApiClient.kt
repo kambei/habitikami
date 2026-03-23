@@ -150,15 +150,25 @@ object HabitApiClient {
         val result = mutableListOf<CounterEntry>()
         for (i in 0 until arr.length()) {
             val obj = arr.getJSONObject(i)
+            // Find date column (case-insensitive)
             val dateKey = obj.keys().asSequence().find {
-                it.lowercase().let { k -> k == "date" || k == "giorno" }
+                it.lowercase().let { k -> k == "date" || k == "data" || k == "giorno" }
             } ?: continue
+            // Find counter columns (case-insensitive, flexible matching)
+            val keys = obj.keys().asSequence().toList()
+            fun findVal(vararg patterns: String): Int {
+                val key = keys.find { k ->
+                    val lower = k.lowercase()
+                    patterns.any { lower.contains(it) }
+                }
+                return if (key != null) obj.optString(key, "0").toIntOrNull() ?: 0 else 0
+            }
             result.add(
                 CounterEntry(
-                    date = obj.optString(dateKey, ""),
-                    smoke = obj.optString("Smoke(resist)", "0").toIntOrNull() ?: 0,
-                    smoked = obj.optString("Smoked", "0").toIntOrNull() ?: 0,
-                    coffee = obj.optString("Coffee", "0").toIntOrNull() ?: 0,
+                    date = normalizeDate(obj.optString(dateKey, "")),
+                    smoke = findVal("smoke(", "resist"),
+                    smoked = findVal("smoked"),
+                    coffee = findVal("coffee", "caffè"),
                 )
             )
         }

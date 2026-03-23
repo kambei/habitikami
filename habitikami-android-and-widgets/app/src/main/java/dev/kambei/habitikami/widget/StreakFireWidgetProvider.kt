@@ -111,9 +111,16 @@ class StreakFireWidgetProvider : AppWidgetProvider() {
     }
 
     private fun currentStreak(entries: List<Boolean>): Int {
+        // Match grid view: skip trailing unchecked, then count consecutive checked
         var streak = 0
+        var started = false
         for (i in entries.indices.reversed()) {
-            if (entries[i]) streak++ else break
+            if (!started) {
+                if (entries[i]) { started = true; streak = 1 }
+            } else {
+                if (entries[i]) streak++
+                else break
+            }
         }
         return streak
     }

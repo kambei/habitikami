@@ -5,7 +5,7 @@ import { habitService } from './services/HabitService'
 import { Toaster, toast } from 'sonner'
 // import { BottomNav } from './components/BottomNav'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LayoutDashboard, Settings, Github, Menu, LogOut, RefreshCcw, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle } from 'lucide-react'
+import { LayoutDashboard, Settings, Github, Menu, LogOut, RefreshCcw, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone } from 'lucide-react'
 import { useTranslation } from './i18n'
 
 const HabitTable = React.lazy(() => import('./components/HabitTable').then(m => ({ default: m.HabitTable })))
@@ -66,6 +66,51 @@ function GitHubDropdown() {
           >
             Report an issue
           </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VersionDropdown() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 flex items-center justify-center transition-colors shadow-sm shrink-0"
+        title="Version info"
+      >
+        <Info width={16} height={16} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg p-3 min-w-[200px] z-50 space-y-2">
+          <div className="flex items-center gap-2 px-1">
+            <Globe className="w-4 h-4 text-primary shrink-0" />
+            <div>
+              <div className="text-xs font-medium text-foreground">Web App</div>
+              <div className="text-[10px] text-muted-foreground">v{__APP_VERSION_WEB__}</div>
+            </div>
+          </div>
+          <div className="border-t border-border/50" />
+          <div className="flex items-center gap-2 px-1">
+            <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div>
+              <div className="text-xs font-medium text-foreground">Android App</div>
+              <div className="text-[10px] text-muted-foreground">v{__APP_VERSION_ANDROID__}</div>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -479,6 +524,7 @@ function App() {
                       <img src="https://storage.ko-fi.com/cdn/logomarkLogo.png" alt="Ko-fi" width={20} height={20} className="object-contain" />
                     </a>
                     <GitHubDropdown />
+                    <VersionDropdown />
                   </div>
                 </div>
 

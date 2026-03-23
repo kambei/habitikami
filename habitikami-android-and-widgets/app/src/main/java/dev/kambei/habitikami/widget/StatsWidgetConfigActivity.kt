@@ -1,20 +1,28 @@
 package dev.kambei.habitikami.widget
 
+import android.annotation.SuppressLint
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Canvas
+import android.graphics.Color
 import android.os.Bundle
-import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
-import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
-import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import dev.kambei.habitikami.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,10 +35,8 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
 
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    // Each entry: habit name, checkbox, and the row layout (for reordering)
-    private val habitRows = mutableListOf<HabitRow>()
-
-    private data class HabitRow(val name: String, val checkbox: CheckBox, val row: LinearLayout)
+    private lateinit var adapter: HabitAdapter
+    private var itemTouchHelper: ItemTouchHelper? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,10 +57,66 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
         val etUrl = findViewById<EditText>(R.id.et_base_url)
         val etToken = findViewById<EditText>(R.id.et_api_token)
         val btnLoad = findViewById<Button>(R.id.btn_load_habits)
-        val habitsContainer = findViewById<LinearLayout>(R.id.habits_container)
-        val habitsScroll = findViewById<ScrollView>(R.id.habits_scroll)
+        val recyclerView = findViewById<RecyclerView>(R.id.habits_recycler)
+        val btnRow = findViewById<LinearLayout>(R.id.btn_select_row)
+        val hintText = findViewById<TextView>(R.id.tv_reorder_hint)
         val progressBar = findViewById<ProgressBar>(R.id.progress_bar)
         val btnSave = findViewById<Button>(R.id.btn_save)
+
+        adapter = HabitAdapter { viewHolder ->
+            itemTouchHelper?.startDrag(viewHolder)
+        }
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = adapter
+
+        val touchCallback = object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val from = viewHolder.bindingAdapterPosition
+                val to = target.bindingAdapterPosition
+                adapter.moveItem(from, to)
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+
+            override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
+                super.onSelectedChanged(viewHolder, actionState)
+                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+                    viewHolder?.itemView?.alpha = 0.85f
+                    viewHolder?.itemView?.scaleX = 1.03f
+                    viewHolder?.itemView?.scaleY = 1.03f
+                }
+            }
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                viewHolder.itemView.alpha = 1.0f
+                viewHolder.itemView.scaleX = 1.0f
+                viewHolder.itemView.scaleY = 1.0f
+            }
+
+            override fun onChildDraw(
+                c: Canvas, recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                dX: Float, dY: Float,
+                actionState: Int, isCurrentlyActive: Boolean
+            ) {
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+                if (isCurrentlyActive) {
+                    viewHolder.itemView.elevation = 8f
+                }
+            }
+        }
+
+        itemTouchHelper = ItemTouchHelper(touchCallback)
+        itemTouchHelper!!.attachToRecyclerView(recyclerView)
 
         // Pre-fill from existing counter widget config
         val existing = CounterWidgetProvider.getConfig(this)
@@ -66,6 +128,13 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
         // Load previously saved order and selection for this widget
         val savedOrder = getOrderedHabits(this, appWidgetId)
         val savedHabits = getSelectedHabits(this, appWidgetId)
+
+        findViewById<Button>(R.id.btn_select_all).setOnClickListener {
+            adapter.setAllChecked(true)
+        }
+        findViewById<Button>(R.id.btn_select_none).setOnClickListener {
+            adapter.setAllChecked(false)
+        }
 
         btnLoad.setOnClickListener {
             val baseUrl = etUrl.text.toString().trim().trimEnd('/')
@@ -83,10 +152,8 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
                 .putString("api_token", apiToken)
                 .apply()
 
-            progressBar.visibility = android.view.View.VISIBLE
+            progressBar.visibility = View.VISIBLE
             btnLoad.isEnabled = false
-            habitsContainer.removeAllViews()
-            habitRows.clear()
 
             scope.launch {
                 try {
@@ -103,59 +170,28 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
                         allHabitsAlpha
                     }
 
+                    val items = orderedHabits.map { habit ->
+                        HabitItem(habit, savedHabits.isEmpty() || habit in savedHabits)
+                    }
+
                     withContext(Dispatchers.Main) {
-                        progressBar.visibility = android.view.View.GONE
+                        progressBar.visibility = View.GONE
                         btnLoad.isEnabled = true
 
-                        if (orderedHabits.isEmpty()) {
+                        if (items.isEmpty()) {
                             Toast.makeText(this@StatsWidgetConfigActivity, "No habits found", Toast.LENGTH_SHORT).show()
                             return@withContext
                         }
 
-                        habitsScroll.visibility = android.view.View.VISIBLE
-                        btnSave.visibility = android.view.View.VISIBLE
-
-                        // Select all / none buttons
-                        val btnRow = LinearLayout(this@StatsWidgetConfigActivity).apply {
-                            orientation = LinearLayout.HORIZONTAL
-                            setPadding(0, 0, 0, 16)
-                        }
-
-                        val btnAll = Button(this@StatsWidgetConfigActivity).apply {
-                            text = "Select All"
-                            textSize = 12f
-                            setOnClickListener {
-                                habitRows.forEach { it.checkbox.isChecked = true }
-                            }
-                        }
-                        val btnNone = Button(this@StatsWidgetConfigActivity).apply {
-                            text = "Select None"
-                            textSize = 12f
-                            setOnClickListener {
-                                habitRows.forEach { it.checkbox.isChecked = false }
-                            }
-                        }
-                        btnRow.addView(btnAll, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-                        btnRow.addView(btnNone, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-                        habitsContainer.addView(btnRow)
-
-                        // Hint text
-                        val hint = TextView(this@StatsWidgetConfigActivity).apply {
-                            text = "Use arrows to reorder habits in the heatmap"
-                            setTextColor(0x99FFFFFF.toInt())
-                            textSize = 12f
-                            setPadding(4, 0, 4, 12)
-                        }
-                        habitsContainer.addView(hint)
-
-                        // Create a row for each habit: [checkbox] [▲] [▼]
-                        for (habit in orderedHabits) {
-                            addHabitRow(habitsContainer, habit, savedHabits)
-                        }
+                        adapter.setItems(items)
+                        recyclerView.visibility = View.VISIBLE
+                        btnRow.visibility = View.VISIBLE
+                        hintText.visibility = View.VISIBLE
+                        btnSave.visibility = View.VISIBLE
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        progressBar.visibility = android.view.View.GONE
+                        progressBar.visibility = View.GONE
                         btnLoad.isEnabled = true
                         Toast.makeText(this@StatsWidgetConfigActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                     }
@@ -164,8 +200,9 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
         }
 
         btnSave.setOnClickListener {
-            val selected = habitRows.filter { it.checkbox.isChecked }.map { it.name }
-            val allOrdered = habitRows.map { it.name }
+            val items = adapter.getItems()
+            val selected = items.filter { it.checked }.map { it.name }
+            val allOrdered = items.map { it.name }
 
             if (selected.isEmpty()) {
                 Toast.makeText(this, "Select at least one habit", Toast.LENGTH_SHORT).show()
@@ -190,66 +227,119 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
         }
     }
 
-    private fun addHabitRow(container: LinearLayout, habit: String, savedHabits: Set<String>) {
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, 4, 0, 4)
+    // ── Data class ──
+
+    data class HabitItem(val name: String, var checked: Boolean)
+
+    // ── RecyclerView Adapter ──
+
+    class HabitAdapter(
+        private val onDragStart: (RecyclerView.ViewHolder) -> Unit
+    ) : RecyclerView.Adapter<HabitAdapter.ViewHolder>() {
+
+        private val items = mutableListOf<HabitItem>()
+
+        fun setItems(newItems: List<HabitItem>) {
+            items.clear()
+            items.addAll(newItems)
+            @SuppressLint("NotifyDataSetChanged")
+            notifyDataSetChanged()
         }
 
-        val cb = CheckBox(this).apply {
-            text = habit
-            setTextColor(0xFFE0E0E0.toInt())
-            textSize = 16f
-            isChecked = savedHabits.isEmpty() || savedHabits.contains(habit)
-            setPadding(8, 8, 8, 8)
+        fun getItems(): List<HabitItem> = items.toList()
+
+        fun moveItem(from: Int, to: Int) {
+            val item = items.removeAt(from)
+            items.add(to, item)
+            notifyItemMoved(from, to)
         }
-        row.addView(cb, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
 
-        val btnUp = ImageButton(this).apply {
-            setImageResource(android.R.drawable.arrow_up_float)
-            setBackgroundColor(0x00000000)
-            contentDescription = "Move up"
-            setPadding(16, 8, 16, 8)
-            setOnClickListener { moveHabit(container, habit, -1) }
+        fun setAllChecked(checked: Boolean) {
+            items.forEach { it.checked = checked }
+            @SuppressLint("NotifyDataSetChanged")
+            notifyDataSetChanged()
         }
-        row.addView(btnUp, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
-        ))
 
-        val btnDown = ImageButton(this).apply {
-            setImageResource(android.R.drawable.arrow_down_float)
-            setBackgroundColor(0x00000000)
-            contentDescription = "Move down"
-            setPadding(16, 8, 16, 8)
-            setOnClickListener { moveHabit(container, habit, 1) }
+        @SuppressLint("ClickableViewAccessibility")
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val row = LinearLayout(parent.context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = RecyclerView.LayoutParams(
+                    RecyclerView.LayoutParams.MATCH_PARENT,
+                    RecyclerView.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    val px = (4 * parent.context.resources.displayMetrics.density).toInt()
+                    setMargins(0, px, 0, px)
+                }
+                setBackgroundColor(0xFF1A1A2E.toInt())
+                setPadding(
+                    (4 * parent.context.resources.displayMetrics.density).toInt(),
+                    (10 * parent.context.resources.displayMetrics.density).toInt(),
+                    (12 * parent.context.resources.displayMetrics.density).toInt(),
+                    (10 * parent.context.resources.displayMetrics.density).toInt()
+                )
+                elevation = 2f
+            }
+
+            val cb = CheckBox(parent.context).apply {
+                setTextColor(0xFFE0E0E0.toInt())
+                textSize = 16f
+                setPadding(
+                    (8 * parent.context.resources.displayMetrics.density).toInt(), 0,
+                    (8 * parent.context.resources.displayMetrics.density).toInt(), 0
+                )
+            }
+            row.addView(cb, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+
+            // Drag handle: ≡ icon
+            val handle = ImageView(parent.context).apply {
+                setImageResource(android.R.drawable.ic_menu_sort_by_size)
+                setColorFilter(0xFF888899.toInt())
+                contentDescription = "Drag to reorder"
+                val size = (32 * parent.context.resources.displayMetrics.density).toInt()
+                setPadding(
+                    (8 * parent.context.resources.displayMetrics.density).toInt(), 0,
+                    0, 0
+                )
+            }
+            row.addView(handle, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = android.view.Gravity.CENTER_VERTICAL
+            })
+
+            val holder = ViewHolder(row, cb, handle)
+
+            handle.setOnTouchListener { _, event ->
+                if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                    onDragStart(holder)
+                }
+                false
+            }
+
+            return holder
         }
-        row.addView(btnDown, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
-        ))
 
-        habitRows.add(HabitRow(habit, cb, row))
-        container.addView(row)
-    }
-
-    private fun moveHabit(container: LinearLayout, habit: String, direction: Int) {
-        val idx = habitRows.indexOfFirst { it.name == habit }
-        if (idx < 0) return
-        val newIdx = idx + direction
-        if (newIdx < 0 || newIdx >= habitRows.size) return
-
-        // Swap in the list
-        val item = habitRows.removeAt(idx)
-        habitRows.add(newIdx, item)
-
-        // Rebuild the container views (keep the first 2 children: button row + hint)
-        val fixedChildren = 2
-        for (i in habitRows.indices) {
-            container.removeView(habitRows[i].row)
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val item = items[position]
+            holder.checkbox.text = item.name
+            holder.checkbox.setOnCheckedChangeListener(null)
+            holder.checkbox.isChecked = item.checked
+            holder.checkbox.setOnCheckedChangeListener { _, isChecked ->
+                val pos = holder.bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    items[pos].checked = isChecked
+                }
+            }
         }
-        for (i in habitRows.indices) {
-            container.addView(habitRows[i].row, fixedChildren + i)
-        }
+
+        override fun getItemCount() = items.size
+
+        class ViewHolder(
+            view: View,
+            val checkbox: CheckBox,
+            val dragHandle: ImageView
+        ) : RecyclerView.ViewHolder(view)
     }
 
     companion object {

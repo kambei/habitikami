@@ -83,21 +83,56 @@
         android:visibility="gone"
         android:paddingTop="8dp" />
 
-    <ScrollView
-        android:id="@+id/habits_scroll"
+    <!-- Select All / None buttons -->
+    <LinearLayout
+        android:id="@+id/btn_select_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:paddingTop="16dp"
+        android:paddingBottom="4dp">
+
+        <Button
+            android:id="@+id/btn_select_all"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Select All"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btn_select_none"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Select None"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+    <!-- Reorder hint -->
+    <TextView
+        android:id="@+id/tv_reorder_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Hold and drag the handle to reorder habits"
+        android:textColor="#99FFFFFF"
+        android:textSize="12sp"
+        android:visibility="gone"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:paddingBottom="8dp" />
+
+    <!-- Draggable habit list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/habits_recycler"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:visibility="gone"
-        android:paddingTop="16dp">
-
-        <LinearLayout
-            android:id="@+id/habits_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-
-    </ScrollView>
+        android:clipToPadding="false"
+        android:paddingBottom="8dp" />
 
     <Button
         android:id="@+id/btn_save"

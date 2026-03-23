@@ -128,6 +128,17 @@ function App() {
 
   const [refreshKey, setRefreshKey] = useState(0);
   const [openSettings, setOpenSettings] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
 
   // Persist view selection & sync to history
   useEffect(() => {
@@ -389,69 +400,55 @@ function App() {
                     </span>
                   )}
                   {/* Hamburger Menu */}
-                  {(() => {
-                    const [menuOpen, setMenuOpen] = React.useState(false);
-                    const menuRef = React.useRef<HTMLDivElement>(null);
-                    React.useEffect(() => {
-                      if (!menuOpen) return;
-                      const handleClick = (e: MouseEvent) => {
-                        if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-                      };
-                      document.addEventListener('mousedown', handleClick);
-                      return () => document.removeEventListener('mousedown', handleClick);
-                    }, [menuOpen]);
-                    return (
-                      <div className="relative" ref={menuRef}>
+                  <div className="relative" ref={menuRef}>
+                    <button
+                      onClick={() => setMenuOpen(o => !o)}
+                      className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 flex items-center justify-center transition-colors shadow-sm shrink-0"
+                      title="Menu"
+                    >
+                      <Menu width={16} height={16} />
+                    </button>
+                    {menuOpen && (
+                      <div className="absolute right-0 top-full mt-1 flex flex-col bg-card border border-border rounded-lg shadow-lg p-1.5 min-w-[200px] z-50">
                         <button
-                          onClick={() => setMenuOpen(o => !o)}
-                          className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 flex items-center justify-center transition-colors shadow-sm shrink-0"
-                          title="Menu"
+                          onClick={() => { setOpenSettings(true); setActiveSheet('Help'); setMenuOpen(false); }}
+                          className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
                         >
-                          <Menu width={16} height={16} />
+                          <Settings className="w-4 h-4 shrink-0" />
+                          {t('tooltipSettings')}
                         </button>
-                        {menuOpen && (
-                          <div className="absolute right-0 top-full mt-1 flex flex-col bg-card border border-border rounded-lg shadow-lg p-1.5 min-w-[200px] z-50">
-                            <button
-                              onClick={() => { setOpenSettings(true); setActiveSheet('Help'); setMenuOpen(false); }}
-                              className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
-                            >
-                              <Settings className="w-4 h-4 shrink-0" />
-                              {t('tooltipSettings')}
-                            </button>
-                            <button
-                              onClick={() => { toggleLanguage(); setMenuOpen(false); }}
-                              className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
-                            >
-                              <Languages className="w-4 h-4 shrink-0" />
-                              {t('tooltipLanguage')} <span className="ml-auto text-[10px] font-bold opacity-60">{language.toUpperCase()}</span>
-                            </button>
-                            <button
-                              onClick={() => { setIsEditingTabs(true); history.pushState({ editingTabs: true }, '', '#edit-tabs'); setMenuOpen(false); }}
-                              className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
-                            >
-                              <LayoutDashboard className="w-4 h-4 shrink-0" />
-                              {t('tooltipCustomize')}
-                            </button>
-                            <button
-                              onClick={() => { handleRefresh(); setMenuOpen(false); }}
-                              className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
-                            >
-                              <RefreshCcw className="w-4 h-4 shrink-0" />
-                              {t('tooltipRefresh')}
-                            </button>
-                            <div className="border-t border-border/50 my-1" />
-                            <button
-                              onClick={() => { handleLogout(); setMenuOpen(false); }}
-                              className="flex items-center gap-3 text-xs text-red-400 hover:text-red-300 px-3 py-2 rounded hover:bg-red-500/10 transition-colors w-full text-left"
-                            >
-                              <LogOut className="w-4 h-4 shrink-0" />
-                              {t('tooltipSignOut')}
-                            </button>
-                          </div>
-                        )}
+                        <button
+                          onClick={() => { toggleLanguage(); setMenuOpen(false); }}
+                          className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
+                        >
+                          <Languages className="w-4 h-4 shrink-0" />
+                          {t('tooltipLanguage')} <span className="ml-auto text-[10px] font-bold opacity-60">{language.toUpperCase()}</span>
+                        </button>
+                        <button
+                          onClick={() => { setIsEditingTabs(true); history.pushState({ editingTabs: true }, '', '#edit-tabs'); setMenuOpen(false); }}
+                          className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
+                        >
+                          <LayoutDashboard className="w-4 h-4 shrink-0" />
+                          {t('tooltipCustomize')}
+                        </button>
+                        <button
+                          onClick={() => { handleRefresh(); setMenuOpen(false); }}
+                          className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
+                        >
+                          <RefreshCcw className="w-4 h-4 shrink-0" />
+                          {t('tooltipRefresh')}
+                        </button>
+                        <div className="border-t border-border/50 my-1" />
+                        <button
+                          onClick={() => { handleLogout(); setMenuOpen(false); }}
+                          className="flex items-center gap-3 text-xs text-red-400 hover:text-red-300 px-3 py-2 rounded hover:bg-red-500/10 transition-colors w-full text-left"
+                        >
+                          <LogOut className="w-4 h-4 shrink-0" />
+                          {t('tooltipSignOut')}
+                        </button>
                       </div>
-                    );
-                  })()}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

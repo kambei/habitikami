@@ -275,17 +275,21 @@ export function Graphs() {
                                 <LabelList
                                     dataKey="name"
                                     content={(props: any) => {
-                                        const { x, y, height, value } = props;
-                                        
+                                        const { x, y, width, height, value, index } = props;
+                                        const entry = filteredStats[index];
+                                        if (!entry) return null;
+
                                         const textWidth = value.length * 8 + 12;
+                                        const isZero = entry.percentage === 0;
 
                                         return (
                                             <g>
+                                                {/* Left: Habit Name */}
                                                 <rect
                                                     x={x + 10}
                                                     y={y + (height - 30) / 2}
                                                     width={textWidth}
-                                                    height={30} // Fit text comfortably
+                                                    height={30}
                                                     fill="white"
                                                     rx={6}
                                                     ry={6}
@@ -300,6 +304,31 @@ export function Graphs() {
                                                 >
                                                     {value}
                                                 </text>
+
+                                                {/* Right: NO DATA (if zero) */}
+                                                {isZero && (
+                                                    <g>
+                                                        <rect
+                                                            x={x + width - 85}
+                                                            y={y + (height - 30) / 2}
+                                                            width={75}
+                                                            height={30}
+                                                            fill="white"
+                                                            rx={6}
+                                                            ry={6}
+                                                        />
+                                                        <text
+                                                            x={x + width - 47.5}
+                                                            y={y + height / 2}
+                                                            fill="#ef4444"
+                                                            textAnchor="middle"
+                                                            dominantBaseline="central"
+                                                            style={{ fontSize: 11, fontWeight: 900, pointerEvents: 'none' }}
+                                                        >
+                                                            NO DATA
+                                                        </text>
+                                                    </g>
+                                                )}
                                             </g>
                                         );
                                     }}

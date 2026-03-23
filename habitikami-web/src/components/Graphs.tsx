@@ -239,7 +239,18 @@ export function Graphs() {
                             <Tooltip
                                 contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
                                 itemStyle={{ color: '#f3f4f6' }}
-                                formatter={(value: any) => [`${value}%`, t('graphsCompletion')]}
+                                content={({ active, payload }) => {
+                                    if (!active || !payload?.length) return null;
+                                    const entry = payload.find((p: any) => p.dataKey === 'percentage');
+                                    if (!entry) return null;
+                                    return (
+                                        <div style={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: 8, padding: '8px 12px' }}>
+                                            <p style={{ color: '#f3f4f6', margin: 0, fontSize: 13 }}>
+                                                <strong>{entry.payload.name}</strong>: {entry.value}% {t('graphsCompletion')}
+                                            </p>
+                                        </div>
+                                    );
+                                }}
                             />
                             {/* Layer 1: Background / Zero Completion Pattern (Always 100%) */}
                             <Bar 

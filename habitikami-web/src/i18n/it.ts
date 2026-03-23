@@ -313,4 +313,5 @@ export const it: Record<TranslationKey, string | string[]> = {
   tourDoneTitle: 'Tutto pronto!',
   tourDoneDesc: 'Inizia aggiungendo le tue abitudini nella sezione Feriali. Habitikami salva tutto nel tuo Google Sheet — i tuoi dati, il tuo controllo.',
   tourFinish: 'Inizia',
+  tourReplay: 'Guida App',
 } as const;

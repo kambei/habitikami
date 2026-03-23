@@ -312,6 +312,7 @@ export const en = {
   tourDoneTitle: 'You\'re all set!',
   tourDoneDesc: 'Start by adding your habits in the Weekdays section. Habitikami stores everything in your own Google Sheet — your data, your control.',
   tourFinish: 'Get Started',
+  tourReplay: 'App Guide',
 } as const;
 
 export type TranslationKey = keyof typeof en;

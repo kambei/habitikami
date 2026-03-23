@@ -1,5 +1,5 @@
 // Habitikami Service Worker — Cache-first for static assets, network-first for API calls
-const CACHE_NAME = 'habitikami-v1';
+const CACHE_NAME = 'habitikami-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

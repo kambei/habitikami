@@ -280,4 +280,11 @@ export const it: Record<TranslationKey, string | string[]> = {
   moodGraphConsolidateSuccess: 'Storico consolidato con successo!',
   moodAssessPrompt: 'In base a questa sessione, valuta lo stato emotivo dell\'utente. Rispondi SOLO in JSON: {"mood": 0-100, "anxiety": 0-100}. mood=0 pessimo, 100=ottimo. anxiety=0 calmo, 100=ansia estrema.',
   backToExit: 'Premi ancora indietro per uscire',
+
+  // Habit Stats Popup
+  statsCompletion: 'Completamento',
+  statsDays: 'Giorni',
+  statsCurrentStreak: 'Streak Attuale',
+  statsBestStreak: 'Streak Migliore',
+  close: 'Chiudi',
 } as const;

@@ -279,6 +279,13 @@ export const en = {
   moodGraphConsolidateSuccess: 'History consolidated successfully!',
   moodAssessPrompt: 'Based on this session, assess the user emotional state. Respond ONLY in JSON: {"mood": 0-100, "anxiety": 0-100}. mood=0 means very bad, 100=great. anxiety=0 means calm, 100=extreme anxiety.',
   backToExit: 'Press back again to exit',
+
+  // Habit Stats Popup
+  statsCompletion: 'Completion',
+  statsDays: 'Days',
+  statsCurrentStreak: 'Current Streak',
+  statsBestStreak: 'Best Streak',
+  close: 'Close',
 } as const;
 
 export type TranslationKey = keyof typeof en;

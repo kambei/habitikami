@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { HabitData } from '../types';
 import { useTranslation } from '../i18n';
 import { translateDay } from '../utils/dayTranslation';
@@ -23,8 +23,9 @@ export function CheckboxGridView({
     isPending,
     optimisticOverrides,
 }: CheckboxGridViewProps) {
-    const { tArray } = useTranslation();
+    const { t, tArray } = useTranslation();
     const todayColRef = useRef<HTMLDivElement>(null);
+    const [selectedHabit, setSelectedHabit] = useState<string | null>(null);
 
     const parseDate = useCallback((dateStr: string) => {
         const parts = dateStr.split(/[-/]/);
@@ -49,6 +50,37 @@ export function CheckboxGridView({
 
     const defaultColor = '#6b7280';
 
+    const habitStats = useMemo(() => {
+        if (!selectedHabit) return null;
+        const total = data.length;
+        let completed = 0;
+        let currentStreak = 0;
+        let bestStreak = 0;
+        let streak = 0;
+        let countingCurrent = true;
+
+        // Iterate from most recent to oldest
+        for (let i = data.length - 1; i >= 0; i--) {
+            const overrideKey = `${i}:${selectedHabit}`;
+            const checked = overrideKey in optimisticOverrides
+                ? optimisticOverrides[overrideKey]
+                : data[i].habits[selectedHabit];
+            if (checked) {
+                completed++;
+                streak++;
+                if (streak > bestStreak) bestStreak = streak;
+            } else {
+                if (countingCurrent) currentStreak = streak;
+                countingCurrent = false;
+                streak = 0;
+            }
+        }
+        if (countingCurrent) currentStreak = streak;
+
+        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+        return { total, completed, percentage, currentStreak, bestStreak };
+    }, [selectedHabit, data, optimisticOverrides]);
+
     return (
         <div className="flex-1 flex overflow-y-auto p-4">
             {/* Fixed left column — habit names */}
@@ -67,8 +99,9 @@ export function CheckboxGridView({
                                 transition={{ delay: hIndex * 0.03 }}
                                 className="flex items-center gap-2 h-6 md:h-8"
                             >
-                                <div
-                                    className="w-[112px] md:w-[152px] shrink-0 flex items-center gap-2 pr-2 truncate"
+                                <button
+                                    onClick={() => setSelectedHabit(habit)}
+                                    className="w-[112px] md:w-[152px] shrink-0 flex items-center gap-2 pr-2 truncate cursor-pointer hover:opacity-80 active:scale-95 transition-all text-left"
                                     title={habit}
                                 >
                                     <div
@@ -76,7 +109,7 @@ export function CheckboxGridView({
                                         style={{ backgroundColor: color }}
                                     />
                                     <span className="text-xs font-medium truncate">{habit}</span>
-                                </div>
+                                </button>
                             </motion.div>
                         );
                     })}
@@ -138,6 +171,84 @@ export function CheckboxGridView({
                     })}
                 </div>
             </div>
+
+            {/* Habit stats popup */}
+            <AnimatePresence>
+                {selectedHabit && habitStats && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                        onClick={() => setSelectedHabit(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ type: 'spring', duration: 0.3 }}
+                            className="bg-card border border-border rounded-xl p-5 w-full max-w-xs shadow-xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="flex items-center gap-3 mb-4">
+                                <div
+                                    className="w-4 h-4 rounded-full shrink-0"
+                                    style={{ backgroundColor: colors[selectedHabit] || defaultColor }}
+                                />
+                                <h3 className="text-base font-semibold break-words">{selectedHabit}</h3>
+                            </div>
+
+                            {/* Progress bar */}
+                            <div className="w-full h-2 bg-secondary rounded-full mb-4 overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${habitStats.percentage}%` }}
+                                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                                    className="h-full rounded-full"
+                                    style={{ backgroundColor: colors[selectedHabit] || defaultColor }}
+                                />
+                            </div>
+
+                            {/* Stats grid */}
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                                <div className="bg-secondary/50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold" style={{ color: colors[selectedHabit] || defaultColor }}>
+                                        {habitStats.percentage}%
+                                    </div>
+                                    <div className="text-muted-foreground text-xs">{t('statsCompletion')}</div>
+                                </div>
+                                <div className="bg-secondary/50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold">
+                                        {habitStats.completed}/{habitStats.total}
+                                    </div>
+                                    <div className="text-muted-foreground text-xs">{t('statsDays')}</div>
+                                </div>
+                                <div className="bg-secondary/50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold" style={{ color: colors[selectedHabit] || defaultColor }}>
+                                        {habitStats.currentStreak}
+                                    </div>
+                                    <div className="text-muted-foreground text-xs">{t('statsCurrentStreak')}</div>
+                                </div>
+                                <div className="bg-secondary/50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold">
+                                        {habitStats.bestStreak}
+                                    </div>
+                                    <div className="text-muted-foreground text-xs">{t('statsBestStreak')}</div>
+                                </div>
+                            </div>
+
+                            {/* Close button */}
+                            <button
+                                onClick={() => setSelectedHabit(null)}
+                                className="mt-4 w-full py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-sm font-medium transition-colors"
+                            >
+                                {t('close')}
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

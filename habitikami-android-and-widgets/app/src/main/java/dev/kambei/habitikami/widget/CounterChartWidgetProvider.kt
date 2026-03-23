@@ -57,12 +57,12 @@ class CounterChartWidgetProvider : AppWidgetProvider() {
             } else {
                 try {
                     val (baseUrl, apiToken) = config
-                    val export = HabitApiClient.fetchExport(baseUrl, apiToken, 14)
+                    val counters = CounterApiClient.fetchCounterHistory(baseUrl, apiToken, 14)
 
                     val dm = context.resources.displayMetrics
                     val bitmapW = (280 * dm.density).toInt()
                     val bitmapH = (200 * dm.density).toInt()
-                    val bitmap = ChartRenderer.renderCounterBars(export.counters, bitmapW, bitmapH)
+                    val bitmap = ChartRenderer.renderCounterBars(counters, bitmapW, bitmapH)
 
                     views.setImageViewBitmap(R.id.iv_counter_chart, bitmap)
                     views.setTextViewText(R.id.tv_counter_status, "")

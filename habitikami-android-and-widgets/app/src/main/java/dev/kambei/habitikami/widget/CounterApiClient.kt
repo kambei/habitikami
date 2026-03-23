@@ -65,4 +65,39 @@ object CounterApiClient {
             conn.disconnect()
         }
     }
+    /** Fetch counter history for a date range. Uses the dedicated /api/counter endpoint
+     *  which returns properly-named fields (smoke, smoked, coffee) regardless of sheet headers. */
+    fun fetchCounterHistory(baseUrl: String, apiToken: String, days: Int = 14): List<CounterEntry> {
+        val newest = java.time.LocalDate.now().toString()
+        val oldest = java.time.LocalDate.now().minusDays(days.toLong()).toString()
+        val url = URL("$baseUrl/api/counter?oldest=$oldest&newest=$newest")
+        val conn = url.openConnection() as HttpURLConnection
+        try {
+            conn.requestMethod = "GET"
+            conn.setRequestProperty("X-API-Token", apiToken)
+            conn.connectTimeout = 10_000
+            conn.readTimeout = 10_000
+
+            if (conn.responseCode != 200) return emptyList()
+
+            val body = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
+            val json = JSONObject(body)
+            if (!json.optBoolean("success", false)) return emptyList()
+
+            val entries = json.optJSONArray("entries") ?: return emptyList()
+            val result = mutableListOf<CounterEntry>()
+            for (i in 0 until entries.length()) {
+                val obj = entries.getJSONObject(i)
+                result.add(CounterEntry(
+                    date = obj.optString("date", ""),
+                    smoke = obj.optInt("smoke", 0),
+                    smoked = obj.optInt("smoked", 0),
+                    coffee = obj.optInt("coffee", 0),
+                ))
+            }
+            return result
+        } finally {
+            conn.disconnect()
+        }
+    }
 }

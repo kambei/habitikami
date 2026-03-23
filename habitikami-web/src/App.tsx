@@ -3,7 +3,7 @@ import type { SheetType, ViewType } from './types'
 import { cn } from './lib/utils'
 import { habitService } from './services/HabitService'
 import { Toaster, toast } from 'sonner'
-import { BottomNav } from './components/BottomNav'
+// import { BottomNav } from './components/BottomNav'
 import { AnimatePresence, motion } from 'framer-motion'
 import { LayoutDashboard, Settings, Github, Menu, LogOut, RefreshCcw, Languages } from 'lucide-react'
 import { useTranslation } from './i18n'
@@ -370,6 +370,30 @@ function App() {
                       </button>
                       {menuOpen && (
                         <div className="absolute left-0 top-full mt-1 flex flex-col bg-card border border-border rounded-lg shadow-lg p-1.5 min-w-[200px] z-50">
+                          {/* Tabs (Mobile Only) */}
+                          <div className="md:hidden flex flex-col mb-1 pb-1 border-b border-border/50">
+                            {visibleTabs.map((tab) => (
+                              <button
+                                key={`menu-${tab}`}
+                                onClick={() => { setActiveSheet(tab); setMenuOpen(false); }}
+                                className={cn(
+                                  "flex items-center gap-3 text-xs px-3 py-2 rounded transition-colors w-full text-left",
+                                  activeSheet === tab
+                                    ? "bg-primary/10 text-primary font-medium"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                                )}
+                              >
+                                {activeSheet === tab ? (
+                                  <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mr-1" />
+                                ) : (
+                                  <div className="w-1.5 h-1.5 shrink-0 mr-1" />
+                                )}
+                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                {t(TAB_LABEL_KEYS[tab] as any)}
+                              </button>
+                            ))}
+                          </div>
+
                           <button
                             onClick={() => { setOpenSettings(true); setActiveSheet('Help'); setMenuOpen(false); }}
                             className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
@@ -480,12 +504,14 @@ function App() {
             </div>
           </main>
 
+          {/*
           <BottomNav 
             key={visibleTabs.join(',')} 
             activeTab={activeSheet} 
             onTabChange={setActiveSheet} 
             enabledTabs={visibleTabs} 
           />
+          */}
           <Toaster position="top-center" theme="dark" />
         </motion.div>
       )}

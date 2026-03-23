@@ -5,7 +5,7 @@ import { habitService } from './services/HabitService'
 import { Toaster, toast } from 'sonner'
 // import { BottomNav } from './components/BottomNav'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LayoutDashboard, Settings, Github, Menu, LogOut, RefreshCcw, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone } from 'lucide-react'
+import { LayoutDashboard, Settings, Github, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone } from 'lucide-react'
 import { useTranslation } from './i18n'
 
 const HabitTable = React.lazy(() => import('./components/HabitTable').then(m => ({ default: m.HabitTable })))
@@ -486,13 +486,7 @@ function App() {
                             <LayoutDashboard className="w-4 h-4 shrink-0" />
                             {t('tooltipCustomize')}
                           </button>
-                          <button
-                            onClick={() => { handleRefresh(); setMenuOpen(false); }}
-                            className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
-                          >
-                            <RefreshCcw className="w-4 h-4 shrink-0" />
-                            {t('tooltipRefresh')}
-                          </button>
+
                           <button
                             onClick={() => { localStorage.removeItem('habitikami_tour_completed'); setShowTour(true); setMenuOpen(false); }}
                             className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"

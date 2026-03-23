@@ -11,8 +11,8 @@ android {
         applicationId = "dev.kambei.habitikami"
         minSdk = 26
         targetSdk = 34
-        versionCode = 7
-        versionName = "3.2.0"
+        versionCode = 8
+        versionName = "3.3.0"
 
         // Default PWA URL — override in local.properties if needed
         buildConfigField("String", "PWA_URL", "\"https://habitikami.kambei.dev\"")

@@ -15,6 +15,13 @@
         <item name="android:windowBackground">@color/background</item>
     </style>
 
+    <!-- Dark dialog matching app theme -->
+    <style name="Theme.Habitikami.Dialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="android:background">#FF1A1A2E</item>
+        <item name="android:textColor">#FFE0E0E0</item>
+        <item name="colorAccent">@color/primary</item>
+    </style>
+
     <!-- Widget button style -->
     <style name="Widget.Habitikami.WidgetButton" parent="android:Widget.Button">
         <item name="android:background">@drawable/widget_button</item>

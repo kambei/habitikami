@@ -40,8 +40,8 @@ export function HabitHeatmap({ data, habitName, completionRate, color }: HabitHe
             animate={{ opacity: 1, scale: 1 }}
             className="flex flex-col gap-3"
         >
-            <div className="flex justify-between items-center">
-                <h4 className="text-sm font-medium text-muted-foreground">{habitName}</h4>
+            <div className="flex justify-between items-center overflow-hidden">
+                <h4 className="text-sm font-medium text-muted-foreground truncate" title={habitName}>{habitName}</h4>
                 {typeof completionRate === 'number' && (
                     <span className={cn(
                         "text-xs font-bold px-1.5 py-0.5 rounded",

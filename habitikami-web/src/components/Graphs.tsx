@@ -179,15 +179,15 @@ export function Graphs() {
             </div>
 
             {/* Main Stats: Bar Chart */}
-            <div className="bg-card border border-border rounded-xl shadow-sm p-6 mb-8 min-h-[500px] flex flex-col">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <h2 className="text-xl font-bold">{t('graphsHabitCompletion')}</h2>
+            <div className="bg-card border border-border rounded-xl shadow-sm p-6 mb-8 min-h-[500px] flex flex-col max-w-full overflow-hidden">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 overflow-hidden">
+                    <h2 className="text-xl font-bold truncate pr-4" title={t('graphsHabitCompletion')}>{t('graphsHabitCompletion')}</h2>
 
-                    <div className="flex gap-2 w-full md:w-auto">
+                    <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
                         <select
                             value={sortMethod}
                             onChange={(e) => setSortMethod(e.target.value as any)}
-                            className="bg-card text-card-foreground p-2 rounded-md border border-border outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer text-sm"
+                            className="bg-card text-card-foreground p-2 rounded-md border border-border outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer text-sm min-w-[120px]"
                         >
                             <option value="default">{t('graphsSortDefault')}</option>
                             <option value="alphabetical">{t('graphsSortName')}</option>
@@ -195,7 +195,7 @@ export function Graphs() {
                         </select>
                         <button
                             onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
-                            className="bg-card text-card-foreground p-2 rounded-md border border-border hover:bg-accent px-3"
+                            className="bg-card text-card-foreground p-2 rounded-md border border-border hover:bg-accent px-3 shrink-0"
                         >
                             {sortDirection === 'asc' ? '↑' : '↓'}
                         </button>
@@ -218,10 +218,16 @@ export function Graphs() {
                         <BarChart
                             data={filteredStats}
                             layout="vertical"
-                            margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                            margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                         >
+                            <defs>
+                                <pattern id="no-completion-pattern" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+                                    <rect width="10" height="10" fill="white" />
+                                    <line x1="5" y1="0" x2="5" y2="10" stroke="#ef4444" strokeWidth="4" />
+                                </pattern>
+                            </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal={false} />
-                            <XAxis type="number" domain={[0, 100]} stroke="#888" />
+                            <XAxis type="number" domain={[0, 100]} stroke="#888" hide />
                             <YAxis
                                 dataKey="name"
                                 type="category"
@@ -233,16 +239,54 @@ export function Graphs() {
                                 itemStyle={{ color: '#f3f4f6' }}
                                 formatter={(value: any) => [`${value}%`, t('graphsCompletion')]}
                             />
-                            <Bar dataKey="percentage" radius={[0, 4, 4, 0]}>
+                            {/* Background Bar for 0% and structure */}
+                            <Bar 
+                                dataKey={() => 100} 
+                                barSize={32} 
+                                isAnimationActive={false}
+                                radius={4}
+                            >
                                 {filteredStats.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={getColor(entry.name)} />
+                                    <Cell 
+                                        key={`bg-${index}`} 
+                                        fill={entry.percentage === 0 ? 'url(#no-completion-pattern)' : 'transparent'} 
+                                    />
+                                ))}
+                            </Bar>
+                            {/* Actual Data Bar */}
+                            <Bar 
+                                dataKey="percentage" 
+                                radius={4} 
+                                barSize={32}
+                            >
+                                {filteredStats.map((entry, index) => (
+                                    <Cell 
+                                        key={`cell-${index}`} 
+                                        fill={entry.percentage === 0 ? 'transparent' : getColor(entry.name)} 
+                                    />
                                 ))}
                                 <LabelList
                                     dataKey="name"
                                     position="insideLeft"
                                     fill="#000"
-                                    style={{ fontSize: 13, fontWeight: 600, fill: 'rgba(0,0,0,0.7)' }}
-                                    offset={10}
+                                    content={(props: any) => {
+                                        const { x, y, width, height, value } = props;
+                                        // If bar is too short, or it is a 0% bar (where we used bg bar), 
+                                        // we still want to show the text.
+                                        // The background bar is 100% width, so we can always show text inside it.
+                                        return (
+                                            <text
+                                                x={x + 10}
+                                                y={y + height / 2}
+                                                fill={width > 100 || filteredStats.find(s => s.name === value)?.percentage === 0 ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.9)"}
+                                                textAnchor="start"
+                                                dominantBaseline="central"
+                                                style={{ fontSize: 12, fontWeight: 700, pointerEvents: 'none' }}
+                                            >
+                                                {value}
+                                            </text>
+                                        );
+                                    }}
                                 />
                             </Bar>
                         </BarChart>

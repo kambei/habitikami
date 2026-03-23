@@ -54,7 +54,7 @@ export function CheckboxGridView({
             <div className="inline-block min-w-full md:block">
                 {/* Day headers row */}
                 <div className="flex items-end gap-1 md:gap-2 mb-2">
-                    <div className="w-[112px] md:w-[152px] shrink-0 sticky left-0 z-10 bg-background" />
+                    <div className="w-[112px] md:w-[152px] shrink-0 sticky left-0 z-10 bg-background after:content-[''] after:absolute after:top-0 after:right-[-12px] after:w-3 after:h-full after:bg-gradient-to-r after:from-background after:to-transparent after:pointer-events-none relative" />
                     <div className="flex gap-1 md:gap-2 md:flex-1">
                         {data.map((row, colIndex) => {
                             const today = isToday(row.date);
@@ -88,7 +88,7 @@ export function CheckboxGridView({
                             >
                                 {/* Habit label - sticky on mobile */}
                                 <div
-                                    className="w-[112px] md:w-[152px] shrink-0 flex items-center gap-2 pr-2 truncate sticky left-0 z-10 bg-background"
+                                    className="w-[112px] md:w-[152px] shrink-0 flex items-center gap-2 pr-2 truncate sticky left-0 z-10 bg-background relative after:content-[''] after:absolute after:top-0 after:right-[-12px] after:w-3 after:h-full after:bg-gradient-to-r after:from-background after:to-transparent after:pointer-events-none"
                                     title={habit}
                                 >
                                     <div

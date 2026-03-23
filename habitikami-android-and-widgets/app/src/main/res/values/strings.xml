@@ -24,6 +24,9 @@
     <string name="widget_stats_description">Habit completion heatmap with legend</string>
     <string name="btn_refresh">Refresh</string>
 
+    <!-- Habit Stats Widget -->
+    <string name="widget_habit_stats_description">Streak, rate and total for a single habit</string>
+
     <!-- Help Widget -->
     <string name="widget_help_description">Quick button to open Habitikami Help</string>
     <string name="label_help">Help</string>

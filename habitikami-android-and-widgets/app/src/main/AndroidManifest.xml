@@ -92,6 +92,18 @@
                 android:resource="@xml/widget_stats_info" />
         </receiver>
 
+        <!-- Habit Stats Widget (single habit: streak, rate, total) -->
+        <receiver
+            android:name=".widget.HabitStatsWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_habit_stats_info" />
+        </receiver>
+
         <!-- Help Widget -->
         <receiver
             android:name=".widget.HelpWidgetProvider"
@@ -107,6 +119,16 @@
         <!-- Counter Widget Config Activity -->
         <activity
             android:name=".widget.WidgetConfigActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Habitikami">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <!-- Habit Stats Widget Config Activity (single habit picker) -->
+        <activity
+            android:name=".widget.HabitStatsConfigActivity"
             android:exported="false"
             android:theme="@style/Theme.Habitikami">
             <intent-filter>

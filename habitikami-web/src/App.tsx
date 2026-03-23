@@ -379,7 +379,7 @@ function App() {
                 <div className="flex items-center w-full md:w-auto justify-between md:justify-start gap-4 relative">
                   <div className="flex items-center gap-2">
                     {/* Hamburger Menu */}
-                    <div className="relative" ref={menuRef}>
+                    <div className={cn("relative", showTour && "z-[110]")} ref={menuRef}>
                       <button
                         onClick={() => setMenuOpen(o => !o)}
                         className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 flex items-center justify-center transition-colors shadow-sm shrink-0"
@@ -388,7 +388,7 @@ function App() {
                         <Menu width={16} height={16} />
                       </button>
                       {menuOpen && (
-                        <div className="absolute left-0 top-full mt-1 flex flex-col bg-card border border-border rounded-lg shadow-lg p-1.5 min-w-[200px] z-50">
+                        <div className={cn("absolute left-0 top-full mt-1 flex flex-col bg-card border border-border rounded-lg shadow-lg p-1.5 min-w-[200px]", showTour ? "z-[110]" : "z-50")}>
                           {/* Tabs (Mobile Only) */}
                           <div className="md:hidden flex flex-col mb-1 pb-1 border-b border-border/50">
                             {visibleTabs.map((tab) => {
@@ -401,7 +401,8 @@ function App() {
                                     "flex items-center gap-3 text-xs px-3 py-2 rounded transition-colors w-full text-left",
                                     activeSheet === tab
                                       ? "bg-primary/10 text-primary font-medium"
-                                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
+                                    tourHighlight === tab && "ring-2 ring-red-500 ring-offset-1 ring-offset-card"
                                   )}
                                 >
                                   {Icon && <Icon className="w-4 h-4 shrink-0" />}
@@ -545,8 +546,8 @@ function App() {
             <Suspense fallback={null}>
               <AppTour
                 onNavigate={setActiveSheet}
-                onComplete={() => { setShowTour(false); setTourHighlight(null); }}
-                onHighlightChange={setTourHighlight}
+                onComplete={() => { setShowTour(false); setTourHighlight(null); setMenuOpen(false); }}
+                onHighlightChange={(tab) => { setTourHighlight(tab); setMenuOpen(!!tab); }}
               />
             </Suspense>
           )}

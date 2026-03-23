@@ -57,10 +57,9 @@ export function CheckboxGridView({
         let currentStreak = 0;
         let bestStreak = 0;
         let streak = 0;
-        let countingCurrent = true;
 
-        // Iterate from most recent to oldest
-        for (let i = data.length - 1; i >= 0; i--) {
+        // Count completed and best streak (oldest to newest)
+        for (let i = 0; i < data.length; i++) {
             const overrideKey = `${i}:${selectedHabit}`;
             const checked = overrideKey in optimisticOverrides
                 ? optimisticOverrides[overrideKey]
@@ -70,12 +69,25 @@ export function CheckboxGridView({
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
             } else {
-                if (countingCurrent) currentStreak = streak;
-                countingCurrent = false;
                 streak = 0;
             }
         }
-        if (countingCurrent) currentStreak = streak;
+
+        // Current streak: from most recent day backwards, skip trailing unchecked days
+        currentStreak = 0;
+        let started = false;
+        for (let i = data.length - 1; i >= 0; i--) {
+            const overrideKey = `${i}:${selectedHabit}`;
+            const checked = overrideKey in optimisticOverrides
+                ? optimisticOverrides[overrideKey]
+                : data[i].habits[selectedHabit];
+            if (!started) {
+                if (checked) { started = true; currentStreak = 1; }
+            } else {
+                if (checked) currentStreak++;
+                else break;
+            }
+        }
 
         const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
         return { total, completed, percentage, currentStreak, bestStreak };

@@ -241,7 +241,7 @@ export function Graphs() {
                                 itemStyle={{ color: '#f3f4f6' }}
                                 formatter={(value: any) => [`${value}%`, t('graphsCompletion')]}
                             />
-                            {/* Background / Zero Completion Bar (Always 100%) */}
+                            {/* Layer 1: Background / Zero Completion Pattern (Always 100%) */}
                             <Bar 
                                 dataKey={() => 100} 
                                 radius={4}
@@ -253,32 +253,8 @@ export function Graphs() {
                                         fill={entry.percentage === 0 ? 'url(#no-completion-pattern)' : 'rgba(255,255,255,0.05)'} 
                                     />
                                 ))}
-                                <LabelList
-                                    dataKey="name"
-                                    content={(props: any) => {
-                                        const { x, y, height, value, index } = props;
-                                        const entry = filteredStats[index];
-                                        if (!entry) return null;
-                                        
-                                        const isWide = entry.percentage > 40;
-                                        const isZero = entry.percentage === 0;
-
-                                        return (
-                                            <text
-                                                x={x + 10} // Relative to the 100% wide bar start
-                                                y={y + height / 2}
-                                                fill={isWide || isZero ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.9)"}
-                                                textAnchor="start"
-                                                dominantBaseline="central"
-                                                style={{ fontSize: 13, fontWeight: 700, pointerEvents: 'none' }}
-                                            >
-                                                {value}
-                                            </text>
-                                        );
-                                    }}
-                                />
                             </Bar>
-                            {/* Actual Completion Bar (Drawn on top) */}
+                            {/* Layer 2: Actual Completion Bar (Drawn on top of background) */}
                             <Bar 
                                 dataKey="percentage" 
                                 radius={4}
@@ -289,6 +265,45 @@ export function Graphs() {
                                         fill={entry.percentage === 0 ? 'transparent' : getColor(entry.name)} 
                                     />
                                 ))}
+                            </Bar>
+                            {/* Layer 3: Invisible Label Layer (Always 100%, drawn on the very top) */}
+                            <Bar 
+                                dataKey={() => 100} 
+                                fill="transparent"
+                                isAnimationActive={false}
+                            >
+                                <LabelList
+                                    dataKey="name"
+                                    content={(props: any) => {
+                                        const { x, y, height, value } = props;
+                                        
+                                        const textWidth = value.length * 8 + 12;
+
+                                        return (
+                                            <g>
+                                                <rect
+                                                    x={x + 8}
+                                                    y={y + (height - 22) / 2}
+                                                    width={textWidth}
+                                                    height={22}
+                                                    fill="white"
+                                                    rx={4}
+                                                    ry={4}
+                                                />
+                                                <text
+                                                    x={x + 14} 
+                                                    y={y + height / 2}
+                                                    fill="black"
+                                                    textAnchor="start"
+                                                    dominantBaseline="central"
+                                                    style={{ fontSize: 13, fontWeight: 700, pointerEvents: 'none' }}
+                                                >
+                                                    {value}
+                                                </text>
+                                            </g>
+                                        );
+                                    }}
+                                />
                             </Bar>
                         </BarChart>
                     </ResponsiveContainer>

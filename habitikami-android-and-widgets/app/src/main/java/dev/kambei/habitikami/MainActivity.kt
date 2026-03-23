@@ -60,11 +60,12 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Update Available")
             .setMessage("A new version (v$version) is available.\nYou are on v${BuildConfig.VERSION_NAME}.")
             .setPositiveButton("Update") { _, _ ->
-                val url = apkUrl ?: htmlUrl
+                // Open release page so user can download — don't launch TWA
+                val url = htmlUrl ?: apkUrl
                 if (url != null) {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                 }
-                launchTwa()
+                finish()
             }
             .setNegativeButton("Later") { _, _ ->
                 launchTwa()

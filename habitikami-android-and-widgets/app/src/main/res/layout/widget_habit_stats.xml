@@ -3,11 +3,11 @@
     android:id="@+id/widget_habit_stats_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E60A0A0F"
+    android:background="@drawable/widget_background"
     android:padding="8dp">
 
-    <!-- Colored accent bar at top -->
-    <View
+    <!-- Colored accent bar at top (TextView used because View is not supported in RemoteViews) -->
+    <TextView
         android:id="@+id/color_bar"
         android:layout_width="match_parent"
         android:layout_height="3dp"
@@ -48,7 +48,7 @@
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
                 android:src="@android:drawable/ic_popup_sync"
-                android:background="@android:color/transparent"
+                android:background="@drawable/widget_button"
                 android:scaleType="centerInside"
                 android:contentDescription="@string/btn_refresh" />
 

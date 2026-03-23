@@ -7,6 +7,7 @@ import type { SchedaStep } from '../types';
 import type { SchedaTemplate } from '../data/schedeTemplates';
 import { type AIProviderConfig, callAI } from '../utils/aiProvider';
 import { saveMoodEntry } from './MoodGraph';
+import { renderMarkdown } from '../lib/renderMarkdown';
 
 interface Message {
     role: 'user' | 'model';
@@ -303,7 +304,7 @@ export function SchedeCompiler({ template, providerConfig, onBack }: Props) {
                     >
                         <div className="max-w-[90%] md:max-w-[80%] space-y-4">
                             <div className="bg-secondary/50 text-secondary-foreground ring-1 ring-border rounded-2xl rounded-tl-sm px-5 py-4 text-base leading-relaxed shadow-sm">
-                                {currentStep.message}
+                                {renderMarkdown(currentStep.message)}
                             </div>
 
                             {/* Option buttons */}
@@ -354,7 +355,7 @@ export function SchedeCompiler({ template, providerConfig, onBack }: Props) {
                     >
                         <div className="max-w-[95%] md:max-w-[85%] space-y-4">
                             <div className="bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/20 rounded-2xl rounded-tl-sm px-5 py-4 text-base leading-relaxed shadow-sm">
-                                {currentStep.message}
+                                {renderMarkdown(currentStep.message)}
                             </div>
 
                             {/* Document preview */}

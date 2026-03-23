@@ -60,12 +60,14 @@ class ChecklistWidgetProvider : AppWidgetProvider() {
                     val (baseUrl, apiToken) = config
                     val export = HabitApiClient.fetchExport(baseUrl, apiToken, 1)
 
-                    // Use the right sheet: weekdays Mon-Fri, weekend Sat-Sun
+                    // Use the right sheet for today and filter to today's date only
                     val today = LocalDate.now()
+                    val todayStr = today.toString()
                     val isWeekend = today.dayOfWeek.value >= 6
                     val todayDays = if (isWeekend) export.weekend else export.weekdays
                     val todayHabits = mutableMapOf<String, Boolean>()
                     for (day in todayDays) {
+                        if (day.date != todayStr) continue
                         for ((habit, done) in day.habits) {
                             todayHabits[habit] = todayHabits.getOrDefault(habit, false) || done
                         }

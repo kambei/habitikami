@@ -62,10 +62,23 @@ class WeeklySummaryWidgetProvider : AppWidgetProvider() {
                     val (baseUrl, apiToken) = config
                     val export = HabitApiClient.fetchExport(baseUrl, apiToken, 14)
 
-                    val allDays = export.weekdays + export.weekend
-                    // Merge by date
+                    // Merge by date: use weekday sheet for Mon-Fri, weekend sheet for Sat-Sun
                     val byDate = mutableMapOf<String, MutableMap<String, Boolean>>()
-                    for (day in allDays) {
+                    for (day in export.weekdays) {
+                        try {
+                            val dow = LocalDate.parse(day.date).dayOfWeek.value
+                            if (dow !in 1..5) continue
+                        } catch (_: Exception) {}
+                        val map = byDate.getOrPut(day.date) { mutableMapOf() }
+                        for ((habit, done) in day.habits) {
+                            map[habit] = map.getOrDefault(habit, false) || done
+                        }
+                    }
+                    for (day in export.weekend) {
+                        try {
+                            val dow = LocalDate.parse(day.date).dayOfWeek.value
+                            if (dow < 6) continue
+                        } catch (_: Exception) {}
                         val map = byDate.getOrPut(day.date) { mutableMapOf() }
                         for ((habit, done) in day.habits) {
                             map[habit] = map.getOrDefault(habit, false) || done

@@ -116,32 +116,64 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
         }
 
         /**
-         * Smart merge: only include data from sheets where the habit has TRUE entries.
-         * This prevents a weekday-only habit from getting FALSE entries on weekends
-         * (which would break the streak).
+         * Smart merge: use weekday sheet data for Mon-Fri dates and weekend sheet
+         * data for Sat-Sun dates. Only includes a sheet if the habit is active in it
+         * (has at least one TRUE). This prevents a weekday-only habit from getting
+         * FALSE entries on weekends (which would break the streak).
          */
         fun smartMerge(
             weekdays: List<DayEntry>,
             weekend: List<DayEntry>,
             habit: String
         ): List<Pair<String, Boolean>> {
-            val weekdayHasTrue = weekdays.any { it.habits[habit] == true }
-            val weekendHasTrue = weekend.any { it.habits[habit] == true }
-
-            val sources = mutableListOf<List<DayEntry>>()
-            if (weekdayHasTrue) sources.add(weekdays)
-            if (weekendHasTrue) sources.add(weekend)
-            // If neither has TRUE, use both (habit just started or all false)
-            if (sources.isEmpty()) sources.addAll(listOf(weekdays, weekend))
+            val weekdayHasHabit = weekdays.any { it.habits.containsKey(habit) }
+            val weekendHasHabit = weekend.any { it.habits.containsKey(habit) }
 
             val byDate = mutableMapOf<String, Boolean>()
-            for (days in sources) {
-                for (day in days) {
+
+            if (weekdayHasHabit) {
+                for (day in weekdays) {
+                    val status = day.habits[habit] ?: continue
+                    // Only use weekday sheet entries for Mon-Fri
+                    if (isWeekday(day.date)) {
+                        byDate[day.date] = byDate.getOrDefault(day.date, false) || status
+                    }
+                }
+            }
+
+            if (weekendHasHabit) {
+                for (day in weekend) {
+                    val status = day.habits[habit] ?: continue
+                    // Only use weekend sheet entries for Sat-Sun
+                    if (isWeekend(day.date)) {
+                        byDate[day.date] = byDate.getOrDefault(day.date, false) || status
+                    }
+                }
+            }
+
+            // If neither sheet has the habit, try both unfiltered as fallback
+            if (byDate.isEmpty()) {
+                for (day in weekdays + weekend) {
                     val status = day.habits[habit] ?: continue
                     byDate[day.date] = byDate.getOrDefault(day.date, false) || status
                 }
             }
+
             return byDate.entries.sortedBy { it.key }.map { it.key to it.value }
+        }
+
+        private fun isWeekday(dateStr: String): Boolean {
+            return try {
+                val dow = java.time.LocalDate.parse(dateStr).dayOfWeek.value
+                dow in 1..5
+            } catch (_: Exception) { true }
+        }
+
+        private fun isWeekend(dateStr: String): Boolean {
+            return try {
+                val dow = java.time.LocalDate.parse(dateStr).dayOfWeek.value
+                dow >= 6
+            } catch (_: Exception) { true }
         }
     }
 

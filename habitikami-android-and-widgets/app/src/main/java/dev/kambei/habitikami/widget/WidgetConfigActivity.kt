@@ -58,9 +58,15 @@ class WidgetConfigActivity : AppCompatActivity() {
                 .putString("api_token", apiToken)
                 .apply()
 
-            // Trigger initial widget update
-            val mgr = AppWidgetManager.getInstance(this)
-            CounterWidgetProvider().onUpdate(this, mgr, intArrayOf(appWidgetId))
+            // Trigger update for all widget types that use this config
+            CounterWidgetProvider.refreshAll(this)
+            CounterChartWidgetProvider.refreshAll(this)
+            ChecklistWidgetProvider.refreshAll(this)
+            WeeklySummaryWidgetProvider.refreshAll(this)
+            StreakFireWidgetProvider.refreshAll(this)
+            WorstHabitWidgetProvider.refreshAll(this)
+            HabitStatsWidgetProvider.refreshAll(this)
+            MiniHeatmapWidgetProvider.refreshAll(this)
 
             // Return success
             setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))

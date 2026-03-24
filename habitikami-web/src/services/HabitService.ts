@@ -121,8 +121,8 @@ class HabitServiceImpl {
                             console.error("Auth Error:", response);
                             return;
                         }
-                        // Verify state to prevent CSRF attacks
-                        if (response.state !== this.oauthState) {
+                        // Verify state to prevent CSRF attacks (only if state is returned by GIS)
+                        if (response.state && response.state !== this.oauthState) {
                             console.error("OAuth state mismatch — possible CSRF attack");
                             this.authError = "Security error: OAuth state mismatch";
                             return;

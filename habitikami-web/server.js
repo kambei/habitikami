@@ -479,23 +479,6 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
     }
 });
 
-// ─── Changelog endpoint ───────────────────────────────────────────────────────
-
-app.get('/api/changelog', async (req, res) => {
-    try {
-        const changelogPath = path.join(__dirname, '..', 'CHANGELOG.md');
-        if (!fs.existsSync(changelogPath)) {
-            return res.json({ content: '', hash: '' });
-        }
-        const content = fs.readFileSync(changelogPath, 'utf8');
-        const hash = crypto.createHash('md5').update(content).digest('hex');
-        res.json({ content, hash });
-    } catch (error) {
-        console.error('Changelog error:', error);
-        res.status(500).json({ error: 'Failed to read changelog' });
-    }
-});
-
 // ─── Auth: refresh token ──────────────────────────────────────────────────────
 
 app.post('/api/auth/refresh', authLimiter, validateOrigin, async (req, res) => {
@@ -1554,7 +1537,11 @@ function isUserRevoked(email) {
 
 app.get('/api/changelog', async (req, res) => {
     try {
-        const changelogPath = path.join(__dirname, '..', 'CHANGELOG.md');
+        // Try both root repo path (dev) and local app path (docker)
+        const rootPath = path.join(__dirname, '..', 'CHANGELOG.md');
+        const localPath = path.join(__dirname, 'CHANGELOG.md');
+        const changelogPath = fs.existsSync(localPath) ? localPath : rootPath;
+
         if (!fs.existsSync(changelogPath)) {
             return res.status(404).json({ error: 'Changelog not found' });
         }

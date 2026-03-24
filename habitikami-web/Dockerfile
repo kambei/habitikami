@@ -27,6 +27,7 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY server.js ./
+COPY --from=builder /app/CHANGELOG.md ./
 
 RUN mkdir -p /app/data
 

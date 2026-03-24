@@ -18,6 +18,7 @@ const LandingPage = React.lazy(() => import('./components/LandingPage').then(m =
 const OnboardingPage = React.lazy(() => import('./components/OnboardingPage').then(m => ({ default: m.OnboardingPage })))
 const TabSelectionPage = React.lazy(() => import('./components/TabSelectionPage').then(m => ({ default: m.TabSelectionPage })))
 const HelpView = React.lazy(() => import('./components/HelpView').then(m => ({ default: m.HelpView })))
+const UpdatesView = React.lazy(() => import('./components/UpdatesView').then(m => ({ default: m.UpdatesView })))
 const AppTour = React.lazy(() => import('./components/AppTour').then(m => ({ default: m.AppTour })))
 
 const LoaderFallback = () => (
@@ -193,6 +194,8 @@ function App() {
   const [showTour, setShowTour] = useState(false);
   const [tourHighlight, setTourHighlight] = useState<ViewType | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hasNewUpdates, setHasNewUpdates] = useState(false);
+  const [showUpdatesOverlay, setShowUpdatesOverlay] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -203,6 +206,25 @@ function App() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [menuOpen]);
+
+  // Check for updates
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const checkUpdates = async () => {
+      try {
+        const { hash } = await habitService.getChangelog();
+        const lastSeen = localStorage.getItem('lastSeenChangelogHash');
+        if (hash && hash !== lastSeen) {
+          setHasNewUpdates(true);
+        }
+      } catch { /* silent fail */ }
+    };
+    checkUpdates();
+
+    const handleSeen = () => setHasNewUpdates(false);
+    window.addEventListener('changelogSeen', handleSeen);
+    return () => window.removeEventListener('changelogSeen', handleSeen);
+  }, [isLoggedIn]);
 
   // Persist view selection & sync to history
   useEffect(() => {
@@ -447,6 +469,12 @@ function App() {
                         title="Menu"
                       >
                         <Menu width={16} height={16} />
+                        {hasNewUpdates && (
+                          <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                          </span>
+                        )}
                       </button>
                       {menuOpen && (
                         <div className={cn("absolute left-0 top-full mt-1 flex flex-col bg-card border border-border rounded-lg shadow-lg p-1.5 min-w-[200px]", showTour ? "z-[110]" : "z-50")}>
@@ -505,6 +533,16 @@ function App() {
                           >
                             <HelpCircle className="w-4 h-4 shrink-0" />
                             {t('tourReplay')}
+                          </button>
+                          <button
+                            onClick={() => { setShowUpdatesOverlay(true); setMenuOpen(false); }}
+                            className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left relative"
+                          >
+                            <Info className="w-4 h-4 shrink-0 text-amber-400" />
+                            <span className="flex-1">What's New</span>
+                            {hasNewUpdates && (
+                              <span className="flex h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse ring-4 ring-amber-400/20" />
+                            )}
                           </button>
                           <div className="border-t border-border/50 my-1" />
                           <button
@@ -614,6 +652,24 @@ function App() {
             </Suspense>
           )}
           <Toaster position="top-center" theme="dark" />
+
+          {/* Updates Overlay */}
+          <AnimatePresence>
+            {showUpdatesOverlay && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="fixed inset-0 z-[100] p-4 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+              >
+                <div className="w-full max-w-2xl h-[80vh] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+                  <Suspense fallback={<LoaderFallback />}>
+                    <UpdatesView onBack={() => setShowUpdatesOverlay(false)} />
+                  </Suspense>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>

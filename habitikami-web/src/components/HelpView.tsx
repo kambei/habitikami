@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { HeartHandshake, Key, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2, FilePlus2, Megaphone, ChevronRight, Loader2 } from 'lucide-react';
+import { HeartHandshake, Key, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2, FilePlus2, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import type { GuidedStep } from '../types';
@@ -22,7 +22,6 @@ import {
 } from '../utils/aiProvider';
 import { MoodGraph, saveMoodEntry } from './MoodGraph';
 import { renderMarkdown } from '../lib/renderMarkdown';
-import { UpdatesView } from './UpdatesView';
 
 interface Message {
     role: 'user' | 'model';
@@ -71,26 +70,7 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [hasNewUpdates, setHasNewUpdates] = useState(false);
     const endOfMessagesRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const checkUpdates = async () => {
-            try {
-                const { hash } = await habitService.getChangelog();
-                const lastSeen = localStorage.getItem('lastSeenChangelogHash');
-                if (hash && hash !== lastSeen) {
-                    setHasNewUpdates(true);
-                }
-            } catch { /* silent fail */ }
-        };
-        checkUpdates();
-
-        // Listen for updates from the view itself
-        const handleSeen = () => setHasNewUpdates(false);
-        window.addEventListener('changelogSeen', handleSeen);
-        return () => window.removeEventListener('changelogSeen', handleSeen);
-    }, []);
 
     useEffect(() => {
         if (mode === 'chat' && isKeySetup && history.length === 0 && !currentStep && !isLoading) {
@@ -516,11 +496,6 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
         return <MoodGraph onBack={handleBackToMenu} />;
     }
 
-    // ── Updates mode ──
-    if (mode === 'updates') {
-        return <UpdatesView onBack={handleBackToMenu} />;
-    }
-
     // ── Settings mode ──
     if (mode === 'settings') {
         return (
@@ -771,36 +746,6 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                                     <p className="text-sm text-muted-foreground">{t('helpMenuMoodDesc')}</p>
                                 </div>
                             </div>
-                        </motion.button>
-
-                        {/* What's New Card */}
-                        <motion.button
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.18 }}
-                            onClick={() => setMode('updates')}
-                            className="w-full text-left bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 p-5 hover:border-primary/30 hover:bg-card/80 transition-all group relative overflow-hidden"
-                        >
-                            <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-amber-500/20 transition-colors">
-                                    <Megaphone className="w-6 h-6 text-amber-400" />
-                                </div>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="font-semibold text-foreground mb-1">What's New</h3>
-                                        {hasNewUpdates && (
-                                            <span className="flex h-2 w-2 rounded-full bg-amber-400 animate-pulse ring-4 ring-amber-400/20" />
-                                        )}
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">Discover latest features and improvements.</p>
-                                </div>
-                                <ChevronRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-amber-400/50 transition-colors self-center" />
-                            </div>
-                            {hasNewUpdates && (
-                                <div className="absolute top-0 right-0 p-1">
-                                    <span className="bg-amber-400 text-amber-950 text-[10px] font-bold px-2 py-0.5 rounded-bl-lg shadow-sm">NEW</span>
-                                </div>
-                            )}
                         </motion.button>
 
                         <div className="space-y-3">

@@ -840,6 +840,30 @@ class HabitServiceImpl {
         }
     }
 
+    async deleteCounterColumnsByName(columnNames: string[]) {
+        try {
+            await this.ensureClient();
+            const response = await gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: this.getSpreadsheetId(),
+                range: "Counters!1:1",
+            });
+            const headers = response.result.values?.[0] || [];
+            const indexes: number[] = [];
+            for (const name of columnNames) {
+                const idx = headers.findIndex((h: any) => typeof h === 'string' && h.toLowerCase() === name.toLowerCase());
+                if (idx > 0) indexes.push(idx);
+            }
+            // Sort descending so deleting from right to left doesn't shift earlier indexes
+            indexes.sort((a, b) => b - a);
+            for (const idx of indexes) {
+                await this.deleteColumn("Counters", idx);
+            }
+            return { success: true, deleted: indexes.length };
+        } catch (e: any) {
+            return { error: e.result?.error?.message || e.message };
+        }
+    }
+
     async getHabitColors(sheetName: string): Promise<Record<string, string> | { error: string }> {
         try {
             await this.ensureClient();

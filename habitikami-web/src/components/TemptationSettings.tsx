@@ -41,8 +41,16 @@ export const TemptationSettings = () => {
         handleSave([...temptations, newT]);
     };
 
-    const deleteTemptation = (id: string) => {
-        if (confirm("Are you sure you want to delete this temptation type? Existing data in Google Sheets will be preserved but won't be visible in this view.")) {
+    const deleteTemptation = async (id: string) => {
+        const temptation = temptations.find(t => t.id === id);
+        if (!temptation) return;
+        if (confirm("Are you sure you want to delete this temptation type? This will also remove its columns from the Counters sheet.")) {
+            const columnNames = temptation.actions.map((a: any) => a.id);
+            try {
+                await habitService.deleteCounterColumnsByName(columnNames);
+            } catch (e) {
+                console.error("Failed to clean sheet columns", e);
+            }
             handleSave(temptations.filter(t => t.id !== id));
         }
     };

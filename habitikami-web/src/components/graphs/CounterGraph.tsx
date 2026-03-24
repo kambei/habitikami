@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line } from 'recharts';
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar } from 'recharts';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { habitService } from '../../services/HabitService';
 import { cn } from '../../lib/utils';
@@ -14,48 +14,20 @@ const DAYS_TO_SHOW = 30;
 export const CounterGraph = ({ data }: Props) => {
     const { t, locale } = useTranslation();
     const [temptations, setTemptations] = useState<any[]>([]);
-    const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('daily');
 
     useEffect(() => {
         habitService.getTemptations().then(setTemptations);
     }, []);
 
-    // Sort data by date just in case
+    // Sort data by date
     const sortedData = useMemo(() => {
         return [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     }, [data]);
-
-    // Aggregate data by month if viewMode is monthly
-    const chartData = useMemo(() => {
-        if (viewMode === 'daily') return sortedData;
-
-        const monthlyMap: Record<string, any> = {};
-        sortedData.forEach(d => {
-            const date = new Date(d.date);
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            
-            if (!monthlyMap[monthKey]) {
-                monthlyMap[monthKey] = { date: `${monthKey}-01` }; // Use 1st of month for date axis
-            }
-            
-            Object.keys(d).forEach(k => {
-                if (k !== 'date') {
-                    monthlyMap[monthKey][k] = (monthlyMap[monthKey][k] || 0) + (d[k] || 0);
-                }
-            });
-        });
-
-        return Object.values(monthlyMap).sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    }, [sortedData, viewMode]);
 
     // View state: End date of the visible window
     const [viewEndDate, setViewEndDate] = useState<Date>(new Date());
 
     const { visibleData, startDate, endDate, canGoNext } = useMemo(() => {
-        if (viewMode === 'monthly') {
-            return { visibleData: chartData, startDate: new Date(chartData[0]?.date || Date.now()), endDate: new Date(), canGoNext: false };
-        }
-
         const end = new Date(viewEndDate);
         end.setHours(23, 59, 59, 999);
 
@@ -63,7 +35,7 @@ export const CounterGraph = ({ data }: Props) => {
         start.setDate(start.getDate() - DAYS_TO_SHOW);
         start.setHours(0, 0, 0, 0);
 
-        const visible = chartData.filter(d => {
+        const visible = sortedData.filter(d => {
             const date = new Date(d.date);
             return date >= start && date <= end;
         });
@@ -73,7 +45,7 @@ export const CounterGraph = ({ data }: Props) => {
         const canNext = end < today;
 
         return { visibleData: visible, startDate: start, endDate: end, canGoNext: canNext };
-    }, [chartData, viewEndDate, viewMode]);
+    }, [sortedData, viewEndDate]);
 
     const handlePrev = () => {
         const newEnd = new Date(viewEndDate);
@@ -84,7 +56,6 @@ export const CounterGraph = ({ data }: Props) => {
     const handleNext = () => {
         const newEnd = new Date(viewEndDate);
         newEnd.setDate(newEnd.getDate() + Math.floor(DAYS_TO_SHOW / 2));
-
         const today = new Date();
         if (newEnd > today) {
             setViewEndDate(today);
@@ -93,142 +64,137 @@ export const CounterGraph = ({ data }: Props) => {
         }
     };
 
+    // Build per-temptation chart data
+    const temptationCharts = useMemo(() => {
+        if (temptations.length === 0) return [];
+
+        return temptations.map(tConfig => {
+            // Find resist and succumb actions
+            const resistAction = tConfig.actions.find((a: any) => a.type === 'positive' || a.type === 'resist');
+            const succumbAction = tConfig.actions.find((a: any) => a.type === 'negative' || a.type === 'succumb');
+            const otherActions = tConfig.actions.filter((a: any) =>
+                a.type !== 'positive' && a.type !== 'resist' && a.type !== 'negative' && a.type !== 'succumb'
+            );
+
+            const chartData = visibleData.map(d => {
+                const entry: any = { date: d.date };
+                if (resistAction) {
+                    entry[resistAction.label || resistAction.id] = d[resistAction.id.toLowerCase()] || d[resistAction.id] || 0;
+                }
+                if (succumbAction) {
+                    entry[succumbAction.label || succumbAction.id] = d[succumbAction.id.toLowerCase()] || d[succumbAction.id] || 0;
+                }
+                for (const a of otherActions) {
+                    entry[a.label || a.id] = d[a.id.toLowerCase()] || d[a.id] || 0;
+                }
+                return entry;
+            });
+
+            const bars: { key: string; color: string }[] = [];
+            if (resistAction) bars.push({ key: resistAction.label || resistAction.id, color: resistAction.color });
+            if (succumbAction) bars.push({ key: succumbAction.label || succumbAction.id, color: succumbAction.color });
+            for (const a of otherActions) {
+                bars.push({ key: a.label || a.id, color: a.color });
+            }
+
+            return {
+                label: tConfig.label,
+                chartData,
+                bars,
+            };
+        });
+    }, [temptations, visibleData]);
+
+    if (temptationCharts.length === 0 && visibleData.length === 0) {
+        return (
+            <div className="w-full bg-card border border-border rounded-xl p-4 shadow-sm mb-6 text-center text-muted-foreground">
+                {t('temptationNoData')}
+            </div>
+        );
+    }
+
     return (
-        <div className="w-full bg-card border border-border rounded-xl p-4 shadow-sm mb-6">
-            <div className="flex items-center justify-between mb-4">
+        <div className="w-full space-y-6 mb-6">
+            {/* Navigation */}
+            <div className="flex items-center justify-between bg-card border border-border rounded-xl p-4 shadow-sm">
                 <h3 className="text-lg font-semibold">{t('temptationHistory')}</h3>
-
-                <div className="flex items-center gap-4">
-                    {/* View Mode Toggle (added for v5.0.3) */}
-                    <div className="flex bg-secondary/50 rounded-lg p-1 text-[10px] font-bold uppercase tracking-wider">
-                        <button
-                            onClick={() => setViewMode('daily')}
-                            className={cn(
-                                "px-3 py-1 rounded-md transition-all",
-                                viewMode === 'daily' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                            )}
-                        >
-                            {t('viewDaily') || 'Daily'}
-                        </button>
-                        <button
-                            onClick={() => setViewMode('monthly')}
-                            className={cn(
-                                "px-3 py-1 rounded-md transition-all",
-                                viewMode === 'monthly' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                            )}
-                        >
-                            {t('viewMonthly') || 'Monthly'}
-                        </button>
-                    </div>
-
-                    {viewMode === 'daily' && (
-                        <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-1">
-                            <button
-                                onClick={handlePrev}
-                                className="p-1 hover:bg-background rounded-md transition-colors"
-                                aria-label="Previous period"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-
-                            <span className="text-sm font-medium px-2 min-w-[140px] text-center">
-                                {startDate.toLocaleDateString(locale, { month: 'short', day: 'numeric' })} - {endDate.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
-                            </span>
-
-                            <button
-                                onClick={handleNext}
-                                disabled={!canGoNext}
-                                className={cn(
-                                    "p-1 hover:bg-background rounded-md transition-colors",
-                                    !canGoNext && "opacity-30 cursor-not-allowed hover:bg-transparent"
-                                )}
-                                aria-label="Next period"
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
-                        </div>
-                    )}
+                <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-1">
+                    <button
+                        onClick={handlePrev}
+                        className="p-1 hover:bg-background rounded-md transition-colors"
+                        aria-label="Previous period"
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-sm font-medium px-2 min-w-[140px] text-center">
+                        {startDate.toLocaleDateString(locale, { month: 'short', day: 'numeric' })} - {endDate.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
+                    </span>
+                    <button
+                        onClick={handleNext}
+                        disabled={!canGoNext}
+                        className={cn(
+                            "p-1 hover:bg-background rounded-md transition-colors",
+                            !canGoNext && "opacity-30 cursor-not-allowed hover:bg-transparent"
+                        )}
+                        aria-label="Next period"
+                    >
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
 
-            <div className="h-[300px] min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                        data={visibleData}
-                        margin={{
-                            top: 5,
-                            right: 30,
-                            left: 0,
-                            bottom: 5,
-                        }}
-                    >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                        <XAxis
-                            dataKey="date"
-                            stroke="#888"
-                            tickFormatter={(value) => {
-                                const date = new Date(value);
-                                return viewMode === 'daily' 
-                                    ? date.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
-                                    : date.toLocaleDateString(locale, { month: 'short', year: '2-digit' });
-                            }}
-                            minTickGap={30}
-                        />
-                        <YAxis stroke="#888" allowDecimals={false} width={30} />
-                        <Tooltip
-                            contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
-                            itemStyle={{ color: '#f3f4f6' }}
-                            labelFormatter={(label) => new Date(label).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}
-                        />
-                        <Legend />
-                        {/* Discover all unique keys across all data points (v5.0.2) */}
-                        {Array.from(new Set(data.flatMap(d => Object.keys(d)))).filter(k => k !== 'date').map((key) => {
-                            // Find metadata for this key
-                            let label = key;
-                            let color = "#8884d8"; 
-
-                            // Search in temptations to build a descriptive label (v5.0.3: case-insensitive match)
-                            for (const tConfig of temptations) {
-                                const action = tConfig.actions.find((a: any) => a.id.toLowerCase() === key.toLowerCase());
-                                if (action) {
-                                    // Filter out binary metrics (resisted/succumbed) as requested in v5.0.4
-                                    // We only show "neutral" or generic counters (not 'resist' or 'succumb' types)
-                                    if (action.type === 'resist' || action.type === 'succumb') {
-                                        return null;
-                                    }
-
-                                    const categoryPrefix = (tConfig.label && tConfig.label !== 'Temptations' && tConfig.label !== 'Smoking') 
-                                        ? `${tConfig.label}: ` 
-                                        : '';
-                                    
-                                    label = categoryPrefix + (action.label || action.id);
-                                    color = action.color;
-                                    break;
-                                }
-                            }
-
-                            // If we filtered it out (returned null above), don't render the Line
-                            if (label === key && (key === 'smoke' || key === 'smoked')) return null; // Fallback filter
-
-                            return (
-                                <Line 
-                                    key={key}
-                                    type="monotone" 
-                                    dataKey={key} 
-                                    name={label} 
-                                    stroke={color} 
-                                    strokeWidth={3} 
-                                    activeDot={{ r: 8 }} 
-                                    dot={{ r: 4, strokeWidth: 2, fill: 'var(--background)' }} 
+            {/* One chart per temptation, stacked vertically */}
+            {temptationCharts.map((chart, idx) => (
+                <div
+                    key={chart.label}
+                    className={cn(
+                        "w-full bg-card border border-border rounded-xl p-4 shadow-sm",
+                        idx === temptationCharts.length - 1 ? "min-h-[400px]" : "min-h-[300px]"
+                    )}
+                >
+                    <h4 className="text-base font-bold mb-3">{chart.label}</h4>
+                    <div className={cn(
+                        "min-h-0",
+                        idx === temptationCharts.length - 1 ? "h-[350px]" : "h-[250px]"
+                    )}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                                data={chart.chartData}
+                                margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                                <XAxis
+                                    dataKey="date"
+                                    stroke="#888"
+                                    tickFormatter={(value) => {
+                                        const date = new Date(value);
+                                        return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+                                    }}
+                                    minTickGap={30}
                                 />
-                            );
-                        })}
-                    </LineChart>
-                </ResponsiveContainer>
-            </div>
+                                <YAxis stroke="#888" allowDecimals={false} width={30} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
+                                    itemStyle={{ color: '#f3f4f6' }}
+                                    labelFormatter={(label) => new Date(label).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}
+                                />
+                                <Legend />
+                                {chart.bars.map(bar => (
+                                    <Bar
+                                        key={bar.key}
+                                        dataKey={bar.key}
+                                        fill={bar.color}
+                                        radius={[4, 4, 0, 0]}
+                                    />
+                                ))}
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            ))}
 
-            {visibleData.length === 0 && (
-                <div className="text-center text-muted-foreground text-sm mt-2">
+            {temptationCharts.length === 0 && visibleData.length > 0 && (
+                <div className="w-full bg-card border border-border rounded-xl p-4 shadow-sm text-center text-muted-foreground">
                     {t('temptationNoData')}
                 </div>
             )}

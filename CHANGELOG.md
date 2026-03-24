@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.1.0] - 2026-03-24
+### 🎯 Temptations Overhaul & Clarity Update
+- **Vertical Button Layout**: Temptation actions now stack vertically — Resisted on top, Succumbed below — with maximized button sizes for easy tapping.
+- **Clear Success Feedback**: Tapping Resisted shows a green check icon; tapping Succumbed shows a red X icon — no more ambiguous icons.
+- **Empty State Guidance**: When no temptations are configured, a helpful message directs users to Settings.
+- **Sheet Cleanup on Delete**: Deleting a temptation in Settings now also removes its columns from the Counters spreadsheet.
+- **Per-Temptation Comparison Charts**: The Counters view now shows one bar chart per temptation comparing Resisted vs Succumbed with their configured colors, stacked vertically and scrollable.
+- **Removed Daily/Monthly Toggle**: Counter graphs now display a single clean daily view as before.
+- **Larger Last Chart**: The last temptation chart card is taller for better visibility.
+- **Graph Overflow Fix**: Bar charts in the analytics view now scroll horizontally instead of clipping.
+
 ## [5.0.4] - 2026-03-24
 ### 🧹 Clean Trends & Sheet Sync
 - **Simplified Dashboard**: Removed the top-level Temptation Hero Bar to favor the detailed original view.

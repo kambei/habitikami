@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { HeartHandshake, Key, Loader2, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff } from 'lucide-react';
+import { HeartHandshake, Key, Loader2, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import type { GuidedStep } from '../types';
@@ -54,6 +54,11 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     const [apiKeyCopied, setApiKeyCopied] = useState(false);
     const [showApiKey, setShowApiKey] = useState(false);
     const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+
+    // Spreadsheet ID state
+    const [tempSpreadsheetId, setTempSpreadsheetId] = useState(() => habitService.getStoredSpreadsheetId() || '');
+    const [spreadsheetSaved, setSpreadsheetSaved] = useState(false);
+    const [spreadsheetError, setSpreadsheetError] = useState<string | null>(null);
 
     const [mode, setMode] = useState<HelpMode>('menu');
     const [selectedScheda, setSelectedScheda] = useState<SchedaTemplate | null>(null);
@@ -114,6 +119,31 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
         setApiKeyLoading(false);
     };
 
+    const handleSaveSpreadsheetId = async () => {
+        const id = tempSpreadsheetId.trim();
+        if (!id) return;
+        const SPREADSHEET_ID_PATTERN = /^[a-zA-Z0-9_-]{10,100}$/;
+        if (!SPREADSHEET_ID_PATTERN.test(id)) {
+            setSpreadsheetError(t('settingsSpreadsheetInvalid'));
+            return;
+        }
+        setSpreadsheetError(null);
+        habitService.setSpreadsheetId(id);
+        // Also register on server
+        try {
+            await fetch('/api/user/spreadsheet', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${habitService.getAccessToken()}`,
+                },
+                body: JSON.stringify({ spreadsheet_id: id }),
+            });
+        } catch { /* best effort */ }
+        setSpreadsheetSaved(true);
+        setTimeout(() => setSpreadsheetSaved(false), 3000);
+    };
+
     const handleCopyApiKey = async () => {
         if (!newApiKey) return;
         await navigator.clipboard.writeText(newApiKey);
@@ -124,6 +154,9 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     const handleOpenSettings = () => {
         setTempGeminiKey(getGeminiKey());
         setTempAnthropicKey(getAnthropicKey());
+        setTempSpreadsheetId(habitService.getStoredSpreadsheetId() || '');
+        setSpreadsheetSaved(false);
+        setSpreadsheetError(null);
         setNewApiKey(null);
         setShowApiKey(false);
         setApiKeyError(null);
@@ -551,6 +584,46 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                             <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
                                 {t('settingsApiKeyUsage')}
                             </p>
+                        </div>
+                    </div>
+
+                    {/* Spreadsheet ID Management */}
+                    <div className="border-t border-border/50 pt-5">
+                        <div className="rounded-xl border border-border/50 bg-background/30 p-4 space-y-3">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 bg-emerald-500/15 rounded-lg flex items-center justify-center">
+                                    <Table2 className="w-4 h-4 text-emerald-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-sm">{t('settingsSpreadsheetTitle')}</h3>
+                                    <span className="text-[10px] text-muted-foreground">{t('settingsSpreadsheetDesc')}</span>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={tempSpreadsheetId}
+                                    onChange={e => { setTempSpreadsheetId(e.target.value); setSpreadsheetSaved(false); setSpreadsheetError(null); }}
+                                    placeholder={t('settingsSpreadsheetPlaceholder')}
+                                    className="flex-1 text-xs bg-background/70 px-3 py-2.5 rounded-lg font-mono border border-border/30 focus:border-primary/50 focus:outline-none transition-colors"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleSaveSpreadsheetId}
+                                    disabled={!tempSpreadsheetId.trim() || spreadsheetSaved}
+                                    className="shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-2.5 rounded-lg bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    {spreadsheetSaved ? <Check className="w-3.5 h-3.5" /> : <Table2 className="w-3.5 h-3.5" />}
+                                    {spreadsheetSaved ? t('settingsSpreadsheetSaved') : 'Save'}
+                                </button>
+                            </div>
+
+                            {spreadsheetError && (
+                                <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                                    <p className="text-xs text-red-400">{spreadsheetError}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

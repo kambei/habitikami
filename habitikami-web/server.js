@@ -449,6 +449,23 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
 
         console.log(`Auth exchange: email=${email}, spreadsheet_id=${spreadsheetId ? 'found' : 'not found'}`);
 
+        // Update refresh token in existing API key so /api/export keeps working
+        if (tokenData.refresh_token) {
+            try {
+                const encryptedRefreshToken = encryptToken(tokenData.refresh_token);
+                await saveApiKeysAtomic(apiKeys => {
+                    for (const [, meta] of Object.entries(apiKeys)) {
+                        if (meta.email === email) {
+                            meta.refreshToken = encryptedRefreshToken;
+                        }
+                    }
+                    return apiKeys;
+                });
+            } catch (e) {
+                console.error('Failed to update refresh token in API key:', e);
+            }
+        }
+
         res.json({
             access_token: tokenData.access_token,
             refresh_token: tokenData.refresh_token,

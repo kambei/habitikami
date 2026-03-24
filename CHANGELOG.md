@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.1.2] - 2026-03-24
+### 📊 Chart Mode Toggle
+- **Daily / Trend Tab Selector**: Counter graphs now have a toggle between "Daily" (bar chart for the selected month) and "Trend" (line chart of monthly totals over time) instead of showing both stacked.
+- Daily mode includes month navigation; Trend mode shows all-time monthly history.
+
 ## [5.1.1] - 2026-03-24
 ### 🔧 Temptation Polish & Counter Graphs
 - **Fixed Button Icons**: Temptation buttons now show ShieldCheck (resist) and ThumbsDown (succumb) instead of a confusing "?" fallback icon.

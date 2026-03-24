@@ -507,9 +507,14 @@ function App() {
                     </div>
                   </div>
 
-                  <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0" title={t('landingNameCaption')}>
-                    Habitikami
-                  </h1>
+                  <div className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 text-center">
+                    <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
+                      Habitikami
+                    </h1>
+                    <p className="text-[10px] text-muted-foreground/50 italic leading-tight">
+                      {t('landingNameCaption')}
+                    </p>
+                  </div>
 
                   <div className="flex items-center gap-2">
                     <a

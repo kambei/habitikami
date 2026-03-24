@@ -78,10 +78,10 @@ export const TemptationView = () => {
                         </div>
                     )}
                     <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-                        {activeTemptation.label === 'Smoking' ? t('smokeFeeling') : activeTemptation.label}
+                        {activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking' ? t('smokeFeeling') : activeTemptation.label}
                     </h2>
                     <p className="text-muted-foreground text-lg">
-                        {activeTemptation.label === 'Smoking' ? t('smokeStronger') : "Stay strong!"}
+                        {activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking' ? t('smokeStronger') : "Stay strong!"}
                     </p>
                 </motion.div>
 
@@ -114,13 +114,13 @@ export const TemptationView = () => {
                                             )}
                                         </div>
                                         <h3 className="text-2xl font-bold">
-                                            {action?.id === 'smoke' ? t('smokeSuccessResist') : 
-                                             action?.id === 'smoked' ? t('smokeSuccessSmoke') : 
+                                            {action?.id === 'smoke' && (activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking') ? t('smokeSuccessResist') : 
+                                             action?.id === 'smoked' && (activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking') ? t('smokeSuccessSmoke') : 
                                              action?.label}
                                         </h3>
                                         <p className="text-muted-foreground text-center">
-                                            {action?.id === 'smoke' ? t('smokeSuccessResistMsg') : 
-                                             action?.id === 'smoked' ? t('smokeSuccessSmokeMsg') : 
+                                            {action?.id === 'smoke' && (activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking') ? t('smokeSuccessResistMsg') : 
+                                             action?.id === 'smoked' && (activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking') ? t('smokeSuccessSmokeMsg') : 
                                              "Great job!"}
                                         </p>
                                     </motion.div>
@@ -153,7 +153,7 @@ export const TemptationView = () => {
                                             <>
                                                 <IconRenderer name={action.icon} size={64} className="drop-shadow-md" />
                                                 <span className="text-xl font-bold tracking-tight drop-shadow-md">
-                                                    {action.id === 'smoke' ? t('smokeResisted') : action.label}
+                                                    {action.id === 'smoke' && (activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking') ? t('smokeResisted') : action.label}
                                                 </span>
                                             </>
                                         )}
@@ -187,8 +187,8 @@ export const TemptationView = () => {
                                                 <>
                                                     {action.icon && <IconRenderer name={action.icon} size={32} className="drop-shadow-md" />}
                                                     <span className="text-sm font-bold tracking-tight drop-shadow-md">
-                                                        {action.id === 'smoked' ? t('smokeSmoked') : 
-                                                         action.id === 'coffee' ? t('smokeCoffee') : 
+                                                        {action.id === 'smoked' && (activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking') ? t('smokeSmoked') : 
+                                                         action.id === 'coffee' && (activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking') ? t('smokeCoffee') : 
                                                          action.label}
                                                     </span>
                                                 </>

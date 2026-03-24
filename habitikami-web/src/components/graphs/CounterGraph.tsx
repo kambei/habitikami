@@ -134,10 +134,12 @@ export const CounterGraph = ({ data }: Props) => {
                             for (const tConfig of temptations) {
                                 const action = tConfig.actions.find((a: any) => a.id === key);
                                 if (action) {
-                                    label = action.id === 'smoke' ? t('temptationResisted') : 
+                                    // Use action.label directly if it exists, otherwise fallback to translations for defaults
+                                    label = action.label || (
+                                            action.id === 'smoke' ? t('temptationResisted') : 
                                             action.id === 'smoked' ? t('temptationSmoked') : 
                                             action.id === 'coffee' ? t('temptationCoffee') : 
-                                            action.label;
+                                            action.id);
                                     color = action.color;
                                     break;
                                 }

@@ -1514,11 +1514,11 @@ class HabitServiceImpl {
             return prefs.temptations;
         }
 
-        // Default seeding for "Smoking" if no config exists
+        // Default seeding for "Temptations" if no config exists
         return [
             {
-                id: "smoking",
-                label: "Smoking",
+                id: "Temptations",
+                label: "Temptations",
                 actions: [
                     { id: "smoke", label: "Resisted", icon: "ShieldCheck", color: "#10b981", type: "positive" },
                     { id: "smoked", label: "Smoked", icon: "Flame", color: "#ef4444", type: "negative" },

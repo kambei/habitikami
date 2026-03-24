@@ -46,11 +46,27 @@ A native **Android** app using Trusted Web Activity (TWA) to deliver the Habitik
   <img src="media/Screenshot_20260324-082157.png" width="200" alt="AI Help Area with Guided Sessions and Mood Tracker" />
 </p>
 
+## 🚀 Try It Now
+
+### 🌐 Live Web App
+
+> Start building better habits today — no installation needed!
+
+👉 **[Open Habitikami](https://habitikami.kambei.dev)**
+
+Works on any device with a browser. Add it to your home screen for a native-like experience.
+
+### 📱 Android App — Become a Tester!
+
+> Help shape the future of Habitikami on Android! 🎯
+
+👉 **[Join the internal test on Google Play](https://play.google.com/apps/internaltest/4700911957596867903)**
+
+Get the native Android app with home screen widgets for quick habit tracking, counters, and stats — right at your fingertips.
+
 ## Getting Started
 
-- [Live version](https://habitikami.kambei.dev)
 - [Web app setup](./habitikami-web/README.md)
-- [Become a tester on Google Play Store](https://play.google.com/apps/internaltest/4700911957596867903)
 
 ## License
 

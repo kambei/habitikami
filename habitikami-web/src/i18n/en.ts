@@ -179,6 +179,8 @@ export const en = {
   temptationSmoked: 'Smoked',
   temptationCoffee: 'Coffee',
   temptationNoData: 'No data in this period',
+  viewDaily: 'Daily',
+  viewMonthly: 'Monthly',
 
   // Help View
   helpConfigTitle: 'Configure AI Assistant',

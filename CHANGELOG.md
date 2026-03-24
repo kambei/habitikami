@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.0.3] - 2026-03-24
+### ✨ Enhanced Analytics & Layout
+- **Time-Based Aggregation**: Introduced a new toggle between **Daily** and **Monthly** views for counter graphs to visualize long-term trends.
+- **Color Fidelity Fix**: Fixed a case-sensitivity issue in trend line matching. Your custom temptation colors now apply perfectly regardless of spreadsheet formatting.
+- **Natural Scrolling Layout**: Refactored the Counters dashboard for a more fluid experience where the entire view scrolls, allowing graphs to move out of the way for historical logs.
+
+## [5.0.2] - 2026-03-24
+### ✨ Hero Temptations & Detailed Trends
+- **Hero Temptation Bar**: A high-impact, dynamic section at the top of the dashboard for instant logging.
+- **Massive Action Buttons**: Premium, large buttons with enhanced visual depth and micro-animations.
+- **Granular Multi-Category Graphs**: Counter graphs now display separate trend lines for each dynamic category (e.g., Smoke vs Coffee).
+- **Auto-Sync Logic**: Enhanced build-time synchronization for zero-config changelog updates in Docker.
+
 ## [5.0.1] - 2026-03-24
 ### ✨ The Privacy and Dynamic Era
 - **Temptations Migration**: Officially renamed "Smoking Temptations" to "Temptations" to reflect the new dynamic multi-category system.

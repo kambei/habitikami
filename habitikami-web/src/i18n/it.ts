@@ -180,6 +180,8 @@ export const it: Record<TranslationKey, string | string[]> = {
   temptationSmoked: 'Fumato',
   temptationCoffee: 'Caffè',
   temptationNoData: 'Nessun dato in questo periodo',
+  viewDaily: 'Giornaliero',
+  viewMonthly: 'Mensile',
 
   // Help View
   helpConfigTitle: 'Configura Assistente AI',

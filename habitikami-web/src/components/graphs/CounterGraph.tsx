@@ -14,6 +14,7 @@ const DAYS_TO_SHOW = 30;
 export const CounterGraph = ({ data }: Props) => {
     const { t, locale } = useTranslation();
     const [temptations, setTemptations] = useState<any[]>([]);
+    const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('daily');
 
     useEffect(() => {
         habitService.getTemptations().then(setTemptations);
@@ -24,10 +25,37 @@ export const CounterGraph = ({ data }: Props) => {
         return [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     }, [data]);
 
+    // Aggregate data by month if viewMode is monthly
+    const chartData = useMemo(() => {
+        if (viewMode === 'daily') return sortedData;
+
+        const monthlyMap: Record<string, any> = {};
+        sortedData.forEach(d => {
+            const date = new Date(d.date);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            
+            if (!monthlyMap[monthKey]) {
+                monthlyMap[monthKey] = { date: `${monthKey}-01` }; // Use 1st of month for date axis
+            }
+            
+            Object.keys(d).forEach(k => {
+                if (k !== 'date') {
+                    monthlyMap[monthKey][k] = (monthlyMap[monthKey][k] || 0) + (d[k] || 0);
+                }
+            });
+        });
+
+        return Object.values(monthlyMap).sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }, [sortedData, viewMode]);
+
     // View state: End date of the visible window
     const [viewEndDate, setViewEndDate] = useState<Date>(new Date());
 
     const { visibleData, startDate, endDate, canGoNext } = useMemo(() => {
+        if (viewMode === 'monthly') {
+            return { visibleData: chartData, startDate: new Date(chartData[0]?.date || Date.now()), endDate: new Date(), canGoNext: false };
+        }
+
         const end = new Date(viewEndDate);
         end.setHours(23, 59, 59, 999);
 
@@ -35,7 +63,7 @@ export const CounterGraph = ({ data }: Props) => {
         start.setDate(start.getDate() - DAYS_TO_SHOW);
         start.setHours(0, 0, 0, 0);
 
-        const visible = sortedData.filter(d => {
+        const visible = chartData.filter(d => {
             const date = new Date(d.date);
             return date >= start && date <= end;
         });
@@ -45,7 +73,7 @@ export const CounterGraph = ({ data }: Props) => {
         const canNext = end < today;
 
         return { visibleData: visible, startDate: start, endDate: end, canGoNext: canNext };
-    }, [sortedData, viewEndDate]);
+    }, [chartData, viewEndDate, viewMode]);
 
     const handlePrev = () => {
         const newEnd = new Date(viewEndDate);
@@ -70,30 +98,56 @@ export const CounterGraph = ({ data }: Props) => {
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">{t('temptationHistory')}</h3>
 
-                <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-1">
-                    <button
-                        onClick={handlePrev}
-                        className="p-1 hover:bg-background rounded-md transition-colors"
-                        aria-label="Previous period"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </button>
+                <div className="flex items-center gap-4">
+                    {/* View Mode Toggle (added for v5.0.3) */}
+                    <div className="flex bg-secondary/50 rounded-lg p-1 text-[10px] font-bold uppercase tracking-wider">
+                        <button
+                            onClick={() => setViewMode('daily')}
+                            className={cn(
+                                "px-3 py-1 rounded-md transition-all",
+                                viewMode === 'daily' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            {t('viewDaily') || 'Daily'}
+                        </button>
+                        <button
+                            onClick={() => setViewMode('monthly')}
+                            className={cn(
+                                "px-3 py-1 rounded-md transition-all",
+                                viewMode === 'monthly' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            {t('viewMonthly') || 'Monthly'}
+                        </button>
+                    </div>
 
-                    <span className="text-sm font-medium px-2 min-w-[140px] text-center">
-                        {startDate.toLocaleDateString(locale, { month: 'short', day: 'numeric' })} - {endDate.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
-                    </span>
+                    {viewMode === 'daily' && (
+                        <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-1">
+                            <button
+                                onClick={handlePrev}
+                                className="p-1 hover:bg-background rounded-md transition-colors"
+                                aria-label="Previous period"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
 
-                    <button
-                        onClick={handleNext}
-                        disabled={!canGoNext}
-                        className={cn(
-                            "p-1 hover:bg-background rounded-md transition-colors",
-                            !canGoNext && "opacity-30 cursor-not-allowed hover:bg-transparent"
-                        )}
-                        aria-label="Next period"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
+                            <span className="text-sm font-medium px-2 min-w-[140px] text-center">
+                                {startDate.toLocaleDateString(locale, { month: 'short', day: 'numeric' })} - {endDate.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
+                            </span>
+
+                            <button
+                                onClick={handleNext}
+                                disabled={!canGoNext}
+                                className={cn(
+                                    "p-1 hover:bg-background rounded-md transition-colors",
+                                    !canGoNext && "opacity-30 cursor-not-allowed hover:bg-transparent"
+                                )}
+                                aria-label="Next period"
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -114,7 +168,9 @@ export const CounterGraph = ({ data }: Props) => {
                             stroke="#888"
                             tickFormatter={(value) => {
                                 const date = new Date(value);
-                                return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+                                return viewMode === 'daily' 
+                                    ? date.toLocaleDateString(locale, { month: 'short', day: 'numeric' })
+                                    : date.toLocaleDateString(locale, { month: 'short', year: '2-digit' });
                             }}
                             minTickGap={30}
                         />
@@ -125,21 +181,21 @@ export const CounterGraph = ({ data }: Props) => {
                             labelFormatter={(label) => new Date(label).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}
                         />
                         <Legend />
-                        {Object.keys(data[0] || {}).filter(k => k !== 'date').map((key) => {
+                        {/* Discover all unique keys across all data points (v5.0.2) */}
+                        {Array.from(new Set(data.flatMap(d => Object.keys(d)))).filter(k => k !== 'date').map((key) => {
                             // Find metadata for this key
                             let label = key;
                             let color = "#8884d8"; 
 
-                            // Search in temptations
+                            // Search in temptations to build a descriptive label (v5.0.3: case-insensitive match)
                             for (const tConfig of temptations) {
-                                const action = tConfig.actions.find((a: any) => a.id === key);
+                                const action = tConfig.actions.find((a: any) => a.id.toLowerCase() === key.toLowerCase());
                                 if (action) {
-                                    // Use action.label directly if it exists, otherwise fallback to translations for defaults
-                                    label = action.label || (
-                                            action.id === 'smoke' ? t('temptationResisted') : 
-                                            action.id === 'smoked' ? t('temptationSmoked') : 
-                                            action.id === 'coffee' ? t('temptationCoffee') : 
-                                            action.id);
+                                    const categoryPrefix = (tConfig.label && tConfig.label !== 'Temptations' && tConfig.label !== 'Smoking') 
+                                        ? `${tConfig.label}: ` 
+                                        : '';
+                                    
+                                    label = categoryPrefix + (action.label || action.id);
                                     color = action.color;
                                     break;
                                 }
@@ -152,9 +208,9 @@ export const CounterGraph = ({ data }: Props) => {
                                     dataKey={key} 
                                     name={label} 
                                     stroke={color} 
-                                    strokeWidth={2} 
+                                    strokeWidth={3} 
                                     activeDot={{ r: 8 }} 
-                                    dot={false} 
+                                    dot={{ r: 4, strokeWidth: 2, fill: 'var(--background)' }} 
                                 />
                             );
                         })}

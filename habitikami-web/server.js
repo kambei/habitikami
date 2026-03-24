@@ -430,6 +430,12 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
             email = await getEmailFromToken(tokenData.access_token);
         }
 
+        // Check if user is revoked by RISC (Cross-Account Protection)
+        if (isUserRevoked(email)) {
+            console.log(`Auth exchange blocked: ${email} is revoked by RISC`);
+            return res.status(403).json({ error: 'Account access revoked due to a security event. Please contact support.' });
+        }
+
         // Look up spreadsheetId for this user; fall back to env for owner
         const users = loadUsers();
         const spreadsheetId = getUserSpreadsheetId(users, email) || (email === process.env.OWNER_EMAIL ? process.env.VITE_SPREADSHEET_ID : null) || null;
@@ -487,6 +493,12 @@ app.post('/api/auth/refresh', authLimiter, validateOrigin, async (req, res) => {
         }
         if (!email) {
             try { email = await getEmailFromToken(data.access_token); } catch { /* no email available */ }
+        }
+
+        // Check if user is revoked by RISC (Cross-Account Protection)
+        if (isUserRevoked(email)) {
+            console.log(`Auth refresh blocked: ${email} is revoked by RISC`);
+            return res.status(403).json({ error: 'Account access revoked due to a security event. Please contact support.' });
         }
 
         const users = loadUsers();
@@ -1242,6 +1254,122 @@ app.post('/api/anthropic/chat', geminiLimiter, validateOrigin, async (req, res) 
         res.status(500).json({ error: 'Failed to proxy Anthropic request' });
     }
 });
+
+// ─── RISC: Cross-Account Protection (Security Event Tokens) ──────────────────
+// Google sends SETs (Security Event Tokens) when a user's account is compromised,
+// disabled, or sessions are revoked. We verify the JWT and revoke local sessions.
+
+const RISC_REVOKED_FILE = path.join(__dirname, 'data', 'risc-revoked.json');
+
+function loadRevokedUsers() {
+    try {
+        if (fs.existsSync(RISC_REVOKED_FILE)) return JSON.parse(fs.readFileSync(RISC_REVOKED_FILE, 'utf8'));
+    } catch { /* empty */ }
+    return {};
+}
+
+function saveRevokedUsers(data) {
+    fs.writeFileSync(RISC_REVOKED_FILE, JSON.stringify(data, null, 2));
+}
+
+// Verify a RISC Security Event Token (SET) JWT from Google
+async function verifySecurityEventToken(token) {
+    const parts = token.split('.');
+    if (parts.length !== 3) throw new Error('Invalid SET format');
+
+    const header = JSON.parse(base64UrlDecode(parts[0]).toString('utf8'));
+    const payload = JSON.parse(base64UrlDecode(parts[1]).toString('utf8'));
+
+    // Validate issuer — RISC tokens come from accounts.google.com
+    if (payload.iss !== 'https://accounts.google.com' && payload.iss !== 'accounts.google.com') {
+        throw new Error('Invalid SET issuer');
+    }
+
+    // Validate audience — must match our client ID
+    const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
+    if (payload.aud !== clientId) {
+        throw new Error('Invalid SET audience');
+    }
+
+    // Verify signature
+    const certs = await getGooglePublicKeys();
+    const key = certs.keys?.find(k => k.kid === header.kid);
+    if (!key) throw new Error('SET signed with unknown key');
+
+    const publicKey = crypto.createPublicKey({ key, format: 'jwk' });
+    const signatureValid = crypto.verify(
+        'sha256',
+        Buffer.from(parts[0] + '.' + parts[1]),
+        publicKey,
+        base64UrlDecode(parts[2])
+    );
+    if (!signatureValid) throw new Error('SET signature verification failed');
+
+    return payload;
+}
+
+app.post('/api/risc/events', express.text({ type: 'application/secevent+jwt' }), async (req, res) => {
+    try {
+        const token = req.body;
+        if (!token || typeof token !== 'string') {
+            return res.status(400).json({ error: 'Missing SET' });
+        }
+
+        const payload = await verifySecurityEventToken(token);
+        const events = payload.events || {};
+        const subject = payload.sub || null;
+
+        console.log(`[RISC] Received security event for subject=${subject}`, Object.keys(events));
+
+        const revoked = loadRevokedUsers();
+
+        for (const [eventType, eventData] of Object.entries(events)) {
+            const subjectEmail = eventData?.subject?.email || subject;
+            console.log(`[RISC] Event: ${eventType}, email=${subjectEmail}`);
+
+            switch (eventType) {
+                case 'https://schemas.openid.net/secevent/risc/event-type/sessions-revoked':
+                case 'https://schemas.openid.net/secevent/risc/event-type/tokens-revoked':
+                case 'https://schemas.openid.net/secevent/risc/event-type/account-disabled':
+                case 'https://schemas.openid.net/secevent/risc/event-type/account-purged':
+                case 'https://schemas.openid.net/secevent/risc/event-type/account-credential-change-required':
+                    if (subjectEmail) {
+                        revoked[subjectEmail] = {
+                            event: eventType,
+                            timestamp: new Date().toISOString(),
+                            reason: eventData?.reason || 'security_event',
+                        };
+                        console.log(`[RISC] Revoked access for ${subjectEmail} due to ${eventType}`);
+                    }
+                    break;
+                case 'https://schemas.openid.net/secevent/risc/event-type/account-enabled':
+                    // Account re-enabled — remove from revoked list
+                    if (subjectEmail && revoked[subjectEmail]) {
+                        delete revoked[subjectEmail];
+                        console.log(`[RISC] Restored access for ${subjectEmail}`);
+                    }
+                    break;
+                default:
+                    console.log(`[RISC] Unhandled event type: ${eventType}`);
+            }
+        }
+
+        saveRevokedUsers(revoked);
+
+        // Google expects 202 Accepted
+        res.status(202).send();
+    } catch (error) {
+        console.error('[RISC] Error processing security event:', error.message);
+        res.status(400).json({ error: 'Invalid security event token' });
+    }
+});
+
+// Helper: check if a user is revoked by RISC
+function isUserRevoked(email) {
+    if (!email) return false;
+    const revoked = loadRevokedUsers();
+    return !!revoked[email];
+}
 
 // ─── SPA fallback ─────────────────────────────────────────────────────────────
 

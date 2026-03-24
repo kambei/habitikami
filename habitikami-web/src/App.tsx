@@ -206,6 +206,8 @@ function App() {
 
   // Persist view selection & sync to history
   useEffect(() => {
+    if (!isLoggedIn) return;
+
     localStorage.setItem('habitikami_active_view', activeSheet);
 
     // Clear settings flag when navigating away from Help
@@ -218,7 +220,7 @@ function App() {
         history.pushState({ tab: activeSheet }, '', `#${activeSheet}`);
       }
     }
-  }, [activeSheet]);
+  }, [activeSheet, isLoggedIn]);
 
   // Back button handling & double-back-to-exit
   useEffect(() => {

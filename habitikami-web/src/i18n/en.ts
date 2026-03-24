@@ -52,6 +52,13 @@ export const en = {
   landingFeatureFocusDesc: 'Compact priority view',
   landingPrivacy: 'Privacy Policy',
   landingTerms: 'Terms of Service',
+  landingAndroidTitle: 'Android App — Become a Tester!',
+  landingAndroidSubtitle: 'Help shape the future of Habitikami on Android! 🎯',
+  landingAndroidStep1: 'Join the Google Group',
+  landingAndroidStep1Desc: 'first to get access.',
+  landingAndroidStep2: 'Opt-in to the tester program',
+  landingAndroidStep2Desc: 'to download the app.',
+  landingAndroidFooter: 'Get the native Android app with home screen widgets for quick habit tracking, counters, and stats — right at your fingertips.',
 
   // Onboarding Page
   onboardingWelcome: 'Welcome to Habitikami',

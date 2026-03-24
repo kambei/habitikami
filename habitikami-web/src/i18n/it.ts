@@ -53,6 +53,13 @@ export const it: Record<TranslationKey, string | string[]> = {
   landingFeatureFocusDesc: 'Vista compatta delle priorità',
   landingPrivacy: 'Informativa Privacy',
   landingTerms: 'Termini di Servizio',
+  landingAndroidTitle: 'App Android — Diventa un Tester!',
+  landingAndroidSubtitle: 'Aiuta a plasmare il futuro di Habitikami su Android! 🎯',
+  landingAndroidStep1: 'Unisciti al Gruppo Google',
+  landingAndroidStep1Desc: 'per ottenere l\'accesso.',
+  landingAndroidStep2: 'Aderisci al programma tester',
+  landingAndroidStep2Desc: 'per scaricare l\'app.',
+  landingAndroidFooter: 'Ottieni l\'app Android nativa con widget per la schermata home per il monitoraggio rapido delle abitudini, contatori e statistiche — tutto a portata di mano.',
 
   // Onboarding Page
   onboardingWelcome: 'Benvenuto su Habitikami',

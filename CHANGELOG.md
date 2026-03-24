@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 - **Temptations Migration**: Officially renamed "Smoking Temptations" to "Temptations" to reflect the new dynamic multi-category system.
 - **Dynamic Counters**: Create, iconize, and color-code unlimited temptation categories (Smoking, Snacking, etc.) directly from the UI.
 - **What's New Notification System**: Integrated a premium notification system that detects updates via MD5 hashing and suggests reloads.
-- **Full Privacy Migration**: All user preferences and temptation metadata are now stored solely in your Google Spreadsheet's header row. Zero configuration on our servers.
+- **Full Privacy Migration**: All temptation preferences metadata are now stored solely in your Google Spreadsheet's header row. Almost zero configuration on our servers.
 - **Auto-Provisioning**: Automated spreadsheet column creation for new counter types.
 - **Enhanced Graphs**: Automated mapping of all discovered counters into the "Graphs" visualization tab.
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { HeartHandshake, Key, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2, FilePlus2, Megaphone, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
+import { HeartHandshake, Key, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2, FilePlus2, Megaphone, ChevronRight, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import type { GuidedStep } from '../types';

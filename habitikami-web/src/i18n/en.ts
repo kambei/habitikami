@@ -19,8 +19,8 @@ export const en = {
   daysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
 
   // Nav tabs
-  tabWeekdays: 'Weekdays',
-  tabWeekend: 'Weekend',
+  tabWeekdays: 'Mon–Fri',
+  tabWeekend: 'Sat–Sun',
   tabFocus: 'Focus',
   tabStats: 'Stats',
   tabNotes: 'Notes',
@@ -38,6 +38,7 @@ export const en = {
   tooltipLanguage: 'Switch language',
 
   // Landing Page
+  landingNameCaption: 'Habit + Origami + mi (on you)',
   landingSubtitle: 'Build better habits, track your progress, and level up your daily routine.',
   landingSignInPrompt: 'Sign in to get started',
   landingSignInButton: 'Continue with Google',
@@ -79,8 +80,8 @@ export const en = {
   tabSelectionSelected: 'Selected Views',
   tabSelectionDefaultTab: 'Set as default tab on startup',
   tabSelectionAvailable: 'Available Views',
-  tabDescWeekdays: 'Track your weekday habits',
-  tabDescWeekend: 'Track your weekend habits',
+  tabDescWeekdays: 'Track your Mon–Fri habits',
+  tabDescWeekend: 'Track your Sat–Sun habits',
   tabDescFocus: 'Compact view of your priorities',
   tabDescStats: 'Charts and streak analytics',
   tabDescNotes: 'Mobius-style journaling',
@@ -113,7 +114,7 @@ export const en = {
   focusAllDone: 'All Done!',
   focusNoPending: 'No pending habits for today',
   focusNoData: 'No habits configured for today',
-  focusNoDataHint: 'Go to the Weekdays or Weekend section to add your habits and today\'s row.',
+  focusNoDataHint: 'Go to the Mon–Fri or Sat–Sun section to add your habits and today\'s row.',
   focusReady: 'Ready to mark this as done?',
   focusSkip: 'Skip',
   focusComplete: 'Complete',
@@ -287,14 +288,14 @@ export const en = {
   statsDays: 'Days',
   statsCurrentStreak: 'Current Streak',
   statsBestStreak: 'Best Streak',
-  statsMerged: 'Weekdays + Weekend combined',
+  statsMerged: 'Mon–Fri + Sat–Sun combined',
   close: 'Close',
 
   // App Tour
   tourWelcomeTitle: 'Welcome to Habitikami!',
   tourWelcomeDesc: 'Let\'s take a quick tour to discover all the features of the app. You can skip anytime by tapping outside.',
-  tourWeekdaysTitle: 'Weekdays Habits',
-  tourWeekdaysDesc: 'This is your main tracker. Add habits as columns, add a new row each day, and check off what you\'ve done. Weekend has its own separate section.',
+  tourWeekdaysTitle: 'Mon–Fri Habits',
+  tourWeekdaysDesc: 'This is your main tracker. Add habits as columns, add a new row each day, and check off what you\'ve done. Sat–Sun has its own separate section.',
   tourFocusTitle: 'Focus Mode',
   tourFocusDesc: 'One habit at a time. Focus mode shows your pending habits for today — mark them complete or skip to the next one.',
   tourStatsTitle: 'Statistics',
@@ -310,7 +311,7 @@ export const en = {
   tourMenuTitle: 'Hamburger Menu',
   tourMenuDesc: 'Use the menu icon to access Settings, change language, customize which tabs are visible, refresh data, or sign out.',
   tourDoneTitle: 'You\'re all set!',
-  tourDoneDesc: 'Start by adding your habits in the Weekdays section. Habitikami stores everything in your own Google Sheet — your data, your control.',
+  tourDoneDesc: 'Start by adding your habits in the Mon–Fri section. Habitikami stores everything in your own Google Sheet — your data, your control.',
   tourFinish: 'Get Started',
   tourReplay: 'App Guide',
 } as const;

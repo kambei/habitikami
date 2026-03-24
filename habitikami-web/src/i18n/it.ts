@@ -20,8 +20,8 @@ export const it: Record<TranslationKey, string | string[]> = {
   daysShort: ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'],
 
   // Nav tabs
-  tabWeekdays: 'Feriali',
-  tabWeekend: 'Weekend',
+  tabWeekdays: 'Lun–Ven',
+  tabWeekend: 'Sab–Dom',
   tabFocus: 'Focus',
   tabStats: 'Statistiche',
   tabNotes: 'Note',
@@ -39,6 +39,7 @@ export const it: Record<TranslationKey, string | string[]> = {
   tooltipLanguage: 'Cambia lingua',
 
   // Landing Page
+  landingNameCaption: 'Habit + Origami + mi (su di te)',
   landingSubtitle: 'Costruisci abitudini migliori, monitora i tuoi progressi e migliora la tua routine quotidiana.',
   landingSignInPrompt: 'Accedi per iniziare',
   landingSignInButton: 'Continua con Google',
@@ -80,8 +81,8 @@ export const it: Record<TranslationKey, string | string[]> = {
   tabSelectionSelected: 'Viste Selezionate',
   tabSelectionDefaultTab: 'Imposta come tab predefinita all\'avvio',
   tabSelectionAvailable: 'Viste Disponibili',
-  tabDescWeekdays: 'Traccia le abitudini dei giorni feriali',
-  tabDescWeekend: 'Traccia le abitudini del weekend',
+  tabDescWeekdays: 'Traccia le abitudini da Lun a Ven',
+  tabDescWeekend: 'Traccia le abitudini da Sab a Dom',
   tabDescFocus: 'Vista compatta delle tue priorità',
   tabDescStats: 'Grafici e analisi delle streak',
   tabDescNotes: 'Diario in stile Mobius',
@@ -114,7 +115,7 @@ export const it: Record<TranslationKey, string | string[]> = {
   focusAllDone: 'Tutto Fatto!',
   focusNoPending: 'Nessuna abitudine in sospeso per oggi',
   focusNoData: 'Nessuna abitudine configurata per oggi',
-  focusNoDataHint: 'Vai nella sezione Feriali o Weekend per aggiungere le tue abitudini e la riga di oggi.',
+  focusNoDataHint: 'Vai nella sezione Lun–Ven o Sab–Dom per aggiungere le tue abitudini e la riga di oggi.',
   focusReady: 'Pronto a segnare come fatto?',
   focusSkip: 'Salta',
   focusComplete: 'Completa',
@@ -288,14 +289,14 @@ export const it: Record<TranslationKey, string | string[]> = {
   statsDays: 'Giorni',
   statsCurrentStreak: 'Streak Attuale',
   statsBestStreak: 'Streak Migliore',
-  statsMerged: 'Feriali + Weekend combinati',
+  statsMerged: 'Lun–Ven + Sab–Dom combinati',
   close: 'Chiudi',
 
   // App Tour
   tourWelcomeTitle: 'Benvenuto in Habitikami!',
   tourWelcomeDesc: 'Facciamo un breve tour per scoprire tutte le funzionalita\' dell\'app. Puoi saltare in qualsiasi momento toccando fuori.',
-  tourWeekdaysTitle: 'Abitudini Feriali',
-  tourWeekdaysDesc: 'Questo e\' il tuo tracker principale. Aggiungi abitudini come colonne, una nuova riga per ogni giorno e spunta quello che hai fatto. Il weekend ha la sua sezione separata.',
+  tourWeekdaysTitle: 'Abitudini Lun–Ven',
+  tourWeekdaysDesc: 'Questo e\' il tuo tracker principale. Aggiungi abitudini come colonne, una nuova riga per ogni giorno e spunta quello che hai fatto. Sab–Dom ha la sua sezione separata.',
   tourFocusTitle: 'Modalita\' Focus',
   tourFocusDesc: 'Un\'abitudine alla volta. La modalita\' Focus mostra le abitudini da completare oggi — segnale come fatte o passa alla prossima.',
   tourStatsTitle: 'Statistiche',
@@ -311,7 +312,7 @@ export const it: Record<TranslationKey, string | string[]> = {
   tourMenuTitle: 'Menu Hamburger',
   tourMenuDesc: 'Usa l\'icona menu per accedere alle Impostazioni, cambiare lingua, personalizzare le tab visibili, aggiornare i dati o disconnetterti.',
   tourDoneTitle: 'Tutto pronto!',
-  tourDoneDesc: 'Inizia aggiungendo le tue abitudini nella sezione Feriali. Habitikami salva tutto nel tuo Google Sheet — i tuoi dati, il tuo controllo.',
+  tourDoneDesc: 'Inizia aggiungendo le tue abitudini nella sezione Lun–Ven. Habitikami salva tutto nel tuo Google Sheet — i tuoi dati, il tuo controllo.',
   tourFinish: 'Inizia',
   tourReplay: 'Guida App',
 } as const;

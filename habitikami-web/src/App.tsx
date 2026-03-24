@@ -507,7 +507,7 @@ function App() {
                     </div>
                   </div>
 
-                  <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
+                  <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0" title={t('landingNameCaption')}>
                     Habitikami
                   </h1>
 

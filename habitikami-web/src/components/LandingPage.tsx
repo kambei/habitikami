@@ -196,6 +196,9 @@ export function LandingPage({ onSignIn, isLoading }: LandingPageProps) {
                             Habitikami
                         </span>
                     </h1>
+                    <p className="text-xs md:text-sm text-muted-foreground/60 italic tracking-wide">
+                        {t('landingNameCaption')}
+                    </p>
                     <p className="text-muted-foreground text-base md:text-lg font-medium max-w-sm mx-auto leading-relaxed">
                         {t('landingSubtitle')}
                     </p>

@@ -1,15 +1,31 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import * as Icons from 'lucide-react';
-import { Loader2, CheckCircle2, XCircle, Settings, Flame } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Settings, Flame, ShieldCheck, ThumbsDown } from 'lucide-react';
 import { habitService } from '../services/HabitService';
 import { cn } from '../lib/utils';
 import { useTranslation } from '../i18n';
 
-const IconRenderer = ({ name, size = 24, className = "" }: { name: string, size?: number, className?: string }) => {
-    const IconComponent = (Icons as any)[name] || Icons.HelpCircle;
-    return <IconComponent size={size} className={className} />;
-};
+const POSITIVE_PHRASES = [
+    "You're stronger than you think!",
+    "One more victory under your belt!",
+    "Your future self thanks you!",
+    "Willpower level: legendary!",
+    "That's the spirit! Keep going!",
+    "You chose yourself today!",
+    "Discipline is freedom!",
+];
+
+const NEGATIVE_PHRASES = [
+    "You are the worst!",
+    "Tomorrow is a new chance...",
+    "Don't let this define you.",
+    "Get back up. You've got this.",
+    "One slip doesn't erase your progress.",
+    "Acknowledge it. Move forward.",
+    "Fall seven times, stand up eight.",
+];
+
+const getRandomPhrase = (phrases: string[]) => phrases[Math.floor(Math.random() * phrases.length)];
 
 export const TemptationView = () => {
     const { t } = useTranslation();
@@ -18,6 +34,7 @@ export const TemptationView = () => {
     const [actionId, setActionId] = useState<string | null>(null);
     const [temptations, setTemptations] = useState<any[] | null>(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const [successPhrase, setSuccessPhrase] = useState('');
 
     useEffect(() => {
         habitService.getTemptations().then(setTemptations);
@@ -29,6 +46,10 @@ export const TemptationView = () => {
         setActionId(action.id);
         setStatus('loading');
         setErrorMessage(null);
+
+        const isPositive = action.type === 'positive' || action.type === 'resist';
+        setSuccessPhrase(getRandomPhrase(isPositive ? POSITIVE_PHRASES : NEGATIVE_PHRASES));
+
         try {
             const result = await habitService.incrementCounter(action.id);
             if (result && result.error) {
@@ -73,6 +94,14 @@ export const TemptationView = () => {
         const order = (type: string) => type === 'positive' || type === 'resist' ? 0 : type === 'negative' || type === 'succumb' ? 1 : 2;
         return order(a.type) - order(b.type);
     });
+
+    const getButtonIcon = (action: any, size: number) => {
+        const isPositive = action.type === 'positive' || action.type === 'resist';
+        const isNegative = action.type === 'negative' || action.type === 'succumb';
+        if (isPositive) return <ShieldCheck size={size} className="drop-shadow-md" />;
+        if (isNegative) return <ThumbsDown size={size} className="drop-shadow-md" />;
+        return <Flame size={size} className="drop-shadow-md" />;
+    };
 
     return (
         <div className="flex flex-col h-full bg-gradient-to-br from-red-900/10 to-stone-900/10 dark:from-red-950/30 dark:to-stone-950/30 overflow-y-auto">
@@ -145,10 +174,8 @@ export const TemptationView = () => {
                                          action?.id === 'smoked' && (activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking') ? t('smokeSuccessSmoke') :
                                          action?.label}
                                     </h3>
-                                    <p className="text-muted-foreground text-center text-lg">
-                                        {action?.id === 'smoke' && (activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking') ? t('smokeSuccessResistMsg') :
-                                         action?.id === 'smoked' && (activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking') ? t('smokeSuccessSmokeMsg') :
-                                         "Great job!"}
+                                    <p className="text-muted-foreground text-center text-lg italic max-w-xs">
+                                        {successPhrase}
                                     </p>
                                 </motion.div>
                             );
@@ -182,11 +209,7 @@ export const TemptationView = () => {
                                             <Loader2 className={cn(isPrimary ? "w-16 h-16" : "w-12 h-12", "animate-spin")} />
                                         ) : (
                                             <>
-                                                <IconRenderer
-                                                    name={action.icon}
-                                                    size={isPrimary ? 72 : 52}
-                                                    className="drop-shadow-md"
-                                                />
+                                                {getButtonIcon(action, isPrimary ? 72 : 52)}
                                                 <span className={cn(
                                                     "font-black tracking-tight drop-shadow-md",
                                                     isPrimary ? "text-xl md:text-2xl" : "text-lg md:text-xl"

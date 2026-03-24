@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.1.1] - 2026-03-24
+### 🔧 Temptation Polish & Counter Graphs
+- **Fixed Button Icons**: Temptation buttons now show ShieldCheck (resist) and ThumbsDown (succumb) instead of a confusing "?" fallback icon.
+- **Motivational Phrases**: Both resisted and succumbed success states now display random motivational messages ("You are the worst!", "Willpower level: legendary!", etc.).
+- **Monthly Trend Line Charts**: Each temptation now has a monthly totals line chart below the daily bar chart, showing long-term resist vs succumb trends.
+- **Month Navigation**: Counter graphs are now navigable by month (prev/next) with daily bars scoped to the selected month.
+- **Fixed Counters Scroll**: The counter table below graphs is now properly scrollable — using absolute positioning to break out of flex constraints.
+
 ## [5.1.0] - 2026-03-24
 ### 🎯 Temptations Overhaul & Clarity Update
 - **Vertical Button Layout**: Temptation actions now stack vertically — Resisted on top, Succumbed below — with maximized button sizes for easy tapping.

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { ResponsiveContainer, BarChart, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, Line } from 'recharts';
-import { ChevronLeft, ChevronRight, BarChart3, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp } from 'lucide-react';
 import { habitService } from '../../services/HabitService';
 import { cn } from '../../lib/utils';
 import { useTranslation } from '../../i18n';
@@ -9,12 +9,24 @@ interface Props {
     data: any[];
 }
 
-type ChartMode = 'daily' | 'trend';
+type ChartMode = 'weekly' | 'trend';
+
+function getWeekBounds() {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((day + 6) % 7)); // go back to Monday
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    return { start: monday, end: sunday };
+}
 
 export const CounterGraph = ({ data }: Props) => {
     const { t, locale } = useTranslation();
     const [temptations, setTemptations] = useState<any[]>([]);
-    const [chartMode, setChartMode] = useState<ChartMode>('daily');
+    const [chartMode, setChartMode] = useState<ChartMode>('weekly');
     const [currentMonth, setCurrentMonth] = useState(() => {
         const now = new Date();
         return { year: now.getFullYear(), month: now.getMonth() };
@@ -28,13 +40,21 @@ export const CounterGraph = ({ data }: Props) => {
         return [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     }, [data]);
 
-    const monthData = useMemo(() => {
+    // Weekly mode: current week (Mon-Sun)
+    const weekBounds = useMemo(() => getWeekBounds(), []);
+    const weekData = useMemo(() => {
         return sortedData.filter(d => {
             const date = new Date(d.date);
-            return date.getFullYear() === currentMonth.year && date.getMonth() === currentMonth.month;
+            return date >= weekBounds.start && date <= weekBounds.end;
         });
-    }, [sortedData, currentMonth]);
+    }, [sortedData, weekBounds]);
 
+    const weekLabel = useMemo(() => {
+        const fmt = (d: Date) => d.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+        return `${fmt(weekBounds.start)} — ${fmt(weekBounds.end)}`;
+    }, [weekBounds, locale]);
+
+    // Monthly aggregation for trend line chart
     const monthlyHistory = useMemo(() => {
         const monthlyMap: Record<string, any> = {};
         sortedData.forEach(d => {
@@ -84,7 +104,7 @@ export const CounterGraph = ({ data }: Props) => {
                 return entry;
             };
 
-            const barData = monthData.map(d => ({ date: d.date, ...mapEntry(d) }));
+            const barData = weekData.map(d => ({ date: d.date, ...mapEntry(d) }));
             const lineData = monthlyHistory.map(d => ({ date: d.date, ...mapEntry(d) }));
 
             const series: { key: string; color: string }[] = [];
@@ -94,9 +114,9 @@ export const CounterGraph = ({ data }: Props) => {
 
             return { label: tConfig.label, barData, lineData, series };
         });
-    }, [temptations, monthData, monthlyHistory]);
+    }, [temptations, weekData, monthlyHistory]);
 
-    if (temptationCharts.length === 0 && monthData.length === 0) {
+    if (temptationCharts.length === 0 && sortedData.length === 0) {
         return (
             <div className="w-full bg-card border border-border rounded-xl p-4 shadow-sm mb-6 text-center text-muted-foreground">
                 {t('temptationNoData')}
@@ -106,7 +126,7 @@ export const CounterGraph = ({ data }: Props) => {
 
     return (
         <div className="w-full space-y-6 mb-6">
-            {/* Header: title + chart mode toggle + month nav */}
+            {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-card border border-border rounded-xl p-4 shadow-sm">
                 <h3 className="text-lg font-semibold">{t('temptationHistory')}</h3>
 
@@ -114,14 +134,14 @@ export const CounterGraph = ({ data }: Props) => {
                     {/* Chart type toggle */}
                     <div className="flex bg-secondary/50 rounded-lg p-1">
                         <button
-                            onClick={() => setChartMode('daily')}
+                            onClick={() => setChartMode('weekly')}
                             className={cn(
                                 "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all",
-                                chartMode === 'daily' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                chartMode === 'weekly' ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            <BarChart3 className="w-3.5 h-3.5" />
-                            Daily
+                            <CalendarDays className="w-3.5 h-3.5" />
+                            Weekly
                         </button>
                         <button
                             onClick={() => setChartMode('trend')}
@@ -135,8 +155,15 @@ export const CounterGraph = ({ data }: Props) => {
                         </button>
                     </div>
 
-                    {/* Month navigation (only for daily mode) */}
-                    {chartMode === 'daily' && (
+                    {/* Week label (weekly mode) */}
+                    {chartMode === 'weekly' && (
+                        <span className="text-xs text-muted-foreground font-medium bg-secondary/50 rounded-lg px-3 py-1.5">
+                            {weekLabel}
+                        </span>
+                    )}
+
+                    {/* Month navigation (trend mode) */}
+                    {chartMode === 'trend' && (
                         <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-1">
                             <button
                                 onClick={() => changeMonth(-1)}
@@ -177,11 +204,10 @@ export const CounterGraph = ({ data }: Props) => {
                         "min-h-0",
                         idx === temptationCharts.length - 1 ? "h-[350px]" : "h-[250px]"
                     )}>
-                        {chartMode === 'daily' ? (
-                            /* Daily bar chart for current month */
+                        {chartMode === 'weekly' ? (
                             chart.barData.length === 0 ? (
                                 <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                                    No data for this month
+                                    No data this week
                                 </div>
                             ) : (
                                 <ResponsiveContainer width="100%" height="100%">
@@ -190,14 +216,13 @@ export const CounterGraph = ({ data }: Props) => {
                                         <XAxis
                                             dataKey="date"
                                             stroke="#888"
-                                            tickFormatter={(value) => new Date(value).toLocaleDateString(locale, { day: 'numeric' })}
-                                            minTickGap={20}
+                                            tickFormatter={(value) => new Date(value).toLocaleDateString(locale, { weekday: 'short' })}
                                         />
                                         <YAxis stroke="#888" allowDecimals={false} width={30} />
                                         <Tooltip
                                             contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
                                             itemStyle={{ color: '#f3f4f6' }}
-                                            labelFormatter={(label) => new Date(label).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}
+                                            labelFormatter={(label) => new Date(label).toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' })}
                                         />
                                         <Legend />
                                         {chart.series.map(s => (
@@ -207,7 +232,6 @@ export const CounterGraph = ({ data }: Props) => {
                                 </ResponsiveContainer>
                             )
                         ) : (
-                            /* Monthly trend line chart */
                             chart.lineData.length === 0 ? (
                                 <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
                                     No history data
@@ -254,7 +278,7 @@ export const CounterGraph = ({ data }: Props) => {
                 </div>
             ))}
 
-            {temptationCharts.length === 0 && monthData.length > 0 && (
+            {temptationCharts.length === 0 && sortedData.length > 0 && (
                 <div className="w-full bg-card border border-border rounded-xl p-4 shadow-sm text-center text-muted-foreground">
                     {t('temptationNoData')}
                 </div>

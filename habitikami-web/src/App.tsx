@@ -190,6 +190,7 @@ function App() {
 
   const [refreshKey, setRefreshKey] = useState(0);
   const [openSettings, setOpenSettings] = useState(false);
+  const prevTabBeforeSettings = useRef<ViewType | null>(null);
   const [showTour, setShowTour] = useState(false);
   const [tourHighlight, setTourHighlight] = useState<ViewType | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -505,7 +506,7 @@ function App() {
                           </div>
 
                           <button
-                            onClick={() => { setOpenSettings(true); setActiveSheet('Help'); setMenuOpen(false); }}
+                            onClick={() => { prevTabBeforeSettings.current = activeSheet; setOpenSettings(true); setActiveSheet('Help'); setMenuOpen(false); }}
                             className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
                           >
                             <Settings className="w-4 h-4 shrink-0" />
@@ -626,7 +627,12 @@ function App() {
                 ) : activeSheet === 'Counters' ? (
                   <CountersView />
                 ) : activeSheet === 'Help' ? (
-                  <HelpView openSettings={openSettings} onSettingsClosed={() => setOpenSettings(false)} />
+                  <HelpView openSettings={openSettings} onSettingsClosed={() => {
+                    setOpenSettings(false);
+                    const goTo = prevTabBeforeSettings.current || defaultTab || 'Weekdays';
+                    prevTabBeforeSettings.current = null;
+                    setActiveSheet(goTo);
+                  }} />
                 ) : (
                   <HabitTable sheetName={activeSheet as SheetType} key={activeSheet} refreshKey={refreshKey} />
                 )}

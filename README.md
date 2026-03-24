@@ -48,6 +48,7 @@ A native **Android** app using Trusted Web Activity (TWA) to deliver the Habitik
 
 ## Getting Started
 
+- [Live version](https://habitikami.kambei.dev)
 - [Web app setup](./habitikami-web/README.md)
 - [Become a tester on Google Play Store](https://play.google.com/apps/internaltest/4700911957596867903)
 

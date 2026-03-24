@@ -32,6 +32,20 @@ A native **Android** app using Trusted Web Activity (TWA) to deliver the Habitik
 
 **Tech stack:** Kotlin, Android SDK, Gradle, AndroidBrowserHelper, Coroutines
 
+## Screenshots
+
+<p align="center">
+  <img src="media/Screenshot_20260324-082019.png" width="200" alt="Welcome tour & Smoke Temptation tracker" />
+  <img src="media/Screenshot_20260324-082029.png" width="200" alt="Weekdays habit grid with navigation menu" />
+  <img src="media/Screenshot_20260324-082041.png" width="200" alt="Focus Mode for completing habits one at a time" />
+  <img src="media/Screenshot_20260324-082057.png" width="200" alt="Statistics with completion charts and trends" />
+  <img src="media/Screenshot_20260324-082116.png" width="200" alt="Daily Notes with scrollable timeline" />
+  <img src="media/Screenshot_20260324-082120.png" width="200" alt="Smoke & Coffee resistance tracker" />
+  <img src="media/Screenshot_20260324-082137.png" width="200" alt="Counters with trend graphs" />
+  <img src="media/Screenshot_20260324-082142.png" width="200" alt="AI-Guided Help with CBT/ACT sessions" />
+  <img src="media/Screenshot_20260324-082157.png" width="200" alt="AI Help Area with Guided Sessions and Mood Tracker" />
+</p>
+
 ## Getting Started
 
 See each project's own README for setup instructions:

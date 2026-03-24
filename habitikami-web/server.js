@@ -202,19 +202,26 @@ function decryptToken(ciphertext) {
 }
 
 // Seed owner account from env on startup
-// OWNER_EMAIL is required; VITE_SPREADSHEET_ID is the owner's sheet
+// OWNER_EMAIL is required; VITE_SPREADSHEET_ID is the owner's sheet (only used if not already registered)
 {
     const ownerEmail = process.env.OWNER_EMAIL;
     const ownerSpreadsheetId = process.env.VITE_SPREADSHEET_ID;
-    if (ownerEmail && ownerSpreadsheetId) {
+    if (ownerEmail) {
         const users = loadUsers();
-        // Always update owner entry in case spreadsheet ID changed in env
         const existing = users[ownerEmail] || {};
-        users[ownerEmail] = { ...(typeof existing === 'object' ? existing : {}), spreadsheetId: ownerSpreadsheetId };
-        saveUsers(users);
-        console.log(`Owner account seeded: ${ownerEmail}`);
+        const existingId = getUserSpreadsheetId(users, ownerEmail);
+        if (!existingId && ownerSpreadsheetId) {
+            // Only seed if no spreadsheet registered yet
+            users[ownerEmail] = { ...(typeof existing === 'object' ? existing : {}), spreadsheetId: ownerSpreadsheetId };
+            saveUsers(users);
+            console.log(`Owner account seeded: ${ownerEmail} (spreadsheet from env)`);
+        } else if (existingId) {
+            console.log(`Owner account already registered: ${ownerEmail} (spreadsheet: ${existingId})`);
+        } else {
+            console.log(`Owner account ${ownerEmail} has no spreadsheet (VITE_SPREADSHEET_ID not set, will use app-generated sheet)`);
+        }
     } else {
-        console.warn('OWNER_EMAIL or VITE_SPREADSHEET_ID not set — owner account not seeded.');
+        console.warn('OWNER_EMAIL not set — owner account not seeded.');
     }
 }
 

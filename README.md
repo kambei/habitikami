@@ -60,7 +60,8 @@ Works on any device with a browser. Add it to your home screen for a native-like
 
 > Help shape the future of Habitikami on Android! 🎯
 
-👉 **[Join the internal test on Google Play](https://play.google.com/apps/internaltest/4700911957596867903)**
+1. **[Join the Google Group](https://groups.google.com/g/habitikam)** first to get access.
+2. After joining, **[Opt-in to the tester program](https://play.google.com/apps/testing/dev.kambei.habitikami)** to download the app.
 
 Get the native Android app with home screen widgets for quick habit tracking, counters, and stats — right at your fingertips.
 

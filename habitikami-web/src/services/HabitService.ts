@@ -29,6 +29,7 @@ class HabitServiceImpl {
     private refreshToken: string | null = null;
     private tokenExpiry: number = 0;
     private authError: string | null = null;
+    private oauthState: string | null = null;
     private email: string | null = null;
     private spreadsheetId: string | null = null;
 
@@ -106,13 +107,24 @@ class HabitServiceImpl {
         gisScript.defer = true;
         gisScript.onload = () => {
             try {
+                // Generate a random state token for CSRF protection
+                this.oauthState = crypto.randomUUID();
+
                 this.tokenClient = (window as any).google.accounts.oauth2.initCodeClient({
                     client_id: CLIENT_ID,
                     scope: SCOPES,
                     ux_mode: 'popup',
+                    include_granted_scopes: true,
+                    state: this.oauthState,
                     callback: async (response: any) => {
                         if (response.error) {
                             console.error("Auth Error:", response);
+                            return;
+                        }
+                        // Verify state to prevent CSRF attacks
+                        if (response.state !== this.oauthState) {
+                            console.error("OAuth state mismatch — possible CSRF attack");
+                            this.authError = "Security error: OAuth state mismatch";
                             return;
                         }
                         if (response.code) {

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "prebuild": "node scripts/sync-changelog.js || true",
+    "build": "npm run prebuild && tsc -b && vite build && (cp CHANGELOG.md dist/ || copy CHANGELOG.md dist\\ || true)",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node server.js"

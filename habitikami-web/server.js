@@ -1537,12 +1537,17 @@ function isUserRevoked(email) {
 
 app.get('/api/changelog', async (req, res) => {
     try {
-        // Try both root repo path (dev) and local app path (docker)
-        const rootPath = path.join(__dirname, '..', 'CHANGELOG.md');
+        // Build-time copy might put it in dist or app root
+        const distPath = path.join(__dirname, 'dist', 'CHANGELOG.md');
         const localPath = path.join(__dirname, 'CHANGELOG.md');
-        const changelogPath = fs.existsSync(localPath) ? localPath : rootPath;
+        const rootPath = path.join(__dirname, '..', 'CHANGELOG.md');
+        
+        let changelogPath = null;
+        if (fs.existsSync(distPath)) changelogPath = distPath;
+        else if (fs.existsSync(localPath)) changelogPath = localPath;
+        else if (fs.existsSync(rootPath)) changelogPath = rootPath;
 
-        if (!fs.existsSync(changelogPath)) {
+        if (!changelogPath) {
             return res.status(404).json({ error: 'Changelog not found' });
         }
         const content = fs.readFileSync(changelogPath, 'utf8');

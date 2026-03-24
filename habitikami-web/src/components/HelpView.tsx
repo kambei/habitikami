@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { HeartHandshake, Key, Loader2, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2 } from 'lucide-react';
+import { HeartHandshake, Key, Loader2, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2, FilePlus2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import type { GuidedStep } from '../types';
@@ -59,6 +59,7 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     const [tempSpreadsheetId, setTempSpreadsheetId] = useState(() => habitService.getStoredSpreadsheetId() || '');
     const [spreadsheetSaved, setSpreadsheetSaved] = useState(false);
     const [spreadsheetError, setSpreadsheetError] = useState<string | null>(null);
+    const [spreadsheetCreating, setSpreadsheetCreating] = useState(false);
 
     const [mode, setMode] = useState<HelpMode>('menu');
     const [selectedScheda, setSelectedScheda] = useState<SchedaTemplate | null>(null);
@@ -142,6 +143,36 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
         } catch { /* best effort */ }
         setSpreadsheetSaved(true);
         setTimeout(() => setSpreadsheetSaved(false), 3000);
+    };
+
+    const handleCreateNewSheet = async () => {
+        setSpreadsheetCreating(true);
+        setSpreadsheetError(null);
+        setSpreadsheetSaved(false);
+        try {
+            const result = await habitService.createInitialTemplate();
+            if (result.error) {
+                setSpreadsheetError(result.error);
+            } else if (result.spreadsheetId) {
+                // Register on server
+                try {
+                    await fetch('/api/user/spreadsheet', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${habitService.getAccessToken()}`,
+                        },
+                        body: JSON.stringify({ spreadsheet_id: result.spreadsheetId }),
+                    });
+                } catch { /* best effort */ }
+                setTempSpreadsheetId(result.spreadsheetId);
+                setSpreadsheetSaved(true);
+                setTimeout(() => setSpreadsheetSaved(false), 3000);
+            }
+        } catch (e: any) {
+            setSpreadsheetError(e.message || t('settingsSpreadsheetCreateError'));
+        }
+        setSpreadsheetCreating(false);
     };
 
     const handleCopyApiKey = async () => {
@@ -512,6 +543,16 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                                 {spreadsheetSaved ? t('settingsSpreadsheetSaved') : 'Save'}
                             </button>
                         </div>
+
+                        <button
+                            type="button"
+                            onClick={handleCreateNewSheet}
+                            disabled={spreadsheetCreating}
+                            className="w-full flex items-center justify-center gap-2 text-xs font-medium px-3 py-2.5 rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            {spreadsheetCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FilePlus2 className="w-3.5 h-3.5" />}
+                            {spreadsheetCreating ? t('settingsSpreadsheetCreating') : t('settingsSpreadsheetCreate')}
+                        </button>
 
                         {spreadsheetError && (
                             <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">

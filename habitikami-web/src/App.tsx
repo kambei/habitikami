@@ -596,7 +596,8 @@ function App() {
               <AppTour
                 onNavigate={setActiveSheet}
                 onComplete={() => { setShowTour(false); setTourHighlight(null); setMenuOpen(false); }}
-                onHighlightChange={(tab) => { setTourHighlight(tab); setMenuOpen(!!tab); }}
+                onHighlightChange={(tab) => { setTourHighlight(tab); }}
+                onMenuToggle={(open) => { setMenuOpen(open); }}
               />
             </Suspense>
           )}

@@ -56,14 +56,9 @@ A native **Android** app using Trusted Web Activity (TWA) to deliver the Habitik
 
 Works on any device with a browser. Add it to your home screen for a native-like experience.
 
-### 📱 Android App — Become a Tester!
+### 📱 Android App!
 
-> Help shape the future of Habitikami on Android! 🎯
-
-1. **[Join the Google Group](https://groups.google.com/g/habitikami)** first to get access.
-2. After joining, **[Opt-in to the tester program](https://play.google.com/apps/testing/dev.kambei.habitikami)** to download the app.
-
-Get the native Android app with home screen widgets for quick habit tracking, counters, and stats — right at your fingertips.
+> Download it from the release page of this repository and install the APK file in your Android device.
 
 ## Getting Started
 

@@ -213,12 +213,12 @@ export function Graphs() {
                         </select>
                     </div>
                 </div>
-                <div className="w-full min-h-0 overflow-x-hidden" style={{ height: `${Math.max(400, filteredStats.length * 56)}px` }}>
+                <div className="w-full min-h-0 overflow-x-auto overflow-y-hidden" style={{ height: `${Math.max(400, filteredStats.length * 56)}px` }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                             data={filteredStats}
                             layout="vertical"
-                            margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+                            margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
                             barSize={45} // More "cicciotte"
                             barGap={-45} // Maintain overlap
                         >

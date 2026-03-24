@@ -1,22 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, Loader2, PartyPopper, Coffee } from 'lucide-react';
+import * as Icons from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { habitService } from '../services/HabitService';
 import { cn } from '../lib/utils';
 import { useTranslation } from '../i18n';
 
-export const SmokeTemptationView = () => {
+const IconRenderer = ({ name, size = 24, className = "" }: { name: string, size?: number, className?: string }) => {
+    const IconComponent = (Icons as any)[name] || Icons.HelpCircle;
+    return <IconComponent size={size} className={className} />;
+};
+
+export const TemptationView = () => {
     const { t } = useTranslation();
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [actionType, setActionType] = useState<'resist' | 'smoke' | 'coffee' | null>(null);
+    const [actionId, setActionId] = useState<string | null>(null);
+    const [temptations, setTemptations] = useState<any[]>([]);
+    const [selectedIndex, setSelectedIndex] = useState(0);
 
-    const handleResist = async () => {
-        setActionType('resist');
+    useEffect(() => {
+        habitService.getTemptations().then(setTemptations);
+    }, []);
+
+    const activeTemptation = temptations[selectedIndex];
+
+    const handleAction = async (action: any) => {
+        setActionId(action.id);
         setStatus('loading');
         setErrorMessage(null);
         try {
-            const result = await habitService.incrementCounter('smoke');
+            // We use the ID as the counter name
+            const result = await habitService.incrementCounter(action.id);
             if (result && result.error) {
                 setStatus('error');
                 setErrorMessage(result.error);
@@ -30,43 +45,11 @@ export const SmokeTemptationView = () => {
         }
     };
 
-    const handleSmoke = async () => {
-        setActionType('smoke');
-        setStatus('loading');
-        setErrorMessage(null);
-        try {
-            const result = await habitService.incrementCounter('smoked');
-            if (result && result.error) {
-                setStatus('error');
-                setErrorMessage(result.error);
-            } else {
-                setStatus('success');
-                setTimeout(() => window.location.reload(), 3000);
-            }
-        } catch (e: any) {
-            setStatus('error');
-            setErrorMessage(e.message || t('helpGenericError'));
-        }
-    };
-
-    const handleCoffee = async () => {
-        setActionType('coffee');
-        setStatus('loading');
-        setErrorMessage(null);
-        try {
-            const result = await habitService.incrementCounter('coffee');
-            if (result && result.error) {
-                setStatus('error');
-                setErrorMessage(result.error);
-            } else {
-                setStatus('success');
-                setTimeout(() => window.location.reload(), 3000);
-            }
-        } catch (e: any) {
-            setStatus('error');
-            setErrorMessage(e.message || t('helpGenericError'));
-        }
-    };
+    if (!activeTemptation) return (
+        <div className="flex items-center justify-center h-full">
+            <Loader2 className="animate-spin text-muted-foreground" />
+        </div>
+    );
 
     return (
         <div className="flex flex-col items-center justify-center h-full p-4 bg-gradient-to-br from-red-900/10 to-stone-900/10 dark:from-red-950/30 dark:to-stone-950/30">
@@ -74,143 +57,144 @@ export const SmokeTemptationView = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="space-y-2"
+                    className="space-y-4"
                 >
+                    {temptations.length > 1 && (
+                        <div className="flex justify-center gap-2 mb-4">
+                            {temptations.map((t: any, i: number) => (
+                                <button
+                                    key={t.id}
+                                    onClick={() => setSelectedIndex(i)}
+                                    className={cn(
+                                        "px-4 py-1 rounded-full text-sm transition-all",
+                                        selectedIndex === i 
+                                            ? "bg-primary text-primary-foreground font-bold" 
+                                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                    )}
+                                >
+                                    {t.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                     <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-                        {t('smokeFeeling')}
+                        {activeTemptation.label === 'Smoking' ? t('smokeFeeling') : activeTemptation.label}
                     </h2>
                     <p className="text-muted-foreground text-lg">
-                        {t('smokeStronger')}
+                        {activeTemptation.label === 'Smoking' ? t('smokeStronger') : "Stay strong!"}
                     </p>
                 </motion.div>
 
                 <div className="relative flex justify-center py-8">
                     <AnimatePresence mode="wait">
                         {status === 'success' ? (
-                            actionType === 'smoke' ? (
-                                <motion.div
-                                    key="success-smoke"
-                                    initial={{ scale: 0.8, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    exit={{ scale: 0.8, opacity: 0 }}
-                                    className="flex flex-col items-center gap-4 text-red-500"
-                                >
-                                    <div className="p-6 rounded-full bg-red-500/10 border-2 border-red-500/20 shadow-[0_0_40px_-5px_var(--color-red-500)]">
-                                        <div className="text-6xl">💀</div>
-                                    </div>
-                                    <h3 className="text-2xl font-bold font-serif italic">{t('smokeSuccessSmoke')}</h3>
-                                    <p className="text-muted-foreground">{t('smokeSuccessSmokeMsg')}</p>
-                                </motion.div>
-                            ) : actionType === 'coffee' ? (
-                                <motion.div
-                                    key="success-coffee"
-                                    initial={{ scale: 0.8, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    exit={{ scale: 0.8, opacity: 0 }}
-                                    className="flex flex-col items-center gap-4 text-amber-600"
-                                >
-                                    <div className="p-6 rounded-full bg-amber-600/10 border-2 border-amber-600/20 shadow-[0_0_40px_-5px_var(--color-amber-600)]">
-                                        <Coffee size={64} />
-                                    </div>
-                                    <h3 className="text-2xl font-bold">{t('smokeCaffeineOverload')}</h3>
-                                    <p className="text-muted-foreground">{t('smokeCaffeineMsg')}</p>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="success-resist"
-                                    initial={{ scale: 0.8, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    exit={{ scale: 0.8, opacity: 0 }}
-                                    className="flex flex-col items-center gap-4 text-green-500"
-                                >
-                                    <div className="p-6 rounded-full bg-green-500/10 border-2 border-green-500/20 shadow-[0_0_40px_-5px_var(--color-green-500)]">
-                                        <PartyPopper size={64} />
-                                    </div>
-                                    <h3 className="text-2xl font-bold">{t('smokeSuccessResist')}</h3>
-                                    <p className="text-muted-foreground">{t('smokeSuccessResistMsg')}</p>
-                                </motion.div>
-                            )
+                            (() => {
+                                const action = activeTemptation.actions.find((a: any) => a.id === actionId);
+                                return (
+                                    <motion.div
+                                        key={`success-${actionId}`}
+                                        initial={{ scale: 0.8, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        exit={{ scale: 0.8, opacity: 0 }}
+                                        className="flex flex-col items-center gap-4"
+                                        style={{ color: action?.color || 'var(--color-primary)' }}
+                                    >
+                                        <div 
+                                            className="p-6 rounded-full border-2"
+                                            style={{ 
+                                                backgroundColor: `${action?.color}1a`, 
+                                                borderColor: `${action?.color}33`,
+                                                boxShadow: `0 0 40px -5px ${action?.color}`
+                                            }}
+                                        >
+                                            {action?.icon === 'skull' ? (
+                                                <div className="text-6xl">💀</div>
+                                            ) : (
+                                                <IconRenderer name={action?.icon} size={64} />
+                                            )}
+                                        </div>
+                                        <h3 className="text-2xl font-bold">
+                                            {action?.id === 'smoke' ? t('smokeSuccessResist') : 
+                                             action?.id === 'smoked' ? t('smokeSuccessSmoke') : 
+                                             action?.label}
+                                        </h3>
+                                        <p className="text-muted-foreground text-center">
+                                            {action?.id === 'smoke' ? t('smokeSuccessResistMsg') : 
+                                             action?.id === 'smoked' ? t('smokeSuccessSmokeMsg') : 
+                                             "Great job!"}
+                                        </p>
+                                    </motion.div>
+                                );
+                            })()
                         ) : (
-                            <div className="flex flex-col gap-6">
-                                <motion.button
-                                    key="button-resist"
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={handleResist}
-                                    disabled={status === 'loading'}
-                                    className={cn(
-                                        "relative group w-36 h-36 md:w-48 md:h-48 rounded-full flex flex-col items-center justify-center gap-2",
-                                        "bg-gradient-to-br from-green-600 to-emerald-700 hover:from-green-500 hover:to-emerald-600",
-                                        "text-white shadow-[0_10px_40px_-10px_rgba(16,185,129,0.5)] transition-all",
-                                        "border-4 border-green-400/30",
-                                        status === 'loading' && "opacity-80 cursor-wait"
-                                    )}
-                                >
-                                    {status === 'loading' ? (
-                                        <Loader2 className="w-12 h-12 animate-spin" />
-                                    ) : (
-                                        <>
-                                            <ShieldCheck className="w-12 h-12 md:w-16 md:h-16 drop-shadow-md" />
-                                            <span className="text-xl font-bold tracking-tight drop-shadow-md">
-                                                {t('smokeResisted')}
-                                            </span>
-                                        </>
-                                    )}
-                                    {/* Pulse effect */}
-                                    <span className="absolute inset-0 rounded-full animate-ping bg-green-500/20 duration-1000" />
-                                </motion.button>
-
-                                <div className="flex gap-3 md:gap-4">
+                            <div className="flex flex-col gap-8 items-center">
+                                {activeTemptation.actions.filter((a: any) => a.type === 'positive').map((action: any) => (
                                     <motion.button
-                                        key="button-smoke"
+                                        key={action.id}
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
-                                        onClick={handleSmoke}
+                                        onClick={() => handleAction(action)}
                                         disabled={status === 'loading'}
                                         className={cn(
-                                            "relative group w-24 h-24 md:w-32 md:h-32 rounded-full flex flex-col items-center justify-center gap-1",
-                                            "bg-gradient-to-br from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600",
-                                            "text-white shadow-[0_10px_40px_-10px_rgba(225,29,72,0.5)] transition-all",
-                                            "border-4 border-red-400/30",
+                                            "relative group w-36 h-36 md:w-48 md:h-48 rounded-full flex flex-col items-center justify-center gap-2",
+                                            "transition-all border-4",
                                             status === 'loading' && "opacity-80 cursor-wait"
                                         )}
+                                        style={{
+                                            background: `linear-gradient(to bottom right, ${action.color}, ${action.color}bb)`,
+                                            borderColor: `${action.color}4d`,
+                                            boxShadow: `0 10px 40px -10px ${action.color}80`,
+                                            color: 'white'
+                                        }}
                                     >
-                                        {status === 'loading' ? (
-                                            <Loader2 className="w-8 h-8 animate-spin" />
+                                        {status === 'loading' && actionId === action.id ? (
+                                            <Loader2 className="w-12 h-12 animate-spin" />
                                         ) : (
                                             <>
-                                                <span className="text-sm font-bold tracking-tight drop-shadow-md">
-                                                    {t('smokeSmoked')}
+                                                <IconRenderer name={action.icon} size={64} className="drop-shadow-md" />
+                                                <span className="text-xl font-bold tracking-tight drop-shadow-md">
+                                                    {action.id === 'smoke' ? t('smokeResisted') : action.label}
                                                 </span>
                                             </>
                                         )}
+                                        <span className="absolute inset-0 rounded-full animate-ping opacity-20 duration-1000" style={{ backgroundColor: action.color }} />
                                     </motion.button>
+                                ))}
 
-                                    <motion.button
-                                        key="button-coffee"
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={handleCoffee}
-                                        disabled={status === 'loading'}
-                                        className={cn(
-                                            "relative group w-24 h-24 md:w-32 md:h-32 rounded-full flex flex-col items-center justify-center gap-1",
-                                            "bg-gradient-to-br from-amber-700 to-orange-900 hover:from-amber-600 hover:to-orange-800",
-                                            "text-white shadow-[0_10px_40px_-10px_rgba(180,83,9,0.5)] transition-all",
-                                            "border-4 border-amber-600/30",
-                                            status === 'loading' && "opacity-80 cursor-wait"
-                                        )}
-                                    >
-                                        {status === 'loading' ? (
-                                            <Loader2 className="w-8 h-8 animate-spin" />
-                                        ) : (
-                                            <>
-                                                <Coffee className="w-8 h-8 drop-shadow-md" />
-                                                <span className="text-sm font-bold tracking-tight drop-shadow-md">
-                                                    {t('smokeCoffee')}
-                                                </span>
-                                            </>
-                                        )}
-                                    </motion.button>
+                                <div className="flex flex-wrap justify-center gap-4">
+                                    {activeTemptation.actions.filter((a: any) => a.type !== 'positive').map((action: any) => (
+                                        <motion.button
+                                            key={action.id}
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => handleAction(action)}
+                                            disabled={status === 'loading'}
+                                            className={cn(
+                                                "relative group w-24 h-24 md:w-32 md:h-32 rounded-full flex flex-col items-center justify-center gap-1",
+                                                "transition-all border-4",
+                                                status === 'loading' && "opacity-80 cursor-wait"
+                                            )}
+                                            style={{
+                                                background: `linear-gradient(to bottom right, ${action.color}, ${action.color}bb)`,
+                                                borderColor: `${action.color}4d`,
+                                                boxShadow: `0 10px 40px -10px ${action.color}80`,
+                                                color: 'white'
+                                            }}
+                                        >
+                                            {status === 'loading' && actionId === action.id ? (
+                                                <Loader2 className="w-8 h-8 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    {action.icon && <IconRenderer name={action.icon} size={32} className="drop-shadow-md" />}
+                                                    <span className="text-sm font-bold tracking-tight drop-shadow-md">
+                                                        {action.id === 'smoked' ? t('smokeSmoked') : 
+                                                         action.id === 'coffee' ? t('smokeCoffee') : 
+                                                         action.label}
+                                                    </span>
+                                                </>
+                                            )}
+                                        </motion.button>
+                                    ))}
                                 </div>
                             </div>
                         )}

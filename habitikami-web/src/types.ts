@@ -34,10 +34,22 @@ export interface NoteData {
     links: string[]; // List of dates this note links to
 }
 
+export interface TemptationAction {
+    id: string; // The column name in the spreadsheet
+    label: string;
+    color: string;
+    type: 'resist' | 'succumb' | 'other';
+}
+
+export interface TemptationConfig {
+    id: string;
+    label: string;
+    icon: string;
+    actions: TemptationAction[];
+}
+
 // Data structure for resistance counters
 export type CounterData = {
     date: string;
-    smoke: number;
-    smoked: number;
-    coffee: number;
+    [key: string]: any; // Allow any counter name
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { HeartHandshake, Key, Loader2, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2, FilePlus2 } from 'lucide-react';
+import { HeartHandshake, Key, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2, FilePlus2, Megaphone, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import type { GuidedStep } from '../types';
@@ -7,6 +7,7 @@ import { useTranslation } from '../i18n';
 import { habitService } from '../services/HabitService';
 import { schedeTemplates } from '../data/schedeTemplates';
 import { SchedeCompiler } from './SchedeCompiler';
+import { TemptationSettings } from './TemptationSettings';
 import type { SchedaTemplate } from '../data/schedeTemplates';
 import {
     type AIProvider,
@@ -21,13 +22,14 @@ import {
 } from '../utils/aiProvider';
 import { MoodGraph, saveMoodEntry } from './MoodGraph';
 import { renderMarkdown } from '../lib/renderMarkdown';
+import { UpdatesView } from './UpdatesView';
 
 interface Message {
     role: 'user' | 'model';
     content: string;
 }
 
-type HelpMode = 'menu' | 'chat' | 'scheda' | 'settings' | 'mood';
+type HelpMode = 'menu' | 'chat' | 'scheda' | 'settings' | 'mood' | 'updates';
 
 interface HelpViewProps {
     openSettings?: boolean;
@@ -69,7 +71,26 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const [hasNewUpdates, setHasNewUpdates] = useState(false);
     const endOfMessagesRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const checkUpdates = async () => {
+            try {
+                const { hash } = await habitService.getChangelog();
+                const lastSeen = localStorage.getItem('lastSeenChangelogHash');
+                if (hash && hash !== lastSeen) {
+                    setHasNewUpdates(true);
+                }
+            } catch { /* silent fail */ }
+        };
+        checkUpdates();
+
+        // Listen for updates from the view itself
+        const handleSeen = () => setHasNewUpdates(false);
+        window.addEventListener('changelogSeen', handleSeen);
+        return () => window.removeEventListener('changelogSeen', handleSeen);
+    }, []);
 
     useEffect(() => {
         if (mode === 'chat' && isKeySetup && history.length === 0 && !currentStep && !isLoading) {
@@ -246,12 +267,12 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     };
 
     const handleOptionSelect = (option: string) => {
-        setCurrentStep(null);
-        const newMsg: Message = { role: 'user', content: option };
-        const updatedHistory = [...history, newMsg];
-        setHistory(updatedHistory);
-        callCurrentAI(updatedHistory);
-    };
+            setCurrentStep(null);
+            const newMsg: Message = { role: 'user', content: option };
+            const updatedHistory = [...history, newMsg];
+            setHistory(updatedHistory);
+            callCurrentAI(updatedHistory);
+        };
 
     const handleSelectScheda = (scheda: SchedaTemplate) => {
         if (!isKeySetup) {
@@ -495,6 +516,11 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
         return <MoodGraph onBack={handleBackToMenu} />;
     }
 
+    // ── Updates mode ──
+    if (mode === 'updates') {
+        return <UpdatesView onBack={handleBackToMenu} />;
+    }
+
     // ── Settings mode ──
     if (mode === 'settings') {
         return (
@@ -651,7 +677,12 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                         </div>
                     </div>
 
-                    {/* 3. AI API Keys */}
+                    {/* 3. Temptation Management */}
+                    <div className="border-t border-border/50 pt-5">
+                        <TemptationSettings />
+                    </div>
+
+                    {/* 4. AI API Keys */}
                     <div className="border-t border-border/50 pt-5">
                         <form onSubmit={handleSaveSettings} className="space-y-5">
                             {renderAnthropicCard('settings')}
@@ -735,11 +766,41 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                                 <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-emerald-500/20 transition-colors">
                                     <BarChart3 className="w-6 h-6 text-emerald-400" />
                                 </div>
-                                <div>
+                                <div className="flex-1">
                                     <h3 className="font-semibold text-foreground mb-1">{t('helpMenuMoodTitle')}</h3>
                                     <p className="text-sm text-muted-foreground">{t('helpMenuMoodDesc')}</p>
                                 </div>
                             </div>
+                        </motion.button>
+
+                        {/* What's New Card */}
+                        <motion.button
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.18 }}
+                            onClick={() => setMode('updates')}
+                            className="w-full text-left bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 p-5 hover:border-primary/30 hover:bg-card/80 transition-all group relative overflow-hidden"
+                        >
+                            <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-amber-500/20 transition-colors">
+                                    <Megaphone className="w-6 h-6 text-amber-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-semibold text-foreground mb-1">What's New</h3>
+                                        {hasNewUpdates && (
+                                            <span className="flex h-2 w-2 rounded-full bg-amber-400 animate-pulse ring-4 ring-amber-400/20" />
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">Discover latest features and improvements.</p>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-amber-400/50 transition-colors self-center" />
+                            </div>
+                            {hasNewUpdates && (
+                                <div className="absolute top-0 right-0 p-1">
+                                    <span className="bg-amber-400 text-amber-950 text-[10px] font-bold px-2 py-0.5 rounded-bl-lg shadow-sm">NEW</span>
+                                </div>
+                            )}
                         </motion.button>
 
                         <div className="space-y-3">

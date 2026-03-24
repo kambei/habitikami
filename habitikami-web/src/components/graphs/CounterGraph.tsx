@@ -1,18 +1,23 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line } from 'recharts';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { CounterData } from '../../types';
+import { habitService } from '../../services/HabitService';
 import { cn } from '../../lib/utils';
 import { useTranslation } from '../../i18n';
 
 interface Props {
-    data: CounterData[];
+    data: any[];
 }
 
 const DAYS_TO_SHOW = 30;
 
-export const SmokeVsResistedGraph = ({ data }: Props) => {
+export const CounterGraph = ({ data }: Props) => {
     const { t, locale } = useTranslation();
+    const [temptations, setTemptations] = useState<any[]>([]);
+
+    useEffect(() => {
+        habitService.getTemptations().then(setTemptations);
+    }, []);
 
     // Sort data by date just in case
     const sortedData = useMemo(() => {
@@ -120,9 +125,37 @@ export const SmokeVsResistedGraph = ({ data }: Props) => {
                             labelFormatter={(label) => new Date(label).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}
                         />
                         <Legend />
-                        <Line type="monotone" dataKey="smoke" name={t('temptationResisted')} stroke="#10b981" strokeWidth={2} activeDot={{ r: 8 }} dot={false} />
-                        <Line type="monotone" dataKey="smoked" name={t('temptationSmoked')} stroke="#ef4444" strokeWidth={2} activeDot={{ r: 8 }} dot={false} />
-                        <Line type="monotone" dataKey="coffee" name={t('temptationCoffee')} stroke="#b45309" strokeWidth={2} activeDot={{ r: 8 }} dot={false} />
+                        {Object.keys(data[0] || {}).filter(k => k !== 'date').map((key) => {
+                            // Find metadata for this key
+                            let label = key;
+                            let color = "#8884d8"; 
+
+                            // Search in temptations
+                            for (const tConfig of temptations) {
+                                const action = tConfig.actions.find((a: any) => a.id === key);
+                                if (action) {
+                                    label = action.id === 'smoke' ? t('temptationResisted') : 
+                                            action.id === 'smoked' ? t('temptationSmoked') : 
+                                            action.id === 'coffee' ? t('temptationCoffee') : 
+                                            action.label;
+                                    color = action.color;
+                                    break;
+                                }
+                            }
+
+                            return (
+                                <Line 
+                                    key={key}
+                                    type="monotone" 
+                                    dataKey={key} 
+                                    name={label} 
+                                    stroke={color} 
+                                    strokeWidth={2} 
+                                    activeDot={{ r: 8 }} 
+                                    dot={false} 
+                                />
+                            );
+                        })}
                     </LineChart>
                 </ResponsiveContainer>
             </div>

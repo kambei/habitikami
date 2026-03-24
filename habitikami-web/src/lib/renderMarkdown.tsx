@@ -34,7 +34,16 @@ export function renderMarkdown(text: string): React.ReactNode {
 
     for (const line of lines) {
         const trimmed = line.trim();
-        if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+        if (trimmed.startsWith('# ')) {
+            flushList();
+            elements.push(<h1 key={elements.length} className="text-2xl font-bold mt-6 mb-4 text-primary">{inlineFormat(trimmed.slice(2))}</h1>);
+        } else if (trimmed.startsWith('## ')) {
+            flushList();
+            elements.push(<h2 key={elements.length} className="text-xl font-semibold mt-5 mb-3 text-primary border-b border-border/50 pb-1">{inlineFormat(trimmed.slice(3))}</h2>);
+        } else if (trimmed.startsWith('### ')) {
+            flushList();
+            elements.push(<h3 key={elements.length} className="text-lg font-medium mt-4 mb-2 text-foreground">{inlineFormat(trimmed.slice(4))}</h3>);
+        } else if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
             listItems.push(trimmed.slice(2));
         } else {
             flushList();

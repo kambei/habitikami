@@ -479,6 +479,23 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
     }
 });
 
+// ─── Changelog endpoint ───────────────────────────────────────────────────────
+
+app.get('/api/changelog', async (req, res) => {
+    try {
+        const changelogPath = path.join(__dirname, '..', 'CHANGELOG.md');
+        if (!fs.existsSync(changelogPath)) {
+            return res.json({ content: '', hash: '' });
+        }
+        const content = fs.readFileSync(changelogPath, 'utf8');
+        const hash = crypto.createHash('md5').update(content).digest('hex');
+        res.json({ content, hash });
+    } catch (error) {
+        console.error('Changelog error:', error);
+        res.status(500).json({ error: 'Failed to read changelog' });
+    }
+});
+
 // ─── Auth: refresh token ──────────────────────────────────────────────────────
 
 app.post('/api/auth/refresh', authLimiter, validateOrigin, async (req, res) => {
@@ -597,9 +614,34 @@ app.get('/api/user/preferences', apiLimiter, async (req, res) => {
         const users = loadUsers();
         const userEntry = users[email] || {};
 
+        // 1. Try to fetch from Spreadsheet headers first (for privacy)
+        try {
+            const spreadsheetId = await resolveSpreadsheetId(req);
+            const sheets = await getSheetsClientForRequest(req);
+            const response = await sheets.spreadsheets.values.get({
+                spreadsheetId,
+                range: 'Counters!1:1',
+            });
+
+            const headers = response.data.values?.[0] || [];
+            if (headers.length > 0) {
+                const sheetPrefs = parseHeadersForConfig(headers);
+                if (sheetPrefs.temptations?.length > 0 || sheetPrefs.enabled_tabs) {
+                    return res.json({
+                        enabled_tabs: sheetPrefs.enabled_tabs || userEntry.enabled_tabs || null,
+                        default_tab: sheetPrefs.default_tab || userEntry.default_tab || null,
+                        temptations: sheetPrefs.temptations || userEntry.temptations || null,
+                    });
+                }
+            }
+        } catch (err) {
+            console.warn('Failed to read preferences from sheet, using local:', err.message);
+        }
+
         res.json({
             enabled_tabs: userEntry.enabled_tabs || null,
             default_tab: userEntry.default_tab || null,
+            temptations: userEntry.temptations || null,
         });
     } catch (error) {
         console.error('Get preferences error:', error);
@@ -607,32 +649,118 @@ app.get('/api/user/preferences', apiLimiter, async (req, res) => {
     }
 });
 
+function parseHeadersForConfig(headers) {
+    const temptationsMap = {};
+    let enabled_tabs = null;
+    let default_tab = null;
+
+    headers.forEach(h => {
+        if (!h || typeof h !== 'string') return;
+        
+        if (h.startsWith('_config|')) {
+            const parts = h.split('|');
+            parts.forEach(p => {
+                if (p.startsWith('tabs:')) enabled_tabs = p.replace('tabs:', '').split(',').filter(Boolean);
+                if (p.startsWith('default:')) default_tab = p.replace('default:', '');
+            });
+        } else if (h.includes('|')) {
+            const [actionId, icon, color, label, categoryId, categoryLabel, type] = h.split('|');
+            if (actionId && icon && color) {
+                const catId = categoryId || 'shared';
+                if (!temptationsMap[catId]) {
+                    temptationsMap[catId] = {
+                        id: catId,
+                        label: categoryLabel || 'Temptations',
+                        icon: icon,
+                        actions: []
+                    };
+                }
+                temptationsMap[catId].actions.push({ id: actionId, label: label || actionId, color, type: type || 'other' });
+            }
+        }
+    });
+
+    return { 
+        temptations: Object.values(temptationsMap),
+        enabled_tabs,
+        default_tab
+    };
+}
+
 app.post('/api/user/preferences', apiLimiter, validateOrigin, async (req, res) => {
     try {
         const accessToken = extractBearer(req);
         if (!accessToken) return res.status(401).json({ error: 'Missing access token' });
 
-        const { enabled_tabs, default_tab } = req.body;
-        if (!Array.isArray(enabled_tabs) || enabled_tabs.length === 0) {
-            return res.status(400).json({ error: 'enabled_tabs must be a non-empty array' });
-        }
-        const invalid = enabled_tabs.filter(t => !ALL_TABS.includes(t));
-        if (invalid.length > 0) {
-            return res.status(400).json({ error: 'Invalid tab names provided' });
-        }
-        if (default_tab && !ALL_TABS.includes(default_tab)) {
-            return res.status(400).json({ error: 'Invalid default_tab value' });
+        const { enabled_tabs, default_tab, temptations } = req.body;
+        const email = await getEmailFromToken(accessToken);
+
+        // 1. Update Sheet Headers (Privacy First)
+        try {
+            const spreadsheetId = await resolveSpreadsheetId(req);
+            const sheets = await getSheetsClientForRequest(req);
+            
+            // Get current rows to preserve data columns
+            const response = await sheets.spreadsheets.values.get({
+                spreadsheetId,
+                range: 'Counters!1:1',
+            });
+            const currentHeaders = response.data.values?.[0] || ['Date'];
+            
+            // Reconstruct headers
+            const newHeaders = ['Date'];
+            const actionIdToHeader = {};
+            
+            if (temptations && Array.isArray(temptations)) {
+                temptations.forEach(t => {
+                    t.actions.forEach(a => {
+                        actionIdToHeader[a.id] = `${a.id}|${t.icon}|${a.color}|${a.label}|${t.id}|${t.label}|${a.type || 'other'}`;
+                    });
+                });
+            }
+
+            // Map existing columns to their new encoded names if they exist, or keep encoded ones
+            currentHeaders.forEach(h => {
+                if (!h || h === 'Date' || h.startsWith('_config')) return;
+                const id = h.split('|')[0];
+                if (actionIdToHeader[id]) {
+                    newHeaders.push(actionIdToHeader[id]);
+                    delete actionIdToHeader[id];
+                } else {
+                    newHeaders.push(h); // Keep unknown columns
+                }
+            });
+
+            // Append brand new actions
+            Object.values(actionIdToHeader).forEach(h => newHeaders.push(h));
+
+            // Add config column
+            const configColumn = [`_config|tabs:${(enabled_tabs || []).join(',')}|default:${default_tab || ''}`];
+            newHeaders.push(configColumn[0]);
+
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: 'Counters!1:1',
+                valueInputOption: 'RAW',
+                requestBody: { values: [newHeaders] }
+            });
+        } catch (err) {
+            console.warn('Failed to save preferences to sheet:', err.message);
         }
 
-        const email = await getEmailFromToken(accessToken);
+        // 2. Keep local copy for fallback (optional but safe)
         await saveUsersAtomic(users => {
             const existing = users[email] || {};
-            users[email] = { ...(typeof existing === 'object' ? existing : {}), enabled_tabs, default_tab: default_tab || null };
+            users[email] = { 
+                ...(typeof existing === 'object' ? existing : {}), 
+                enabled_tabs: enabled_tabs || existing.enabled_tabs, 
+                default_tab: default_tab || existing.default_tab,
+                temptations: temptations || existing.temptations || null
+            };
             return users;
         });
 
-        console.log(`Preferences saved for ${email}`);
-        res.json({ success: true, enabled_tabs, default_tab: default_tab || null });
+        res.json({ success: true, enabled_tabs, default_tab, temptations });
     } catch (error) {
         console.error('Save preferences error:', error);
         res.status(500).json({ error: 'Failed to save preferences' });
@@ -1081,44 +1209,51 @@ app.get('/api/counter', authenticate, async (req, res) => {
         const newest = req.query.newest;
         const todayStr = new Date().toISOString().split('T')[0];
 
-        const counterIndexMap = { smoke: 1, smoked: 2, coffee: 3 };
-
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: `${sheetName}!A:D`,
+            range: `${sheetName}!A:Z`,
         });
 
         const rows = response.data.values || [];
-        const startIdx = (rows.length > 0 && rows[0][0] === 'Date') ? 1 : 0;
+        if (rows.length === 0) return res.json({ success: true, entries: [] });
 
-        // If no date params, return today only (backwards-compatible for Zepp)
-        if (!oldest && !newest) {
-            const result = { smoke: 0, smoked: 0, coffee: 0 };
-            for (let i = startIdx; i < rows.length; i++) {
-                if (rows[i][0] === todayStr) {
-                    result.smoke = parseInt(rows[i][counterIndexMap.smoke] || '0', 10);
-                    result.smoked = parseInt(rows[i][counterIndexMap.smoked] || '0', 10);
-                    result.coffee = parseInt(rows[i][counterIndexMap.coffee] || '0', 10);
-                    break;
-                }
+        const headers = rows[0];
+        const dateIdx = headers.findIndex(h => h && /date/i.test(h.split('|')[0]));
+        if (dateIdx === -1) return res.status(500).json({ error: 'Counters sheet missing Date column' });
+
+        // Map column indices using the ActionID part of the header
+        const colMap = {};
+        headers.forEach((h, i) => {
+            if (i !== dateIdx && h && !h.startsWith('_config')) {
+                const id = h.split('|')[0].toLowerCase();
+                colMap[id] = i;
             }
+        });
+
+        // If no date params, return today only
+        if (!oldest && !newest) {
+            const todayRow = rows.find(r => r[dateIdx] === todayStr);
+            const result = {};
+            Object.keys(colMap).forEach(key => {
+                result[key] = parseInt(todayRow?.[colMap[key]] || '0', 10);
+            });
             return res.json({ success: true, date: todayStr, counters: result });
         }
 
         // With date params, return array of daily entries
-        const entries = [];
-        for (let i = startIdx; i < rows.length; i++) {
-            const rowDate = rows[i][0];
-            if (!rowDate) continue;
-            if (oldest && rowDate < oldest) continue;
-            if (newest && rowDate > newest) continue;
-            entries.push({
-                date: rowDate,
-                smoke: parseInt(rows[i][counterIndexMap.smoke] || '0', 10),
-                smoked: parseInt(rows[i][counterIndexMap.smoked] || '0', 10),
-                coffee: parseInt(rows[i][counterIndexMap.coffee] || '0', 10),
+        const entries = rows.slice(1).filter(row => {
+            const rowDate = row[dateIdx];
+            if (!rowDate) return false;
+            if (oldest && rowDate < oldest) return false;
+            if (newest && rowDate > newest) return false;
+            return true;
+        }).map(row => {
+            const entry = { date: row[dateIdx] };
+            Object.keys(colMap).forEach(key => {
+                entry[key] = parseInt(row[colMap[key]] || '0', 10);
             });
-        }
+            return entry;
+        });
 
         res.json({ success: true, entries });
     } catch (error) {
@@ -1132,10 +1267,8 @@ app.get('/api/counter', authenticate, async (req, res) => {
 app.post('/api/counter/increment', authenticate, async (req, res) => {
     try {
         const { counter } = req.body;
-        const validCounters = ['smoke', 'smoked', 'coffee'];
-
-        if (!counter || !validCounters.includes(counter)) {
-            return res.status(400).json({ error: `Invalid counter. Must be one of: ${validCounters.join(', ')}` });
+        if (!counter || typeof counter !== 'string') {
+            return res.status(400).json({ error: 'Invalid or missing counter name' });
         }
 
         const spreadsheetId = await resolveSpreadsheetId(req);
@@ -1143,40 +1276,62 @@ app.post('/api/counter/increment', authenticate, async (req, res) => {
         const sheetName = 'Counters';
         const dateStr = new Date().toISOString().split('T')[0];
 
-        const counterColMap = { smoke: 'B', smoked: 'C', coffee: 'D' };
-        const counterIndexMap = { smoke: 1, smoked: 2, coffee: 3 };
-
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId,
-            range: `${sheetName}!A:D`,
+            range: `${sheetName}!A:Z`,
         });
 
         const rows = response.data.values || [];
-        let rowNumber = -1;
-        let currentVal = 0;
-        const startIdx = (rows.length > 0 && rows[0][0] === 'Date') ? 1 : 0;
-
-        for (let i = startIdx; i < rows.length; i++) {
-            if (rows[i][0] === dateStr) {
-                rowNumber = i + 1;
-                currentVal = parseInt(rows[i][counterIndexMap[counter]] || '0', 10);
-                break;
-            }
-        }
-
-        let newValue;
-        if (rowNumber !== -1) {
-            newValue = currentVal + 1;
+        if (rows.length === 0) {
+            // Initialize sheet if empty
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
-                range: `${sheetName}!${counterColMap[counter]}${rowNumber}`,
+                range: `${sheetName}!A1:B1`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [['Date', counter]] },
+            });
+            await sheets.spreadsheets.values.append({
+                spreadsheetId,
+                range: sheetName,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [[dateStr, 1]] },
+            });
+            return res.json({ success: true, counter, newValue: 1, date: dateStr });
+        }
+
+        const headers = rows[0];
+        const dateIdx = headers.findIndex(h => h && /date/i.test(h.split('|')[0]));
+        let counterIdx = headers.findIndex(h => h && h.split('|')[0].toLowerCase() === counter.toLowerCase());
+
+        // If counter column doesn't exist, add it
+        if (counterIdx === -1) {
+            counterIdx = headers.length;
+            const colLetter = String.fromCharCode(65 + counterIdx); // Basic A-Z mapping (Z is enough for counters)
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: `${sheetName}!${colLetter}1`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [[counter]] },
+            });
+        }
+
+        let rowIndex = rows.findIndex(r => r[dateIdx] === dateStr);
+        let newValue = 1;
+
+        if (rowIndex !== -1) {
+            const currentVal = parseInt(rows[rowIndex][counterIdx] || '0', 10);
+            newValue = currentVal + 1;
+            const colLetter = String.fromCharCode(65 + counterIdx);
+            await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: `${sheetName}!${colLetter}${rowIndex + 1}`,
                 valueInputOption: 'USER_ENTERED',
                 requestBody: { values: [[newValue]] },
             });
         } else {
-            const newRow = [dateStr, 0, 0, 0];
-            newRow[counterIndexMap[counter]] = 1;
-            newValue = 1;
+            const newRow = new Array(headers.length).fill(0);
+            newRow[dateIdx] = dateStr;
+            newRow[counterIdx] = 1;
             await sheets.spreadsheets.values.append({
                 spreadsheetId,
                 range: sheetName,
@@ -1394,6 +1549,23 @@ function isUserRevoked(email) {
     const revoked = loadRevokedUsers();
     return !!revoked[email];
 }
+
+// ─── Changelog ──────────────────────────────────────────────────────────────
+
+app.get('/api/changelog', async (req, res) => {
+    try {
+        const changelogPath = path.join(__dirname, '..', 'CHANGELOG.md');
+        if (!fs.existsSync(changelogPath)) {
+            return res.status(404).json({ error: 'Changelog not found' });
+        }
+        const content = fs.readFileSync(changelogPath, 'utf8');
+        const hash = crypto.createHash('md5').update(content).digest('hex');
+        res.json({ content, hash });
+    } catch (error) {
+        console.error('Changelog error:', error);
+        res.status(500).json({ error: 'Failed to fetch changelog' });
+    }
+});
 
 // ─── SPA fallback ─────────────────────────────────────────────────────────────
 

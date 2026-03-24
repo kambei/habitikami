@@ -1058,101 +1058,67 @@ class HabitServiceImpl {
             const sheetName = "Counters";
             const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
-            // 1. Fetch all data to find if row exists for today
-            let values: any = await this.getData(sheetName);
+            // Fetch current data to find headers and today's row
+            const response = await gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: this.getSpreadsheetId(),
+                range: `${sheetName}!A:Z`,
+            });
 
-            // Check if sheet exists or needs creation
-            if (!Array.isArray(values) && values && 'error' in values) {
-                console.log(`Sheet ${sheetName} maybe missing, attempting to create...`);
-                try {
-                    await gapi.client.sheets.spreadsheets.batchUpdate({
-                        spreadsheetId: this.getSpreadsheetId(),
-                        resource: {
-                            requests: [{
-                                addSheet: {
-                                    properties: {
-                                        title: sheetName,
-                                        gridProperties: {
-                                            columnCount: 4,
-                                            frozenRowCount: 1
-                                        }
-                                    }
-                                }
-                            }]
-                        }
-                    });
-                    // Create header
-                    await gapi.client.sheets.spreadsheets.values.update({
-                        spreadsheetId: this.getSpreadsheetId(),
-                        range: `${sheetName}!A1:B1`,
-                        valueInputOption: 'USER_ENTERED',
-                        resource: {
-                            values: [["Date", "Smoke", "Smoked", "Coffee"]]
-                        }
-                    });
-                    // Retry fetch
-                    values = await this.getData(sheetName);
-                } catch (e) {
-                    // If sheet already exists, batchUpdate will fail, that's fine.
-                    // But if values was error, we needed it.
-                    console.log("Sheet creation skipped or failed", e);
-                }
-            }
-            if (!Array.isArray(values) && values && 'error' in values) throw new Error(values.error);
+            let rows = response.result.values || [];
 
-            // Find row for today
-            let rowIndex = -1;
-            let currentVal = 0;
-
-            if (Array.isArray(values)) {
-                for (let i = 0; i < values.length; i++) {
-                    if (values[i][0] === dateStr) {
-                        rowIndex = i;
-                        // assuming Smoke is col 1 (B), Smoked is col 2 (C)
-                        if (counterName === 'smoke') {
-                            currentVal = parseInt(values[i][1] || "0");
-                        } else if (counterName === 'smoked') {
-                            currentVal = parseInt(values[i][2] || "0");
-                        } else if (counterName === 'coffee') {
-                            currentVal = parseInt(values[i][3] || "0");
-                        }
-                        break;
-                    }
-                }
-            }
-
-            if (rowIndex !== -1) {
-                let range = `${sheetName}!B${rowIndex + 1}`;
-                if (counterName === 'smoked') {
-                    range = `${sheetName}!C${rowIndex + 1}`;
-                } else if (counterName === 'coffee') {
-                    range = `${sheetName}!D${rowIndex + 1}`;
-                }
+            // Initialize sheet if empty
+            if (rows.length === 0) {
                 await gapi.client.sheets.spreadsheets.values.update({
                     spreadsheetId: this.getSpreadsheetId(),
-                    range: range,
+                    range: `${sheetName}!A1:B1`,
                     valueInputOption: 'USER_ENTERED',
-                    resource: {
-                        values: [[currentVal + 1]]
-                    }
+                    resource: { values: [["Date", counterName]] }
                 });
-            } else {
-                // Append
-                // If today's row doesn't exist, we create it.
-                // If counter is 'smoke', we put [date, 1, 0]
-                // If counter is 'smoked', we put [date, 0, 1]
-                const newRow = [dateStr, 0, 0];
-                if (counterName === 'smoke') newRow[1] = 1;
-                else if (counterName === 'smoked') newRow[2] = 1;
-                else if (counterName === 'coffee') newRow[3] = 1;
-
                 await gapi.client.sheets.spreadsheets.values.append({
                     spreadsheetId: this.getSpreadsheetId(),
                     range: sheetName,
                     valueInputOption: 'USER_ENTERED',
-                    resource: {
-                        values: [newRow]
-                    }
+                    resource: { values: [[dateStr, 1]] }
+                });
+                return { success: true };
+            }
+
+            const headers = rows[0];
+            const dateIdx = headers.findIndex((h: any) => typeof h === 'string' && /date/i.test(h));
+            let counterIdx = headers.findIndex((h: any) => typeof h === 'string' && h.toLowerCase() === counterName.toLowerCase());
+
+            // If counter column doesn't exist, add it
+            if (counterIdx === -1) {
+                counterIdx = headers.length;
+                const colLetter = this.getColumnLetter(counterIdx);
+                await gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId: this.getSpreadsheetId(),
+                    range: `${sheetName}!${colLetter}1`,
+                    valueInputOption: 'USER_ENTERED',
+                    resource: { values: [[counterName]] }
+                });
+            }
+
+            const todayRowIndex = rows.findIndex((r: any[]) => r[dateIdx] === dateStr);
+            const colLetter = this.getColumnLetter(counterIdx);
+
+            if (todayRowIndex !== -1) {
+                const currentVal = parseInt(rows[todayRowIndex][counterIdx] || "0");
+                await gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId: this.getSpreadsheetId(),
+                    range: `${sheetName}!${colLetter}${todayRowIndex + 1}`,
+                    valueInputOption: 'USER_ENTERED',
+                    resource: { values: [[currentVal + 1]] }
+                });
+            } else {
+                const newRow = new Array(headers.length).fill(0);
+                newRow[dateIdx] = dateStr;
+                newRow[counterIdx] = 1;
+                await gapi.client.sheets.spreadsheets.values.append({
+                    spreadsheetId: this.getSpreadsheetId(),
+                    range: sheetName,
+                    valueInputOption: 'USER_ENTERED',
+                    resource: { values: [newRow] }
                 });
             }
 
@@ -1178,7 +1144,7 @@ class HabitServiceImpl {
         }
     }
 
-    async savePreferences(enabledTabs: string[], defaultTab?: string): Promise<{ success: boolean } | { error: string }> {
+    async savePreferences(enabledTabs: string[], defaultTab?: string, temptations?: any[]): Promise<{ success: boolean } | { error: string }> {
         try {
             const response = await fetch('/api/user/preferences', {
                 method: 'POST',
@@ -1186,7 +1152,11 @@ class HabitServiceImpl {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${this.accessToken}`,
                 },
-                body: JSON.stringify({ enabled_tabs: enabledTabs, default_tab: defaultTab || null }),
+                body: JSON.stringify({ 
+                    enabled_tabs: enabledTabs, 
+                    default_tab: defaultTab || null,
+                    temptations: temptations || null
+                }),
             });
             if (!response.ok) {
                 const data = await response.json();
@@ -1213,6 +1183,14 @@ class HabitServiceImpl {
         } catch (e: any) {
             return { error: e.message };
         }
+    }
+
+    async getChangelog(): Promise<{ content: string; hash: string }> {
+        const response = await fetch('/api/changelog');
+        if (!response.ok) {
+            throw new Error('Failed to fetch changelog');
+        }
+        return response.json();
     }
 
     async generateApiKey(): Promise<{ success: boolean; api_key: string } | { error: string }> {
@@ -1253,30 +1231,35 @@ class HabitServiceImpl {
         }
     }
 
-    async getCounters(): Promise<import('../types').CounterData[] | { error: string }> {
+    async getCounters(): Promise<any[] | { error: string }> {
         try {
             await this.ensureClient();
             const response = await gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: this.getSpreadsheetId(),
-                range: "Counters!A:D",
+                range: "Counters!A:Z",
             });
             const rows = response.result.values;
             if (!rows || rows.length === 0) return [];
 
-            // Skip header if present
-            const start = (rows[0][0] === "Date") ? 1 : 0;
+            const headers = rows[0];
+            const dateIdx = headers.findIndex((h: any) => typeof h === 'string' && /date/i.test(h));
+            
+            const colMap: Record<string, number> = {};
+            headers.forEach((h: any, i: number) => {
+                if (i !== dateIdx && h) colMap[h.toLowerCase()] = i;
+            });
 
-            const data = rows.slice(start).map((r: any[]) => ({
-                date: r[0] || "",
-                smoke: parseInt(r[1] || "0"),
-                smoked: parseInt(r[2] || "0"),
-                coffee: parseInt(r[3] || "0")
-            }));
-            // Return reversed to show latest first?
+            const data = rows.slice(1).map((row: any[]) => {
+                const entry: any = { date: row[dateIdx] || "" };
+                Object.keys(colMap).forEach(key => {
+                    entry[key] = parseInt(row[colMap[key]] || "0");
+                });
+                return entry;
+            });
+
             return data.reverse();
 
         } catch (e: any) {
-            // console.error("Error fetching counters", e);
             return { error: e.result?.error?.message || e.message };
         }
     }
@@ -1523,6 +1506,34 @@ class HabitServiceImpl {
         } catch (e: any) {
             return { error: e.message || 'Failed to archive worksheets' };
         }
+    }
+
+    async getTemptations(): Promise<any[]> {
+        const prefs: any = await this.getPreferences();
+        if (prefs && !prefs.error && prefs.temptations) {
+            return prefs.temptations;
+        }
+
+        // Default seeding for "Smoking" if no config exists
+        return [
+            {
+                id: "smoking",
+                label: "Smoking",
+                actions: [
+                    { id: "smoke", label: "Resisted", icon: "ShieldCheck", color: "#10b981", type: "positive" },
+                    { id: "smoked", label: "Smoked", icon: "Flame", color: "#ef4444", type: "negative" },
+                    { id: "coffee", label: "Coffee", icon: "Coffee", color: "#b45309", type: "neutral" }
+                ]
+            }
+        ];
+    }
+
+    async saveTemptations(temptations: any[]): Promise<{ success: boolean } | { error: string }> {
+        const prefs: any = await this.getPreferences();
+        if (prefs && !prefs.error) {
+            return this.savePreferences(prefs.enabled_tabs, prefs.default_tab, temptations);
+        }
+        return { error: "Could not fetch current preferences" };
     }
 }
 

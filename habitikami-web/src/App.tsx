@@ -12,7 +12,7 @@ const HabitTable = React.lazy(() => import('./components/HabitTable').then(m => 
 const Graphs = React.lazy(() => import('./components/Graphs').then(m => ({ default: m.Graphs })))
 const CompactHabitView = React.lazy(() => import('./components/CompactHabitView').then(m => ({ default: m.CompactHabitView })))
 const MobiusNotes = React.lazy(() => import('./components/MobiusNotes').then(m => ({ default: m.MobiusNotes })))
-const SmokeTemptationView = React.lazy(() => import('./components/SmokeTemptationView').then(m => ({ default: m.SmokeTemptationView })))
+const TemptationView = React.lazy(() => import('./components/TemptationView').then(m => ({ default: m.TemptationView })))
 const CountersView = React.lazy(() => import('./components/CountersView').then(m => ({ default: m.CountersView })))
 const LandingPage = React.lazy(() => import('./components/LandingPage').then(m => ({ default: m.LandingPage })))
 const OnboardingPage = React.lazy(() => import('./components/OnboardingPage').then(m => ({ default: m.OnboardingPage })))
@@ -583,7 +583,7 @@ function App() {
                 ) : activeSheet === 'MobNotes' ? (
                   <MobiusNotes />
                 ) : activeSheet === 'SmokeTemptation' ? (
-                  <SmokeTemptationView />
+                  <TemptationView />
                 ) : activeSheet === 'Counters' ? (
                   <CountersView />
                 ) : activeSheet === 'Help' ? (

@@ -1,27 +1,33 @@
 import { useState, useEffect } from 'react';
 import { habitService } from '../services/HabitService';
-import type { CounterData } from '../types';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { SmokeVsResistedGraph } from './graphs/SmokeVsResistedGraph';
+import { CounterGraph } from './graphs/CounterGraph';
 import { useTranslation } from '../i18n';
 
 export const CountersView = () => {
     const { t } = useTranslation();
-    const [data, setData] = useState<CounterData[]>([]);
+    const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [temptations, setTemptations] = useState<any[]>([]);
 
     const fetchData = async () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await habitService.getCounters();
-            if ('error' in result) {
-                setError(result.error);
-            } else {
-                setData(result);
+            const [counters, tConfig] = await Promise.all([
+                habitService.getCounters(),
+                habitService.getTemptations()
+            ]);
+            
+            if (Array.isArray(counters)) {
+                setData(counters);
+            } else if (counters && 'error' in counters) {
+                setError(counters.error);
             }
+            
+            setTemptations(tConfig);
         } catch (e: any) {
             setError(e.message);
         } finally {
@@ -52,23 +58,35 @@ export const CountersView = () => {
             )}
 
             {!loading && !error && data.length > 0 && (
-                <SmokeVsResistedGraph data={data} />
+                <CounterGraph data={data} />
             )}
 
             <div className="flex-1 overflow-auto rounded-xl border border-border shadow-sm bg-card/50">
                 <table className="w-full text-left">
                     <thead className="bg-secondary/50 sticky top-0 backdrop-blur-sm z-10">
                         <tr>
-                            <th className="p-4 font-semibold text-muted-foreground w-1/4">{t('countersDate')}</th>
-                            <th className="p-4 font-semibold text-muted-foreground w-1/4">{t('countersResisted')}</th>
-                            <th className="p-4 font-semibold text-muted-foreground w-1/4">{t('countersSmoked')}</th>
-                            <th className="p-4 font-semibold text-muted-foreground w-1/4">{t('countersCoffee')}</th>
+                            <th className="p-4 font-semibold text-muted-foreground">{t('countersDate')}</th>
+                            {Object.keys(data[0] || {}).filter(k => k !== 'date').map(key => {
+                                // Find label
+                                let label = key;
+                                for (const tConfig of temptations) {
+                                    const action = tConfig.actions.find((a: any) => a.id === key);
+                                    if (action) {
+                                        label = action.id === 'smoke' ? t('countersResisted') : 
+                                                action.id === 'smoked' ? t('countersSmoked') : 
+                                                action.id === 'coffee' ? t('countersCoffee') : 
+                                                action.label;
+                                        break;
+                                    }
+                                }
+                                return <th key={key} className="p-4 font-semibold text-muted-foreground">{label}</th>;
+                            })}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                         {loading && data.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                                <td colSpan={10} className="p-8 text-center text-muted-foreground">
                                     <div className="flex flex-col items-center gap-2">
                                         <Loader2 className="animate-spin w-6 h-6" />
                                         <span>{t('countersLoadingData')}</span>
@@ -77,7 +95,7 @@ export const CountersView = () => {
                             </tr>
                         ) : data.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                                <td colSpan={10} className="p-8 text-center text-muted-foreground">
                                     {t('countersNoRecords')}
                                 </td>
                             </tr>
@@ -85,15 +103,22 @@ export const CountersView = () => {
                             data.map((row, i) => (
                                 <tr key={row.date + i} className="hover:bg-muted/50 transition-colors">
                                     <td className="p-4 font-medium">{row.date}</td>
-                                    <td className="p-4 text-green-600 font-bold font-mono text-lg">
-                                        +{row.smoke}
-                                    </td>
-                                    <td className="p-4 text-red-600 font-bold font-mono text-lg">
-                                        +{row.smoked}
-                                    </td>
-                                    <td className="p-4 text-amber-700 font-bold font-mono text-lg">
-                                        +{row.coffee}
-                                    </td>
+                                    {Object.keys(data[0] || {}).filter(k => k !== 'date').map(key => {
+                                        // Find color
+                                        let color = "currentColor";
+                                        for (const tConfig of temptations) {
+                                            const action = tConfig.actions.find((a: any) => a.id === key);
+                                            if (action) {
+                                                color = action.color;
+                                                break;
+                                            }
+                                        }
+                                        return (
+                                            <td key={key} className="p-4 font-bold font-mono text-lg" style={{ color }}>
+                                                +{row[key] || 0}
+                                            </td>
+                                        );
+                                    })}
                                 </tr>
                             ))
                         )}

@@ -191,6 +191,12 @@ export const CounterGraph = ({ data }: Props) => {
                             for (const tConfig of temptations) {
                                 const action = tConfig.actions.find((a: any) => a.id.toLowerCase() === key.toLowerCase());
                                 if (action) {
+                                    // Filter out binary metrics (resisted/succumbed) as requested in v5.0.4
+                                    // We only show "neutral" or generic counters (not 'resist' or 'succumb' types)
+                                    if (action.type === 'resist' || action.type === 'succumb') {
+                                        return null;
+                                    }
+
                                     const categoryPrefix = (tConfig.label && tConfig.label !== 'Temptations' && tConfig.label !== 'Smoking') 
                                         ? `${tConfig.label}: ` 
                                         : '';
@@ -200,6 +206,9 @@ export const CounterGraph = ({ data }: Props) => {
                                     break;
                                 }
                             }
+
+                            // If we filtered it out (returned null above), don't render the Line
+                            if (label === key && (key === 'smoke' || key === 'smoked')) return null; // Fallback filter
 
                             return (
                                 <Line 

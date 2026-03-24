@@ -55,7 +55,16 @@ export const TemptationSettings = () => {
     const updateAction = (tId: string, aId: string, field: string, value: any) => {
         const updated = temptations.map(t => {
             if (t.id === tId) {
-                const updatedActions = t.actions.map((a: any) => a.id === aId ? { ...a, [field]: value } : a);
+                const updatedActions = t.actions.map((a: any) => {
+                    if (a.id === aId) {
+                        // v5.0.4: Sync color to Google Sheet column header in real-time
+                        if (field === 'color') {
+                            habitService.setHabitColor("Counters", a.id, value).catch(console.error);
+                        }
+                        return { ...a, [field]: value };
+                    }
+                    return a;
+                });
                 return { ...t, actions: updatedActions };
             }
             return t;

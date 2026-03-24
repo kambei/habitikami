@@ -3,7 +3,6 @@ import type { SheetType, ViewType } from './types'
 import { cn } from './lib/utils'
 import { habitService } from './services/HabitService'
 import { Toaster, toast } from 'sonner'
-import { TemptationBar } from './components/TemptationBar';
 import { AnimatePresence, motion } from 'framer-motion'
 import { LayoutDashboard, Settings, Github, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone } from 'lucide-react'
 import { useTranslation } from './i18n'
@@ -612,12 +611,7 @@ function App() {
           </header>
 
           <main className="flex-1 p-4 w-full h-full overflow-hidden flex flex-col pb-4">
-            {/* Dynamic Temptation Hero Bar (v5.0.2) */}
-            {isLoggedIn && !['Updates', 'Settings', 'Help'].includes(activeSheet) && (
-              <div className="mb-4">
-                <TemptationBar />
-              </div>
-            )}
+            {/* Content Rendering */}
 
             <div className="bg-card rounded-xl border border-border shadow-2xl overflow-hidden flex-1 flex flex-col relative">
               <Suspense fallback={<LoaderFallback />}>

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.0.4] - 2026-03-24
+### 🧹 Clean Trends & Sheet Sync
+- **Simplified Dashboard**: Removed the top-level Temptation Hero Bar to favor the detailed original view.
+- **Focused Counter Graphs**: Filtered out binary "Resisted/Succumbed" metrics from trend lines to focus exclusively on numerical habit data.
+- **Bi-Directional Color Sync**: Changing temptation colors in settings now automatically updates the Google Sheet column header colors in real-time.
+
 ## [5.0.3] - 2026-03-24
 ### ✨ Enhanced Analytics & Layout
 - **Time-Based Aggregation**: Introduced a new toggle between **Daily** and **Monthly** views for counter graphs to visualize long-term trends.

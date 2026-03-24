@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Sparkles, TrendingUp, Target, Zap, Github, Smartphone, Gitlab } from 'lucide-react';
+import { Sparkles, TrendingUp, Target, Zap, Github, Smartphone } from 'lucide-react';
 import { useTranslation } from '../i18n';
 
 interface LandingPageProps {
@@ -362,11 +362,6 @@ export function LandingPage({ onSignIn, isLoading }: LandingPageProps) {
                     <a href="https://github.com/kambei/habitikami" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors duration-200">
                         <Github className="w-3.5 h-3.5" />
                         GitHub
-                    </a>
-                    <span className="w-1 h-1 rounded-full bg-white/20"></span>
-                    <a href="https://gitlab.com/kambei/habitikami" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors duration-200">
-                        <Gitlab className="w-3.5 h-3.5" />
-                        GitLab
                     </a>
                     <span className="w-1 h-1 rounded-full bg-white/20"></span>
                     <a href="/privacy" className="hover:text-primary transition-colors duration-200">

@@ -225,8 +225,12 @@ function App() {
   // Back button handling & double-back-to-exit
   useEffect(() => {
     // Initial state: ensure we have at least one valid state at the start
-    if (!history.state) {
-      history.replaceState({ tab: activeSheet, isRoot: true }, '', `#${activeSheet}`);
+    if (!history.state && !isCheckingSession) {
+      if (!isLoggedIn) {
+        history.replaceState({ isHome: true }, '', '#home');
+      } else {
+        history.replaceState({ tab: activeSheet, isRoot: true }, '', `#${activeSheet}`);
+      }
     }
 
     const handlePopState = (e: PopStateEvent) => {
@@ -239,6 +243,9 @@ function App() {
         setTimeout(() => {
           isMovingHistory.current = false;
         }, 50);
+      } else if (e.state?.isHome || window.location.hash === '#home') {
+        setIsEditingTabs(false);
+        // We are on home/landing page
       } else {
         // We probably backed out of our history stack
         const now = Date.now();
@@ -250,14 +257,16 @@ function App() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           toast.info(t('backToExit' as any), { duration: 2000 });
           // Guard state: push us back into the app flow
-          history.pushState({ tab: activeSheet, isRoot: true }, '', `#${activeSheet}`);
+          const hash = isLoggedIn ? `#${activeSheet}` : '#home';
+          const state = isLoggedIn ? { tab: activeSheet, isRoot: true } : { isHome: true };
+          history.pushState(state, '', hash);
         }
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [activeSheet, t]);
+  }, [activeSheet, isLoggedIn, isCheckingSession, t]);
 
   const loadPreferences = async () => {
     setIsLoadingPrefs(true);
@@ -324,6 +333,7 @@ function App() {
     setSpreadsheetId(null);
     setEnabledTabs(null);
     setIsEditingTabs(false);
+    history.pushState({ isHome: true }, '', '#home');
   };
 
   const handleTabSelectionComplete = (tabs: ViewType[], newDefaultTab?: ViewType) => {

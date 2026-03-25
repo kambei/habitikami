@@ -15,6 +15,11 @@ All notable changes to this project will be documented in this file.
 ### 🖼️ Widget Previews
 - **All 10 widgets** now show fancy preview layouts in the Android widget picker with sample data — no more blank placeholders.
 
+## 🌐 Web 5.2.3 - 2026-03-25
+### 📊 Desktop Support & UI Polish
+- **Universal Expansion**: The "Expand" button is now available on desktop as well! Hover over any graph to reveal the button and view it in a distraction-free fullscreen overlay.
+- **Glassmorphism Overlay**: Enhanced the fullscreen modal with a consistent background and optimized layout for all screen sizes.
+
 ## 🌐 Web 5.2.2 - 2026-03-25
 ### 📊 Expandable Graphs & Manual Rotation
 - **Manual Rotation Toggle**: Added a "Rotate" button in the expanded graph view to force a landscape-oriented display via CSS transforms. This ensures a great experience even when system orientation lock is unavailable (e.g., inside the Android app wrapper).

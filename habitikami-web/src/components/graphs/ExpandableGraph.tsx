@@ -54,7 +54,7 @@ export const ExpandableGraph: React.FC<ExpandableGraphProps> = ({ children, titl
             {/* Expand Button - Visible only on mobile/small screens */}
             <button
                 onClick={toggleExpand}
-                className="absolute top-2 right-2 z-10 p-2 bg-background/80 hover:bg-background border border-border rounded-lg shadow-sm sm:hidden flex items-center justify-center transition-colors"
+                className="absolute top-2 right-2 z-10 p-2 bg-background/80 hover:bg-background border border-border rounded-lg shadow-sm flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                 title="Expand Graph"
             >
                 <Maximize2 className="w-4 h-4 text-foreground" />
@@ -99,26 +99,26 @@ export const ExpandableGraph: React.FC<ExpandableGraphProps> = ({ children, titl
                             <div 
                                 className={cn(
                                     "w-full h-full transition-all duration-300 flex items-center justify-center",
-                                    isRotated && "fixed inset-0 z-[10000] bg-background w-[100vh] h-[100vw] rotate-90 origin-center"
+                                    isRotated && "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] bg-background w-[100dvh] h-[100dvw] rotate-90 origin-center"
                                 )}
                             >
-                                <div className="w-full h-full relative">
+                                <div className="w-full h-full relative p-4">
                                     {children}
                                     
                                     {/* Small floating close/rotate buttons if rotated fixed fullscreen */}
                                     {isRotated && (
-                                        <div className="absolute top-4 right-4 z-[10001] flex flex-col gap-4 -rotate-90 origin-center translate-x-1/2">
+                                        <div className="absolute top-4 right-4 z-[10001] flex flex-col gap-4 -rotate-90 origin-center">
                                             <button
                                                 onClick={toggleExpand}
-                                                className="p-3 bg-secondary/80 hover:bg-secondary rounded-full backdrop-blur-sm shadow-xl"
+                                                className="p-3 bg-secondary/80 hover:bg-secondary rounded-full backdrop-blur-sm shadow-xl flex items-center justify-center"
                                             >
-                                                <X className="w-8 h-8" />
+                                                <X className="w-6 h-6" />
                                             </button>
                                             <button
                                                 onClick={toggleRotate}
-                                                className="p-3 bg-primary/80 hover:bg-primary text-primary-foreground rounded-full backdrop-blur-sm shadow-xl"
+                                                className="p-3 bg-primary/80 hover:bg-primary text-primary-foreground rounded-full backdrop-blur-sm shadow-xl flex items-center justify-center"
                                             >
-                                                <RotateCw className="w-8 h-8" />
+                                                <RotateCw className="w-6 h-6" />
                                             </button>
                                         </div>
                                     )}

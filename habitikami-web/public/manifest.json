@@ -70,10 +70,10 @@
       ],
       "screenshots": [
         {
-          "src": "/screenshots/desktop.png",
-          "sizes": "768x1713",
+          "src": "/icons/icon-512.png",
+          "sizes": "512x512",
           "type": "image/png",
-          "label": "Habit Summary Widget Preview"
+          "label": "Habitikami Widget"
         }
       ],
       "update": 900

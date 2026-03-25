@@ -3,6 +3,7 @@
   "short_name": "Habitikami",
   "description": "Build better habits, track your progress, and level up your daily routine.",
   "start_url": "/",
+  "id": "/",
   "display": "standalone",
   "background_color": "#0a0a0f",
   "theme_color": "#7c3aed",

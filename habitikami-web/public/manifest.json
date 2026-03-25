@@ -30,13 +30,13 @@
   "screenshots": [
     {
       "src": "/screenshots/mobile.png",
-      "sizes": "1080x1920",
+      "sizes": "768x1713",
       "type": "image/png",
       "form_factor": "narrow"
     },
     {
       "src": "/screenshots/desktop.png",
-      "sizes": "1080x1920",
+      "sizes": "768x1713",
       "type": "image/png",
       "form_factor": "wide"
     }
@@ -51,13 +51,7 @@
       "ms_ac_template": "/widgets/habit-summary.json",
       "data": "/widgets/data/habit-summary-data.json",
       "type": "application/json",
-      "screenshots": [
-        {
-          "src": "/screenshots/mobile.png",
-          "sizes": "1080x1920",
-          "type": "image/png"
-        }
-      ],
+      "screenshots": [],
       "icons": [
         {
           "src": "/icons/icon-512.png",

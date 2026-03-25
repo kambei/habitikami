@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp } from 'lucide-reac
 import { habitService } from '../../services/HabitService';
 import { cn } from '../../lib/utils';
 import { useTranslation } from '../../i18n';
+import { ExpandableGraph } from './ExpandableGraph';
 
 interface Props {
     data: any[];
@@ -213,91 +214,93 @@ export const CounterGraph = ({ data }: Props) => {
                 >
                     <h4 className="text-base font-bold mb-3">{chart.label}</h4>
 
-                    <div className={cn(
+                    <ExpandableGraph title={chart.label} containerClassName={cn(
                         "min-h-0",
                         idx === temptationCharts.length - 1 ? "h-[350px]" : "h-[250px]"
                     )}>
-                        {chartMode === 'weekly' ? (
-                            chart.barData.length === 0 ? (
-                                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                                    No data this week
-                                </div>
-                            ) : (
-                                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                                    <BarChart data={chart.barData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                                        <XAxis
-                                            dataKey="date"
-                                            stroke="#888"
-                                            tickFormatter={(value) => {
-                                                const parts = value.split('-');
-                                                const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-                                                return date.toLocaleDateString(locale, { weekday: 'short' });
-                                            }}
-                                        />
-                                        <YAxis stroke="#888" allowDecimals={false} width={30} />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
-                                            itemStyle={{ color: '#f3f4f6' }}
-                                            labelFormatter={(label) => {
-                                                const parts = label.split('-');
-                                                const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-                                                return date.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' });
-                                            }}
-                                        />
-                                        <Legend />
-                                        {chart.series.map(s => (
-                                            <Bar key={s.key} dataKey={s.key} fill={s.color} radius={[4, 4, 0, 0]} />
-                                        ))}
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            )
-                        ) : (
-                            chart.lineData.length === 0 ? (
-                                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                                    No history data
-                                </div>
-                            ) : (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={chart.lineData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                                        <XAxis
-                                            dataKey="date"
-                                            stroke="#888"
-                                            tickFormatter={(value) => {
-                                                const parts = value.split('-');
-                                                const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-                                                return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
-                                            }}
-                                            minTickGap={30}
-                                        />
-                                        <YAxis stroke="#888" allowDecimals={false} width={30} />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
-                                            itemStyle={{ color: '#f3f4f6' }}
-                                            labelFormatter={(label) => {
-                                                const parts = label.split('-');
-                                                const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-                                                return date.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
-                                            }}
-                                        />
-                                        <Legend />
-                                        {chart.series.map(s => (
-                                            <Line
-                                                key={s.key}
-                                                type="monotone"
-                                                dataKey={s.key}
-                                                stroke={s.color}
-                                                strokeWidth={3}
-                                                activeDot={{ r: 8 }}
-                                                dot={{ r: 4, strokeWidth: 2, fill: 'var(--background)' }}
+                        <div className="w-full h-full">
+                            {chartMode === 'weekly' ? (
+                                chart.barData.length === 0 ? (
+                                    <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                                        No data this week
+                                    </div>
+                                ) : (
+                                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                                        <BarChart data={chart.barData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                                            <XAxis
+                                                dataKey="date"
+                                                stroke="#888"
+                                                tickFormatter={(value) => {
+                                                    const parts = value.split('-');
+                                                    const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                                                    return date.toLocaleDateString(locale, { weekday: 'short' });
+                                                }}
                                             />
-                                        ))}
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            )
-                        )}
-                    </div>
+                                            <YAxis stroke="#888" allowDecimals={false} width={30} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
+                                                itemStyle={{ color: '#f3f4f6' }}
+                                                labelFormatter={(label) => {
+                                                    const parts = label.split('-');
+                                                    const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                                                    return date.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' });
+                                                }}
+                                            />
+                                            <Legend />
+                                            {chart.series.map(s => (
+                                                <Bar key={s.key} dataKey={s.key} fill={s.color} radius={[4, 4, 0, 0]} />
+                                            ))}
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                )
+                            ) : (
+                                chart.lineData.length === 0 ? (
+                                    <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                                        No history data
+                                    </div>
+                                ) : (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={chart.lineData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                                            <XAxis
+                                                dataKey="date"
+                                                stroke="#888"
+                                                tickFormatter={(value) => {
+                                                    const parts = value.split('-');
+                                                    const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                                                    return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+                                                }}
+                                                minTickGap={30}
+                                            />
+                                            <YAxis stroke="#888" allowDecimals={false} width={30} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
+                                                itemStyle={{ color: '#f3f4f6' }}
+                                                labelFormatter={(label) => {
+                                                    const parts = label.split('-');
+                                                    const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                                                    return date.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+                                                }}
+                                            />
+                                            <Legend />
+                                            {chart.series.map(s => (
+                                                <Line
+                                                    key={s.key}
+                                                    type="monotone"
+                                                    dataKey={s.key}
+                                                    stroke={s.color}
+                                                    strokeWidth={3}
+                                                    activeDot={{ r: 8 }}
+                                                    dot={{ r: 4, strokeWidth: 2, fill: 'var(--background)' }}
+                                                />
+                                            ))}
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                )
+                            )}
+                        </div>
+                    </ExpandableGraph>
                 </div>
             ))}
 

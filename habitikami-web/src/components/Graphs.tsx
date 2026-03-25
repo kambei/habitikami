@@ -10,6 +10,7 @@ import { type HabitData } from '../types';
 import { parseDate } from '../utils/dateParsing';
 import { Skeleton } from './ui/Skeleton';
 import { useTranslation } from '../i18n';
+import { ExpandableGraph } from './graphs/ExpandableGraph';
 
 // Deterministic color generation
 const COLORS = [
@@ -174,8 +175,12 @@ export function Graphs() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <CompletionTrends data={dailyTrends} />
-                <DayOfWeekPerformance data={dayOfWeekStats} />
+                <ExpandableGraph title={t('graphsDailyTrend')}>
+                    <CompletionTrends data={dailyTrends} />
+                </ExpandableGraph>
+                <ExpandableGraph title={t('graphsWeeklyPerformance')}>
+                    <DayOfWeekPerformance data={dayOfWeekStats} />
+                </ExpandableGraph>
             </div>
 
             {/* Main Stats: Bar Chart */}
@@ -213,153 +218,157 @@ export function Graphs() {
                         </select>
                     </div>
                 </div>
-                <div className="w-full min-h-0 overflow-x-auto overflow-y-hidden" style={{ height: `${Math.max(400, filteredStats.length * 56)}px` }}>
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                        <BarChart
-                            data={filteredStats}
-                            layout="vertical"
-                            margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
-                            barSize={45} // More "cicciotte"
-                            barGap={-45} // Maintain overlap
-                        >
-                            <defs>
-                                <pattern id="no-completion-pattern" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
-                                    <rect width="10" height="10" fill="white" />
-                                    <line x1="5" y1="0" x2="5" y2="10" stroke="#ef4444" strokeWidth="4" />
-                                </pattern>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal={false} />
-                            <XAxis type="number" domain={[0, 100]} stroke="#888" hide />
-                            <YAxis
-                                dataKey="name"
-                                type="category"
-                                width={0}
-                                tick={false}
-                            />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
-                                itemStyle={{ color: '#f3f4f6' }}
-                                content={({ active, payload }) => {
-                                    if (!active || !payload?.length) return null;
-                                    const entry = payload.find((p: any) => p.dataKey === 'percentage');
-                                    if (!entry) return null;
-                                    return (
-                                        <div style={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: 8, padding: '8px 12px' }}>
-                                            <p style={{ color: '#f3f4f6', margin: 0, fontSize: 13 }}>
-                                                <strong>{entry.payload.name}</strong>: {entry.value}% {t('graphsCompletion')}
-                                            </p>
-                                        </div>
-                                    );
-                                }}
-                            />
-                            {/* Layer 1: Background / Zero Completion Pattern (Always 100%) */}
-                            <Bar 
-                                dataKey={() => 100} 
-                                radius={4}
-                                isAnimationActive={false}
+                <ExpandableGraph title={t('graphsHabitCompletion')} containerClassName="flex-1 min-h-0">
+                    <div className="w-full min-h-0 overflow-x-auto overflow-y-hidden" style={{ height: `${Math.max(400, filteredStats.length * 56)}px` }}>
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                            <BarChart
+                                data={filteredStats}
+                                layout="vertical"
+                                margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+                                barSize={45} // More "cicciotte"
+                                barGap={-45} // Maintain overlap
                             >
-                                {filteredStats.map((entry, index) => (
-                                    <Cell 
-                                        key={`bg-${index}`} 
-                                        fill={entry.percentage === 0 ? 'url(#no-completion-pattern)' : 'rgba(255,255,255,0.05)'} 
-                                    />
-                                ))}
-                            </Bar>
-                            {/* Layer 2: Actual Completion Bar (Drawn on top of background) */}
-                            <Bar 
-                                dataKey="percentage" 
-                                radius={4}
-                            >
-                                {filteredStats.map((entry, index) => (
-                                    <Cell 
-                                        key={`cell-${index}`} 
-                                        fill={entry.percentage === 0 ? 'transparent' : getColor(entry.name)} 
-                                    />
-                                ))}
-                            </Bar>
-                            {/* Layer 3: Invisible Label Layer (Always 100%, drawn on the very top) */}
-                            <Bar 
-                                dataKey={() => 100} 
-                                fill="transparent"
-                                isAnimationActive={false}
-                            >
-                                <LabelList
+                                <defs>
+                                    <pattern id="no-completion-pattern" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+                                        <rect width="10" height="10" fill="white" />
+                                        <line x1="5" y1="0" x2="5" y2="10" stroke="#ef4444" strokeWidth="4" />
+                                    </pattern>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal={false} />
+                                <XAxis type="number" domain={[0, 100]} stroke="#888" hide />
+                                <YAxis
                                     dataKey="name"
-                                    content={(props: any) => {
-                                        const { x, y, width, height, value, index } = props;
-                                        const entry = filteredStats[index];
+                                    type="category"
+                                    width={0}
+                                    tick={false}
+                                />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
+                                    itemStyle={{ color: '#f3f4f6' }}
+                                    content={({ active, payload }) => {
+                                        if (!active || !payload?.length) return null;
+                                        const entry = payload.find((p: any) => p.dataKey === 'percentage');
                                         if (!entry) return null;
-
-                                        const textWidth = value.length * 8 + 12;
-                                        const isZero = entry.percentage === 0;
-
                                         return (
-                                            <g>
-                                                {/* Left: Habit Name */}
-                                                <rect
-                                                    x={x + 10}
-                                                    y={y + (height - 30) / 2}
-                                                    width={textWidth}
-                                                    height={30}
-                                                    fill="white"
-                                                    rx={6}
-                                                    ry={6}
-                                                />
-                                                <text
-                                                    x={x + 16} 
-                                                    y={y + height / 2}
-                                                    fill="black"
-                                                    textAnchor="start"
-                                                    dominantBaseline="central"
-                                                    style={{ fontSize: 13, fontWeight: 700, pointerEvents: 'none' }}
-                                                >
-                                                    {value}
-                                                </text>
-
-                                                {/* Right: NO DATA (if zero) */}
-                                                {isZero && (
-                                                    <g>
-                                                        <rect
-                                                            x={x + width - 85}
-                                                            y={y + (height - 30) / 2}
-                                                            width={75}
-                                                            height={30}
-                                                            fill="white"
-                                                            rx={6}
-                                                            ry={6}
-                                                        />
-                                                        <text
-                                                            x={x + width - 47.5}
-                                                            y={y + height / 2}
-                                                            fill="#ef4444"
-                                                            textAnchor="middle"
-                                                            dominantBaseline="central"
-                                                            style={{ fontSize: 11, fontWeight: 900, pointerEvents: 'none' }}
-                                                        >
-                                                            NO DATA
-                                                        </text>
-                                                    </g>
-                                                )}
-                                            </g>
+                                            <div style={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: 8, padding: '8px 12px' }}>
+                                                <p style={{ color: '#f3f4f6', margin: 0, fontSize: 13 }}>
+                                                    <strong>{entry.payload.name}</strong>: {entry.value}% {t('graphsCompletion')}
+                                                </p>
+                                            </div>
                                         );
                                     }}
                                 />
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
+                                {/* Layer 1: Background / Zero Completion Pattern (Always 100%) */}
+                                <Bar 
+                                    dataKey={() => 100} 
+                                    radius={4}
+                                    isAnimationActive={false}
+                                >
+                                    {filteredStats.map((entry, index) => (
+                                        <Cell 
+                                            key={`bg-${index}`} 
+                                            fill={entry.percentage === 0 ? 'url(#no-completion-pattern)' : 'rgba(255,255,255,0.05)'} 
+                                        />
+                                    ))}
+                                </Bar>
+                                {/* Layer 2: Actual Completion Bar (Drawn on top of background) */}
+                                <Bar 
+                                    dataKey="percentage" 
+                                    radius={4}
+                                >
+                                    {filteredStats.map((entry, index) => (
+                                        <Cell 
+                                            key={`cell-${index}`} 
+                                            fill={entry.percentage === 0 ? 'transparent' : getColor(entry.name)} 
+                                        />
+                                    ))}
+                                </Bar>
+                                {/* Layer 3: Invisible Label Layer (Always 100%, drawn on the very top) */}
+                                <Bar 
+                                    dataKey={() => 100} 
+                                    fill="transparent"
+                                    isAnimationActive={false}
+                                >
+                                    <LabelList
+                                        dataKey="name"
+                                        content={(props: any) => {
+                                            const { x, y, width, height, value, index } = props;
+                                            const entry = filteredStats[index];
+                                            if (!entry) return null;
+
+                                            const textWidth = value.length * 8 + 12;
+                                            const isZero = entry.percentage === 0;
+
+                                            return (
+                                                <g>
+                                                    {/* Left: Habit Name */}
+                                                    <rect
+                                                        x={x + 10}
+                                                        y={y + (height - 30) / 2}
+                                                        width={textWidth}
+                                                        height={30}
+                                                        fill="white"
+                                                        rx={6}
+                                                        ry={6}
+                                                    />
+                                                    <text
+                                                        x={x + 16} 
+                                                        y={y + height / 2}
+                                                        fill="black"
+                                                        textAnchor="start"
+                                                        dominantBaseline="central"
+                                                        style={{ fontSize: 13, fontWeight: 700, pointerEvents: 'none' }}
+                                                    >
+                                                        {value}
+                                                    </text>
+
+                                                    {/* Right: NO DATA (if zero) */}
+                                                    {isZero && (
+                                                        <g>
+                                                            <rect
+                                                                x={x + width - 85}
+                                                                y={y + (height - 30) / 2}
+                                                                width={75}
+                                                                height={30}
+                                                                fill="white"
+                                                                rx={6}
+                                                                ry={6}
+                                                            />
+                                                            <text
+                                                                x={x + width - 47.5}
+                                                                y={y + height / 2}
+                                                                fill="#ef4444"
+                                                                textAnchor="middle"
+                                                                dominantBaseline="central"
+                                                                style={{ fontSize: 11, fontWeight: 900, pointerEvents: 'none' }}
+                                                            >
+                                                                NO DATA
+                                                            </text>
+                                                        </g>
+                                                    )}
+                                                </g>
+                                            );
+                                        }}
+                                    />
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </ExpandableGraph>
             </div>
 
             {/* Heatmaps Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {sortedStats.map(stat => (
                     <div key={stat.name} className="bg-card border border-border p-4 rounded-xl">
-                        <HabitHeatmap
-                            data={allData}
-                            habitName={stat.name}
-                            completionRate={stat.percentage}
-                            color={getColor(stat.name)}
-                        />
+                        <ExpandableGraph title={stat.name}>
+                            <HabitHeatmap
+                                data={allData}
+                                habitName={stat.name}
+                                completionRate={stat.percentage}
+                                color={getColor(stat.name)}
+                            />
+                        </ExpandableGraph>
                     </div>
                 ))}
             </div>

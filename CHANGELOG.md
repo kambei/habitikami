@@ -15,6 +15,12 @@ All notable changes to this project will be documented in this file.
 ### 🖼️ Widget Previews
 - **All 10 widgets** now show fancy preview layouts in the Android widget picker with sample data — no more blank placeholders.
 
+## 🌐 Web 5.2.1 - 2026-03-25
+### 📊 Expandable Graphs
+- **Mobile Landscape Mode**: Added an "expand" button at the top right of every graph on mobile devices.
+- **Fullscreen View**: Graphs now open in a dedicated fullscreen overlay, optimizing the available space and encouraging landscape orientation for better chart readability.
+- **Universal Support**: Integrated across all visualizations, including Trends, Performance, Habit Completion, Heatmaps, and Temptation History.
+
 ## 🌐 Web 5.2.0 - 2026-03-25
 ### 🖼️ Windows 11 PWA Widgets
 - **Native Widget Support**: Developed the infrastructure for Windows 11 PWA Widgets using Adaptive Cards.

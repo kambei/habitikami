@@ -54,23 +54,36 @@ export const CounterGraph = ({ data }: Props) => {
         return `${fmt(weekBounds.start)} — ${fmt(weekBounds.end)}`;
     }, [weekBounds, locale]);
 
-    // Monthly aggregation for trend line chart
-    const monthlyHistory = useMemo(() => {
-        const monthlyMap: Record<string, any> = {};
+    // Selected month daily data for trend line chart
+    const selectedMonthData = useMemo(() => {
+        const { year, month } = currentMonth;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        const dataMap: Record<string, any> = {};
         sortedData.forEach(d => {
-            const date = new Date(d.date);
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            if (!monthlyMap[monthKey]) {
-                monthlyMap[monthKey] = { date: monthKey };
-            }
-            Object.keys(d).forEach(k => {
-                if (k !== 'date') {
-                    monthlyMap[monthKey][k] = (monthlyMap[monthKey][k] || 0) + (d[k] || 0);
+            // Assume d.date is "YYYY-MM-DD"
+            if (!d.date) return;
+            const parts = d.date.split('-');
+            if (parts.length >= 2) {
+                const y = parseInt(parts[0]);
+                const m = parseInt(parts[1]);
+                if (y === year && (m - 1) === month) {
+                    dataMap[d.date] = d;
                 }
-            });
+            }
         });
-        return Object.values(monthlyMap).sort((a: any, b: any) => a.date.localeCompare(b.date));
-    }, [sortedData]);
+
+        const fullMonthData = [];
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            if (dataMap[dateStr]) {
+                fullMonthData.push(dataMap[dateStr]);
+            } else {
+                fullMonthData.push({ date: dateStr });
+            }
+        }
+        return fullMonthData;
+    }, [sortedData, currentMonth]);
 
     const changeMonth = (delta: number) => {
         setCurrentMonth(prev => {
@@ -105,7 +118,7 @@ export const CounterGraph = ({ data }: Props) => {
             };
 
             const barData = weekData.map(d => ({ date: d.date, ...mapEntry(d) }));
-            const lineData = monthlyHistory.map(d => ({ date: d.date, ...mapEntry(d) }));
+            const lineData = selectedMonthData.map(d => ({ date: d.date, ...mapEntry(d) }));
 
             const series: { key: string; color: string }[] = [];
             if (resistAction) series.push({ key: resistAction.label || resistAction.id, color: resistAction.color });
@@ -114,7 +127,7 @@ export const CounterGraph = ({ data }: Props) => {
 
             return { label: tConfig.label, barData, lineData, series };
         });
-    }, [temptations, weekData, monthlyHistory]);
+    }, [temptations, weekData, selectedMonthData]);
 
     if (temptationCharts.length === 0 && sortedData.length === 0) {
         return (
@@ -216,13 +229,21 @@ export const CounterGraph = ({ data }: Props) => {
                                         <XAxis
                                             dataKey="date"
                                             stroke="#888"
-                                            tickFormatter={(value) => new Date(value).toLocaleDateString(locale, { weekday: 'short' })}
+                                            tickFormatter={(value) => {
+                                                const parts = value.split('-');
+                                                const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                                                return date.toLocaleDateString(locale, { weekday: 'short' });
+                                            }}
                                         />
                                         <YAxis stroke="#888" allowDecimals={false} width={30} />
                                         <Tooltip
                                             contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
                                             itemStyle={{ color: '#f3f4f6' }}
-                                            labelFormatter={(label) => new Date(label).toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' })}
+                                            labelFormatter={(label) => {
+                                                const parts = label.split('-');
+                                                const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                                                return date.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' });
+                                            }}
                                         />
                                         <Legend />
                                         {chart.series.map(s => (
@@ -244,18 +265,20 @@ export const CounterGraph = ({ data }: Props) => {
                                             dataKey="date"
                                             stroke="#888"
                                             tickFormatter={(value) => {
-                                                const [y, m] = value.split('-');
-                                                return new Date(Number(y), Number(m) - 1).toLocaleDateString(locale, { month: 'short', year: '2-digit' });
+                                                const parts = value.split('-');
+                                                const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                                                return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
                                             }}
-                                            minTickGap={40}
+                                            minTickGap={30}
                                         />
                                         <YAxis stroke="#888" allowDecimals={false} width={30} />
                                         <Tooltip
                                             contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
                                             itemStyle={{ color: '#f3f4f6' }}
                                             labelFormatter={(label) => {
-                                                const [y, m] = label.split('-');
-                                                return new Date(Number(y), Number(m) - 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+                                                const parts = label.split('-');
+                                                const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+                                                return date.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
                                             }}
                                         />
                                         <Legend />

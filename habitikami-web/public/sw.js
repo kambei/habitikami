@@ -1,5 +1,57 @@
 // Habitikami Service Worker — Cache-first for static assets, network-first for API calls
 const CACHE_NAME = 'habitikami-v3';
+
+// ---------------------------------------------------------------------------
+// Windows 11 PWA Widget Support
+// ---------------------------------------------------------------------------
+
+async function getWidgetData() {
+  try {
+    const response = await fetch('/widgets/data/habit-summary-data.json');
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (_) {
+    // offline – return fallback data
+  }
+  return {
+    date: 'Today',
+    completedCount: 0,
+    totalCount: 0,
+    currentStreak: 0,
+    nextHabitName: 'Open the app to sync your habits.',
+  };
+}
+
+async function updateWidget(widget) {
+  const data = await getWidgetData();
+  const templateResponse = await fetch('/widgets/habit-summary.json');
+  const template = await templateResponse.text();
+  await self.widgets.updateByTag('habit-summary', { template, data: JSON.stringify(data) });
+}
+
+// Widget installed – push initial data
+self.addEventListener('widgetinstall', (event) => {
+  event.waitUntil(updateWidget(event.widget));
+});
+
+// Widget resumed (e.g. Widgets Board opened) – refresh data
+self.addEventListener('widgetresume', (event) => {
+  event.waitUntil(updateWidget(event.widget));
+});
+
+// Widget action clicked
+self.addEventListener('widgetclick', (event) => {
+  if (event.action === 'open-app' || event.action === 'complete-next') {
+    event.waitUntil(
+      clients.openWindow('/').then(() => updateWidget(event.widget))
+    );
+  }
+});
+
+// Widget uninstalled – no cleanup needed
+self.addEventListener('widgetuninstall', (_event) => {});
+
 const STATIC_ASSETS = [
   '/',
   '/index.html',

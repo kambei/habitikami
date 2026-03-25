@@ -20,7 +20,7 @@ export function CompletionTrends({ data }: CompletionTrendsProps) {
         >
             <h3 className="text-lg font-semibold mb-4 text-card-foreground">{t('graphsDailyTrend')}</h3>
             <div className="flex-1 w-full min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <LineChart
                         data={data}
                         margin={{ top: 5, right: 20, left: 0, bottom: 5 }}

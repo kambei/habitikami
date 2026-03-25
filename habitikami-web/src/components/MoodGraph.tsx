@@ -331,7 +331,7 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                         {aiInsights.insightText}
                                     </p>
                                     <div className="h-48 w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
+                                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                                             <BarChart data={aiInsights.chartData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
                                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#333" />
                                                 <XAxis type="number" domain={[-100, 100]} tick={{ fontSize: 10, fill: '#888' }} />
@@ -347,7 +347,7 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                     </div>
                                     {aiInsights.emotionsData && aiInsights.emotionsData.length > 0 && (
                                         <div className="h-56 w-full pt-4 border-t border-border/50">
-                                            <ResponsiveContainer width="100%" height="100%">
+                                            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                                                 <RadarChart cx="50%" cy="50%" outerRadius="70%" data={aiInsights.emotionsData}>
                                                     <PolarGrid stroke="#444" />
                                                     <PolarAngleAxis dataKey="emotion" tick={{ fill: '#ccc', fontSize: 10 }} />

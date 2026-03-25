@@ -21,7 +21,7 @@ export function DayOfWeekPerformance({ data }: DayOfWeekPerformanceProps) {
         >
             <h3 className="text-lg font-semibold mb-2 text-card-foreground">{t('graphsWeeklyPerformance')}</h3>
             <div className="flex-1 w-full min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
                         <PolarGrid stroke="#444" />
                         <PolarAngleAxis dataKey="day" tick={{ fill: '#888', fontSize: 12 }} />

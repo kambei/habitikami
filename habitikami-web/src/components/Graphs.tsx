@@ -214,7 +214,7 @@ export function Graphs() {
                     </div>
                 </div>
                 <div className="w-full min-h-0 overflow-x-auto overflow-y-hidden" style={{ height: `${Math.max(400, filteredStats.length * 56)}px` }}>
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <BarChart
                             data={filteredStats}
                             layout="vertical"

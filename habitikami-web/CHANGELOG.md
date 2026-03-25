@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [5.1.4] - 2026-03-24
+## 🤖 Android 5.1.0 - 2026-03-25
+### 📲 Dynamic Temptation Widgets
+- **Dynamic Counter Widget**: The counter widget now fetches temptation definitions from the server — labels, colors, and actions are no longer hardcoded to Resist/Smoked/Coffee.
+- **Up to 5 Counters**: Widget layout supports up to 5 dynamically-configured counter slots, showing/hiding based on your server config.
+- **Dynamic Chart Widget**: The 14-day bar chart widget now adapts bar colors and legend labels to match your configured temptations.
+- **Offline Cache**: Counter definitions are cached locally so the widget displays correctly even without network.
+- **Fallback Defaults**: If the server hasn't been configured yet, the widget gracefully falls back to the original 3 defaults.
+
+## 🌐 Web 5.1.4 - 2026-03-24
 ### 📅 Weekly View & Trend Navigation
 - **Weekly Bar Chart**: Replaced "Daily" with "Weekly" — bar charts now show only the current week (Mon–Sun) with weekday labels, no month selector needed.
 - **Trend with Month Navigation**: The month prev/next selector now only appears in "Trend" mode for navigating the monthly line chart history.

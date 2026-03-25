@@ -11,17 +11,10 @@ data class DayEntry(
     val habits: Map<String, Boolean>,   // habit name → completed
 )
 
-data class CounterEntry(
-    val date: String,
-    val smoke: Int,
-    val smoked: Int,
-    val coffee: Int,
-)
-
 data class ExportData(
     val weekdays: List<DayEntry>,
     val weekend: List<DayEntry>,
-    val counters: List<CounterEntry>,
+    val counters: List<DynamicCounterEntry>,
     val colors: Map<String, Int> = emptyMap(),   // habit name → Android color int
 )
 
@@ -145,39 +138,23 @@ object HabitApiClient {
         }
     }
 
-    private fun parseCounterEntries(arr: org.json.JSONArray?): List<CounterEntry> {
+    private fun parseCounterEntries(arr: org.json.JSONArray?): List<DynamicCounterEntry> {
         if (arr == null) return emptyList()
-        val result = mutableListOf<CounterEntry>()
+        val dateKeys = setOf("date", "data", "giorno", "day", "jour", "fecha")
+        val result = mutableListOf<DynamicCounterEntry>()
         for (i in 0 until arr.length()) {
             val obj = arr.getJSONObject(i)
-            // Find date column (case-insensitive)
-            val dateKey = obj.keys().asSequence().find {
-                it.lowercase().let { k -> k == "date" || k == "data" || k == "giorno" }
-            } ?: continue
-            // Find counter columns (case-insensitive, exact match first to avoid ambiguity)
             val keys = obj.keys().asSequence().toList()
-            fun findVal(vararg patterns: String): Int {
-                // First try exact match (e.g. "smoke" should not match "smoked")
-                val exactKey = keys.find { k ->
-                    val lower = k.lowercase()
-                    patterns.any { lower == it }
-                }
-                if (exactKey != null) return obj.optString(exactKey, "0").toIntOrNull() ?: 0
-                // Then try substring match as fallback
-                val key = keys.find { k ->
-                    val lower = k.lowercase()
-                    patterns.any { lower.contains(it) }
-                }
-                return if (key != null) obj.optString(key, "0").toIntOrNull() ?: 0 else 0
+            val dateKey = keys.find { it.lowercase() in dateKeys } ?: continue
+            val values = mutableMapOf<String, Int>()
+            for (key in keys) {
+                if (key.lowercase() in dateKeys) continue
+                values[key] = obj.optString(key, "0").toIntOrNull() ?: 0
             }
-            result.add(
-                CounterEntry(
-                    date = normalizeDate(obj.optString(dateKey, "")),
-                    smoke = findVal("resisted", "smoke", "resist"),
-                    smoked = findVal("smoked"),
-                    coffee = findVal("coffee", "caffè"),
-                )
-            )
+            result.add(DynamicCounterEntry(
+                date = normalizeDate(obj.optString(dateKey, "")),
+                values = values,
+            ))
         }
         return result
     }

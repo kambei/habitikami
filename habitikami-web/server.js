@@ -590,12 +590,28 @@ const ALL_TABS = ['Weekdays', 'Weekend', 'Focus', 'Graphs', 'MobNotes', 'SmokeTe
 
 app.get('/api/user/preferences', apiLimiter, async (req, res) => {
     try {
-        const accessToken = extractBearer(req);
-        if (!accessToken) return res.status(401).json({ error: 'Missing access token' });
+        // Support both OAuth Bearer and API key auth
+        let email = null;
+        const apiToken = req.headers['x-api-token'];
+        const bearer = extractBearer(req);
 
-        const email = await getEmailFromToken(accessToken);
+        if (apiToken) {
+            const apiKeys = loadApiKeys();
+            if (apiKeys[apiToken]) {
+                req.apiKeyUser = apiKeys[apiToken];
+                email = req.apiKeyUser.email;
+            } else {
+                return res.status(401).json({ error: 'Invalid API key' });
+            }
+        } else if (bearer) {
+            email = await getEmailFromToken(bearer);
+            req.oauthUser = { email, accessToken: bearer };
+        } else {
+            return res.status(401).json({ error: 'Missing access token' });
+        }
+
         const users = loadUsers();
-        const userEntry = users[email] || {};
+        const userEntry = email ? (users[email] || {}) : {};
 
         // 1. Try to fetch from Spreadsheet headers first (for privacy)
         try {

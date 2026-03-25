@@ -57,12 +57,23 @@ class CounterChartWidgetProvider : AppWidgetProvider() {
             } else {
                 try {
                     val (baseUrl, apiToken) = config
+
+                    // Fetch definitions (use cached as fallback)
+                    val defs = try {
+                        CounterApiClient.fetchCounterDefinitions(baseUrl, apiToken)
+                            .also { if (it.isNotEmpty()) CounterWidgetProvider.cacheDefinitions(context, it) }
+                    } catch (_: Exception) { emptyList() }
+                    val activeDefs = defs.ifEmpty {
+                        CounterWidgetProvider.getCachedDefinitions(context)
+                            .ifEmpty { CounterWidgetProvider.DEFAULT_DEFINITIONS }
+                    }
+
                     val counters = CounterApiClient.fetchCounterHistory(baseUrl, apiToken, 14)
 
                     val dm = context.resources.displayMetrics
                     val bitmapW = (280 * dm.density).toInt()
                     val bitmapH = (200 * dm.density).toInt()
-                    val bitmap = ChartRenderer.renderCounterBars(counters, bitmapW, bitmapH)
+                    val bitmap = ChartRenderer.renderCounterBars(counters, activeDefs, bitmapW, bitmapH)
 
                     views.setImageViewBitmap(R.id.iv_counter_chart, bitmap)
                     views.setTextViewText(R.id.tv_counter_status, "")

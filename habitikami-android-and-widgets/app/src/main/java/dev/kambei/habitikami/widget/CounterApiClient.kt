@@ -6,16 +6,55 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 
-data class CounterValues(
-    val smoke: Int = 0,
-    val smoked: Int = 0,
-    val coffee: Int = 0,
+/** A single counter/temptation action definition from the server. */
+data class CounterDefinition(
+    val id: String,        // e.g. "smoke", "smoked", "coffee"
+    val label: String,     // e.g. "Resisted", "Smoked", "Coffee"
+    val color: String,     // hex e.g. "#10b981"
+    val type: String,      // "positive", "negative", "neutral", etc.
 )
 
 object CounterApiClient {
 
-    /** Fetch today's counter values. Runs on calling thread — call from background. */
-    fun fetchTodayCounters(baseUrl: String, apiToken: String): CounterValues {
+    /** Fetch temptation/counter definitions from /api/user/preferences.
+     *  Returns the list of counter actions configured on the server. */
+    fun fetchCounterDefinitions(baseUrl: String, apiToken: String): List<CounterDefinition> {
+        val url = URL("$baseUrl/api/user/preferences")
+        val conn = url.openConnection() as HttpURLConnection
+        try {
+            conn.requestMethod = "GET"
+            conn.setRequestProperty("X-API-Token", apiToken)
+            conn.connectTimeout = 10_000
+            conn.readTimeout = 10_000
+
+            if (conn.responseCode != 200) return emptyList()
+
+            val body = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
+            val json = JSONObject(body)
+            val temptations = json.optJSONArray("temptations") ?: return emptyList()
+
+            val result = mutableListOf<CounterDefinition>()
+            for (i in 0 until temptations.length()) {
+                val category = temptations.getJSONObject(i)
+                val actions = category.optJSONArray("actions") ?: continue
+                for (j in 0 until actions.length()) {
+                    val action = actions.getJSONObject(j)
+                    result.add(CounterDefinition(
+                        id = action.optString("id", ""),
+                        label = action.optString("label", ""),
+                        color = action.optString("color", "#888888"),
+                        type = action.optString("type", "neutral"),
+                    ))
+                }
+            }
+            return result
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    /** Fetch today's counter values as a dynamic map: counterId -> value. */
+    fun fetchTodayCounters(baseUrl: String, apiToken: String): Map<String, Int> {
         val url = URL("$baseUrl/api/counter")
         val conn = url.openConnection() as HttpURLConnection
         try {
@@ -24,18 +63,20 @@ object CounterApiClient {
             conn.connectTimeout = 10_000
             conn.readTimeout = 10_000
 
-            if (conn.responseCode != 200) return CounterValues()
+            if (conn.responseCode != 200) return emptyMap()
 
             val body = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
             val json = JSONObject(body)
-            if (!json.optBoolean("success", false)) return CounterValues()
+            if (!json.optBoolean("success", false)) return emptyMap()
 
             val counters = json.getJSONObject("counters")
-            return CounterValues(
-                smoke = counters.optInt("smoke", 0),
-                smoked = counters.optInt("smoked", 0),
-                coffee = counters.optInt("coffee", 0),
-            )
+            val result = mutableMapOf<String, Int>()
+            val keys = counters.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                result[key] = counters.optInt(key, 0)
+            }
+            return result
         } finally {
             conn.disconnect()
         }
@@ -65,9 +106,13 @@ object CounterApiClient {
             conn.disconnect()
         }
     }
-    /** Fetch counter history for a date range. Uses the dedicated /api/counter endpoint
-     *  which returns properly-named fields (smoke, smoked, coffee) regardless of sheet headers. */
-    fun fetchCounterHistory(baseUrl: String, apiToken: String, days: Int = 14): List<CounterEntry> {
+
+    /** Fetch counter history for a date range. Returns list of dynamic entries. */
+    fun fetchCounterHistory(
+        baseUrl: String,
+        apiToken: String,
+        days: Int = 14,
+    ): List<DynamicCounterEntry> {
         val newest = java.time.LocalDate.now().toString()
         val oldest = java.time.LocalDate.now().minusDays(days.toLong()).toString()
         val url = URL("$baseUrl/api/counter?oldest=$oldest&newest=$newest")
@@ -85,15 +130,19 @@ object CounterApiClient {
             if (!json.optBoolean("success", false)) return emptyList()
 
             val entries = json.optJSONArray("entries") ?: return emptyList()
-            val result = mutableListOf<CounterEntry>()
+            val result = mutableListOf<DynamicCounterEntry>()
             for (i in 0 until entries.length()) {
                 val obj = entries.getJSONObject(i)
-                result.add(CounterEntry(
-                    date = obj.optString("date", ""),
-                    smoke = obj.optInt("smoke", 0),
-                    smoked = obj.optInt("smoked", 0),
-                    coffee = obj.optInt("coffee", 0),
-                ))
+                val date = obj.optString("date", "")
+                val values = mutableMapOf<String, Int>()
+                val keys = obj.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    if (key != "date") {
+                        values[key] = obj.optInt(key, 0)
+                    }
+                }
+                result.add(DynamicCounterEntry(date = date, values = values))
             }
             return result
         } finally {
@@ -101,3 +150,9 @@ object CounterApiClient {
         }
     }
 }
+
+/** A single day's counter values, with dynamic keys. */
+data class DynamicCounterEntry(
+    val date: String,
+    val values: Map<String, Int>,  // counterId -> value
+)

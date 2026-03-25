@@ -293,10 +293,11 @@ object ChartRenderer {
     }
 
     // ── Counter Bars ───────────────────────────────────────────────────────────
-    // Grouped bar chart: last N days of smoke/smoked/coffee
+    // Grouped bar chart: last N days of dynamically-configured counters
 
     fun renderCounterBars(
-        data: List<CounterEntry>,
+        data: List<DynamicCounterEntry>,
+        definitions: List<CounterDefinition>,
         width: Int,
         height: Int,
     ): Bitmap {
@@ -304,12 +305,13 @@ object ChartRenderer {
         val canvas = Canvas(bitmap)
         canvas.drawColor(Color.TRANSPARENT)
 
-        if (data.isEmpty()) {
+        if (data.isEmpty() || definitions.isEmpty()) {
             drawCenteredText(canvas, "No counter data", width, height)
             return bitmap
         }
 
-        val sorted = data.sortedBy { it.date }.takeLast(14) // last 2 weeks
+        val sorted = data.sortedBy { it.date }.takeLast(14)
+        val counterIds = definitions.map { it.id }
 
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = COLOR_PRIMARY
@@ -327,15 +329,18 @@ object ChartRenderer {
         val areaW = width - marginL - marginR
         val areaH = height - areaTop - marginB
 
-        val maxVal = sorted.maxOf { maxOf(it.smoke, it.smoked, it.coffee) }.coerceAtLeast(1)
+        val maxVal = sorted.maxOf { entry ->
+            counterIds.maxOfOrNull { entry.values[it] ?: 0 } ?: 0
+        }.coerceAtLeast(1)
         val groupW = areaW / sorted.size
-        val barW = (groupW / 4f).coerceAtMost(10f)
+        val barW = (groupW / (counterIds.size + 1).toFloat()).coerceAtMost(10f)
 
-        val paints = listOf(
-            Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_GREEN },
-            Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_RED },
-            Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_AMBER },
-        )
+        // Create a paint for each counter using its defined color
+        val paints = definitions.map { def ->
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = try { Color.parseColor(def.color) } catch (_: Exception) { COLOR_MUTED }
+            }
+        }
 
         // Baseline
         val basePaint = Paint().apply { color = COLOR_MUTED; strokeWidth = 1f }
@@ -348,34 +353,34 @@ object ChartRenderer {
             textAlign = Paint.Align.CENTER
         }
 
+        val halfN = counterIds.size / 2f
         for ((i, entry) in sorted.withIndex()) {
             val groupX = marginL + i * groupW + groupW / 2f
-            val vals = listOf(entry.smoke, entry.smoked, entry.coffee)
 
-            for ((j, v) in vals.withIndex()) {
+            for ((j, id) in counterIds.withIndex()) {
+                val v = entry.values[id] ?: 0
                 val barH = (v.toFloat() / maxVal) * areaH
-                val x = groupX + (j - 1) * (barW + 1f) - barW / 2f
+                val x = groupX + (j - halfN) * (barW + 1f) - barW / 2f
                 canvas.drawRoundRect(x, baseY - barH, x + barW, baseY, 2f, 2f, paints[j])
             }
 
-            // Date label (show day number)
             val dayLabel = entry.date.takeLast(2)
             canvas.drawText(dayLabel, groupX, baseY + 12f, datePaint)
         }
 
-        // Legend
+        // Legend — dynamic from definitions
         val legendY = titleH - 6f
         val legendPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             textSize = 9f
             color = COLOR_TEXT_DIM
         }
-        val labels = listOf("Resist" to COLOR_GREEN, "Smoked" to COLOR_RED, "Coffee" to COLOR_AMBER)
         var lx = width - 8f
-        for ((label, color) in labels.reversed()) {
-            val tw = legendPaint.measureText(label)
+        for (def in definitions.reversed()) {
+            val defColor = try { Color.parseColor(def.color) } catch (_: Exception) { COLOR_MUTED }
+            val tw = legendPaint.measureText(def.label)
             lx -= tw
-            legendPaint.color = color
-            canvas.drawText(label, lx, legendY, legendPaint)
+            legendPaint.color = defColor
+            canvas.drawText(def.label, lx, legendY, legendPaint)
             lx -= 10f
         }
 

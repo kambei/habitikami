@@ -15,6 +15,11 @@ All notable changes to this project will be documented in this file.
 ### 🖼️ Widget Previews
 - **All 10 widgets** now show fancy preview layouts in the Android widget picker with sample data — no more blank placeholders.
 
+## 🌐 Web 5.2.0 - 2026-03-25
+### 🖼️ Windows 11 PWA Widgets
+- **Native Widget Support**: Developed the infrastructure for Windows 11 PWA Widgets using Adaptive Cards.
+- **Improved Asset Routing**: Fixed server-side redirects in Express and Nginx to ensure PWA manifest and widget assets are served correctly, avoiding SPA home-page hijacking.
+
 ## 🌐 Web 5.1.4 - 2026-03-24
 ### 📅 Weekly View & Trend Navigation
 - **Weekly Bar Chart**: Replaced "Daily" with "Weekly" — bar charts now show only the current week (Mon–Sun) with weekday labels, no month selector needed.

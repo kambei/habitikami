@@ -5,10 +5,19 @@ This plan outlines the steps to add a native Windows 11 widget for the Habitikam
 ## User Review Required
 
 > [!IMPORTANT]
-> **Widget Location:** PWA Widgets on Windows 11 appear in the **Widgets Board**, not directly as functional blocks inside the Start Menu (which only supports app icons).
-> **Adaptive Cards:** The UI is defined via JSON (Adaptive Cards), not HTML/react. This means the widget UI will be a simplified version of the app.
+> **Widget Location:** PWA Widgets on Windows 11 appear in the **Widgets Board**, not direttamente nel Menu Start (che mostra solo icone).
+> **Server Config:** Ho implementato una regola di esclusione per `/assets/`, `/icons/` e `/widgets/` per evitare che richieste a file mancanti restituiscano l'HTML della home (SPA redirect), rompendo il widget.
 
 ## Proposed Changes
+
+### Server Configuration
+
+#### [MODIFY] [server.js](file:///c:/DATA/Personal/GitHub/habitikami/habitikami-web/server.js)
+- Aggiornato il fallback SPA (`*`) per escludere file e cartelle statiche. Restituisce 404 invece di `index.html`.
+
+#### [MODIFY] [nginx.conf](file:///c:/DATA/Personal/GitHub/habitikami/habitikami-web/nginx.conf)
+- Aggiunta regola `try_files $uri =404` per gli asset statici.
+- Aggiunto supporto per file `.json` e `.webmanifest`.
 
 ### PWA Manifest
 

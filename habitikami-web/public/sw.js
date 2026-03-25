@@ -24,24 +24,37 @@ async function getWidgetData() {
 }
 
 async function updateWidget(widget) {
-  const data = await getWidgetData();
-  const templateResponse = await fetch('/widgets/habit-summary.json');
-  const template = await templateResponse.text();
-  await self.widgets.updateByTag('habit-summary', { template, data: JSON.stringify(data) });
+  try {
+    console.log('[SW] Updating widget:', widget?.tag || 'habit-summary');
+    const data = await getWidgetData();
+    const templateResponse = await fetch('/widgets/habit-summary.json');
+    if (!templateResponse.ok) throw new Error('Template not found');
+    const template = await templateResponse.text();
+    
+    if (self.widgets && self.widgets.updateByTag) {
+      await self.widgets.updateByTag('habit-summary', { template, data: JSON.stringify(data) });
+      console.log('[SW] Widget updated successfully');
+    }
+  } catch (error) {
+    console.error('[SW] Widget update failed:', error);
+  }
 }
 
 // Widget installed – push initial data
 self.addEventListener('widgetinstall', (event) => {
+  console.log('[SW] widgetinstall event received');
   event.waitUntil(updateWidget(event.widget));
 });
 
 // Widget resumed (e.g. Widgets Board opened) – refresh data
 self.addEventListener('widgetresume', (event) => {
+  console.log('[SW] widgetresume event received');
   event.waitUntil(updateWidget(event.widget));
 });
 
 // Widget action clicked
 self.addEventListener('widgetclick', (event) => {
+  console.log('[SW] widgetclick event received:', event.action);
   if (event.action === 'open-app' || event.action === 'complete-next') {
     event.waitUntil(
       clients.openWindow('/').then(() => updateWidget(event.widget))

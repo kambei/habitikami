@@ -8,10 +8,12 @@ import java.net.URL
 
 /** A single counter/temptation action definition from the server. */
 data class CounterDefinition(
-    val id: String,        // e.g. "smoke", "smoked", "coffee"
-    val label: String,     // e.g. "Resisted", "Smoked", "Coffee"
-    val color: String,     // hex e.g. "#10b981"
-    val type: String,      // "positive", "negative", "neutral", etc.
+    val id: String,            // e.g. "smoke", "smoked", "coffee"
+    val label: String,         // e.g. "Resisted", "Smoked", "Coffee"
+    val color: String,         // hex e.g. "#10b981"
+    val type: String,          // "positive", "negative", "neutral", etc.
+    val categoryId: String = "",    // e.g. "Temptations", "Snacking"
+    val categoryLabel: String = "", // e.g. "Smoking", "Snacking"
 )
 
 object CounterApiClient {
@@ -36,6 +38,8 @@ object CounterApiClient {
             val result = mutableListOf<CounterDefinition>()
             for (i in 0 until temptations.length()) {
                 val category = temptations.getJSONObject(i)
+                val catId = category.optString("id", "")
+                val catLabel = category.optString("label", "")
                 val actions = category.optJSONArray("actions") ?: continue
                 for (j in 0 until actions.length()) {
                     val action = actions.getJSONObject(j)
@@ -44,6 +48,8 @@ object CounterApiClient {
                         label = action.optString("label", ""),
                         color = action.optString("color", "#888888"),
                         type = action.optString("type", "neutral"),
+                        categoryId = catId,
+                        categoryLabel = catLabel,
                     ))
                 }
             }

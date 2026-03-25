@@ -45,9 +45,9 @@ class CounterWidgetProvider : AppWidgetProvider() {
 
         // Fallback definitions if the server doesn't return any
         val DEFAULT_DEFINITIONS = listOf(
-            CounterDefinition("smoke", "Resist", "#22C55E", "positive"),
-            CounterDefinition("smoked", "Smoked", "#EF4444", "negative"),
-            CounterDefinition("coffee", "Coffee", "#F59E0B", "neutral"),
+            CounterDefinition("smoke", "Resist", "#22C55E", "positive", "Temptations", "Smoking"),
+            CounterDefinition("smoked", "Smoked", "#EF4444", "negative", "Temptations", "Smoking"),
+            CounterDefinition("coffee", "Coffee", "#F59E0B", "neutral", "Temptations", "Smoking"),
         )
 
         fun getConfig(context: Context): Pair<String, String>? {
@@ -61,7 +61,10 @@ class CounterWidgetProvider : AppWidgetProvider() {
          *  can show labels/colors even before the network call completes. */
         fun cacheDefinitions(context: Context, defs: List<CounterDefinition>) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            val json = defs.joinToString(";") { "${it.id}|${it.label}|${it.color}|${it.type}" }
+            // Format: id|label|color|type|categoryId|categoryLabel per entry, joined by ;
+            val json = defs.joinToString(";") {
+                "${it.id}|${it.label}|${it.color}|${it.type}|${it.categoryId}|${it.categoryLabel}"
+            }
             prefs.edit().putString("counter_definitions", json).apply()
         }
 
@@ -70,8 +73,11 @@ class CounterWidgetProvider : AppWidgetProvider() {
             val raw = prefs.getString("counter_definitions", null) ?: return emptyList()
             return raw.split(";").mapNotNull { entry ->
                 val parts = entry.split("|")
-                if (parts.size == 4) CounterDefinition(parts[0], parts[1], parts[2], parts[3])
-                else null
+                when {
+                    parts.size >= 6 -> CounterDefinition(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5])
+                    parts.size == 4 -> CounterDefinition(parts[0], parts[1], parts[2], parts[3]) // legacy cache
+                    else -> null
+                }
             }
         }
 
@@ -159,17 +165,27 @@ class CounterWidgetProvider : AppWidgetProvider() {
         }
     }
 
-    /** Configure slot visibility, labels, colors, and values. */
+    /** Configure slot visibility, labels, colors, and values.
+     *  When multiple temptation categories exist, prefix labels with category name. */
     private fun configureSlots(
         views: RemoteViews,
         defs: List<CounterDefinition>,
         values: Map<String, String>,
     ) {
+        // Check if there are multiple categories — if so, prefix labels
+        val categories = defs.map { it.categoryId }.distinct()
+        val multiCategory = categories.size > 1
+
         for (i in 0 until MAX_SLOTS) {
             if (i < defs.size) {
                 val def = defs[i]
                 views.setViewVisibility(SLOT_IDS[i], View.VISIBLE)
-                views.setTextViewText(LABEL_IDS[i], def.label)
+                val displayLabel = if (multiCategory && def.categoryLabel.isNotEmpty()) {
+                    "${def.categoryLabel}\n${def.label}"
+                } else {
+                    def.label
+                }
+                views.setTextViewText(LABEL_IDS[i], displayLabel)
                 views.setTextColor(LABEL_IDS[i], parseColor(def.color))
                 views.setTextViewText(VAL_IDS[i], values[def.id] ?: "0")
             } else {

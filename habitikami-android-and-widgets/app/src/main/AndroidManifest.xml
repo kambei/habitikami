@@ -110,6 +110,7 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="dev.kambei.habitikami.CYCLE_CHART_FILTER" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"

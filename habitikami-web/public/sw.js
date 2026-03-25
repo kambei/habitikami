@@ -7,6 +7,16 @@ const CACHE_NAME = 'habitikami-v3';
 
 async function getWidgetData() {
   try {
+    const cache = await caches.open('widget-data');
+    const response = await cache.match('/widget-summary');
+    if (response) {
+      return await response.json();
+    }
+  } catch (e) {
+    console.warn('[SW] Failed to get cached widget data', e);
+  }
+
+  try {
     const response = await fetch('/widgets/data/habit-summary-data.json');
     if (response.ok) {
       return await response.json();
@@ -33,12 +43,32 @@ async function updateWidget(widget) {
     
     if (self.widgets && self.widgets.updateByTag) {
       await self.widgets.updateByTag('habit-summary', { template, data: JSON.stringify(data) });
-      console.log('[SW] Widget updated successfully');
+      console.log('[SW] Widget updated successfully with data:', data);
     }
   } catch (error) {
     console.error('[SW] Widget update failed:', error);
   }
 }
+
+// PWA background update listener
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'WIDGET_UPDATE') {
+    event.waitUntil((async () => {
+      const data = event.data.data;
+      console.log('[SW] Received widget update payload:', data);
+      
+      try {
+        const cache = await caches.open('widget-data');
+        await cache.put('/widget-summary', new Response(JSON.stringify(data)));
+        
+        // Update widget immediately
+        await updateWidget();
+      } catch (e) {
+        console.error('[SW] Failed to persist widget data:', e);
+      }
+    })());
+  }
+});
 
 // Widget installed – push initial data
 self.addEventListener('widgetinstall', (event) => {

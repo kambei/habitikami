@@ -123,6 +123,38 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
         setScrollDone(false);
     }, [sheetName, refreshKey]);
 
+    useEffect(() => {
+        if (!meta || queryData.length === 0) return;
+        
+        // Find today’s row
+        const todayRow = queryData.find(row => isToday(row.date));
+        if (!todayRow) return;
+
+        // Calculate stats
+        const relevantHabits = Object.entries(todayRow.habits);
+        const totalCount = relevantHabits.length;
+        const completedCount = relevantHabits.filter(([_, checked]) => checked === true).length;
+        
+        // Find first pending habit
+        const nextHabitPair = relevantHabits.find(([_, checked]) => !checked);
+        const nextHabitName = nextHabitPair ? nextHabitPair[0] : (t('habitTableAllDone' as any) || 'Tutti completati!');
+
+        const summary = {
+            date: translateDay(todayRow.day, tArray('days')) + ' ' + todayRow.date,
+            completedCount,
+            totalCount,
+            currentStreak: 0, // Simplified for now
+            nextHabitName
+        };
+
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'WIDGET_UPDATE',
+                data: summary
+            });
+        }
+    }, [queryData, headers, meta, isToday, tArray, t]);
+
     const changeMonth = (delta: number) => {
         const newDate = new Date(currentDate);
         newDate.setMonth(newDate.getMonth() + delta);

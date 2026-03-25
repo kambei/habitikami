@@ -15,6 +15,11 @@ All notable changes to this project will be documented in this file.
 ### 🖼️ Widget Previews
 - **All 10 widgets** now show fancy preview layouts in the Android widget picker with sample data — no more blank placeholders.
 
+## 🌐 Web 5.2.2 - 2026-03-25
+### 📊 Expandable Graphs & Manual Rotation
+- **Manual Rotation Toggle**: Added a "Rotate" button in the expanded graph view to force a landscape-oriented display via CSS transforms. This ensures a great experience even when system orientation lock is unavailable (e.g., inside the Android app wrapper).
+- **Floating Controls**: Added dedicated floating Rotate/Close buttons in the forced-landscape view for easier access while rotated.
+
 ## 🌐 Web 5.2.1 - 2026-03-25
 ### 📊 Expandable Graphs
 - **Mobile Landscape Mode**: Added an "expand" button at the top right of every graph on mobile devices.

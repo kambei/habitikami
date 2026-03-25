@@ -9,5 +9,5 @@
     android:configure="dev.kambei.habitikami.widget.WidgetConfigActivity"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:previewLayout="@layout/widget_counter"
+    android:previewLayout="@layout/widget_counter_preview"
     android:description="@string/widget_description" />

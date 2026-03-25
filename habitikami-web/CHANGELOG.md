@@ -2,19 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
-## 🤖 Android 5.2.0 - 2026-03-25
+## 🤖 Android 5.3.0 - 2026-03-25
 ### 📲 Dynamic Temptation Widgets
-- **Dynamic Counter Widget**: The counter widget now fetches temptation definitions from the server — labels, colors, and actions are no longer hardcoded to Resist/Smoked/Coffee.
-- **Up to 5 Counters**: Widget layout supports up to 5 dynamically-configured counter slots, showing/hiding based on your server config.
-- **Category-Aware Labels**: When multiple temptation categories exist (e.g., Smoking + Snacking), widget labels show the category name above the action (e.g., "Smoking\nResisted") to avoid ambiguous duplicate labels.
-- **Chart Filter by Category**: The bar chart widget now has a tappable filter button — cycle through "All" or individual temptation categories to focus on what matters.
-- **Dynamic Chart Widget**: The 14-day bar chart widget now adapts bar colors and legend labels to match your configured temptations.
-- **Offline Cache**: Counter definitions are cached locally so the widget displays correctly even without network.
-- **Fallback Defaults**: If the server hasn't been configured yet, the widget gracefully falls back to the original 3 defaults.
+- **Dynamic Counter Widget**: Labels, colors, and actions fetched from server — no longer hardcoded. Up to 5 counter slots, auto show/hide.
+- **Category-Aware Labels**: When multiple temptation categories exist (e.g., Smoking + Snacking), widget labels show the category name above the action to avoid ambiguity.
+- **Chart Filter by Category**: The bar chart widget has a tappable filter — cycle through "All" or individual temptation categories.
+- **Dynamic Chart Colors**: 14-day bar chart adapts colors and legend to your configured temptations.
+- **Offline Cache**: Counter definitions cached locally so widgets display correctly even without network.
+- **Fallback Defaults**: Graceful fallback to original 3 defaults if server isn't configured yet.
+- **Server Auth Fix**: Preferences endpoint now supports API key auth for widget access.
 
-## 🌐 Web 5.1.5 - 2026-03-25
-### 🔑 API Key Auth for Preferences
-- **Widget-Compatible Preferences**: The `/api/user/preferences` endpoint now accepts API key auth (`X-API-Token`) in addition to OAuth Bearer — enabling Android widgets to fetch dynamic temptation definitions.
+### 🖼️ Widget Previews
+- **All 10 widgets** now show fancy preview layouts in the Android widget picker with sample data — no more blank placeholders.
 
 ## 🌐 Web 5.1.4 - 2026-03-24
 ### 📅 Weekly View & Trend Navigation

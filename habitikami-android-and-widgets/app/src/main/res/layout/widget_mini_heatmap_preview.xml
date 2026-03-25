@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:padding="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Meditate"
+            android:textColor="#FF7C3AED"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:paddingEnd="6dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#33FFFFFF" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#33FFFFFF" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#33FFFFFF" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

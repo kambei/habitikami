@@ -8,4 +8,5 @@
     android:initialLayout="@layout/widget_weekly_summary"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
+    android:previewLayout="@layout/widget_weekly_summary_preview"
     android:description="@string/widget_weekly_summary_description" />

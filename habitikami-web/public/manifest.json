@@ -8,6 +8,13 @@
   "background_color": "#0a0a0f",
   "theme_color": "#7c3aed",
   "orientation": "any",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "protocol_handlers": [
+    {
+      "protocol": "web+habitikami",
+      "url": "/?url=%s"
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-512.png",

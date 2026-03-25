@@ -54,7 +54,7 @@ export const ExpandableGraph: React.FC<ExpandableGraphProps> = ({ children, titl
             {/* Expand Button - Visible only on mobile/small screens */}
             <button
                 onClick={toggleExpand}
-                className="absolute top-2 right-2 z-10 p-2 bg-background/80 hover:bg-background border border-border rounded-lg shadow-sm flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                className="absolute top-2 right-2 z-10 p-2 bg-background/80 hover:bg-background border border-border rounded-lg shadow-sm flex items-center justify-center transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
                 title="Expand Graph"
             >
                 <Maximize2 className="w-4 h-4 text-foreground" />

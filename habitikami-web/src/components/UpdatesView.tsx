@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Megaphone, ChevronRight, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Megaphone, ChevronRight, Loader2, AlertCircle, RefreshCw, Smartphone, Globe } from 'lucide-react';
 import { habitService } from '../services/HabitService';
 import { renderMarkdown } from '../lib/renderMarkdown';
 
@@ -12,6 +12,7 @@ export function UpdatesView({ onBack }: UpdatesViewProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showReload, setShowReload] = useState(false);
+    const [activeTab, setActiveTab] = useState<'web' | 'android'>('web');
 
     useEffect(() => {
         const fetchChangelog = async () => {
@@ -75,9 +76,46 @@ export function UpdatesView({ onBack }: UpdatesViewProps) {
                             <p className="text-sm">{error}</p>
                         </div>
                     ) : (
-                        <div className="prose prose-invert prose-sm max-w-none">
-                            <div className="changelog-container space-y-2 text-muted-foreground">
-                                {renderMarkdown(changelog?.content || '')}
+                        <div className="space-y-6">
+                            {/* Tab Switcher */}
+                            <div className="flex p-1 bg-foreground/5 rounded-xl border border-border/50 max-w-sm mx-auto">
+                                <button
+                                    onClick={() => setActiveTab('web')}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all text-sm font-medium ${
+                                        activeTab === 'web'
+                                            ? 'bg-card text-primary shadow-sm ring-1 ring-border/50'
+                                            : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'
+                                    }`}
+                                >
+                                    <Globe className={`w-4 h-4 ${activeTab === 'web' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                    Web App
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('android')}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all text-sm font-medium ${
+                                        activeTab === 'android'
+                                            ? 'bg-card text-primary shadow-sm ring-1 ring-border/50'
+                                            : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'
+                                    }`}
+                                >
+                                    <Smartphone className={`w-4 h-4 ${activeTab === 'android' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                    Android
+                                </button>
+                            </div>
+
+                            <div className="prose prose-invert prose-sm max-w-none">
+                                <div className="changelog-container space-y-2 text-muted-foreground">
+                                    {renderMarkdown(
+                                        (changelog?.content || '')
+                                            .split(/(?=^## )/m)
+                                            .filter(block => {
+                                                if (activeTab === 'web') return block.includes('🌐 Web');
+                                                if (activeTab === 'android') return block.includes('🤖 Android');
+                                                return true;
+                                            })
+                                            .join('\n') || '*No updates found for this platform yet.*'
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}

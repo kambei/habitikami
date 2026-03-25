@@ -44,5 +44,20 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Environment files (root level)
+.env
+.env.*
+!.env.example
+
+# Coverage & test output
+coverage/
+*.lcov
+
+# Misc
+.junie/
 .claude/
+*.tgz
+*.bak
+*.tmp
+*.swp
 

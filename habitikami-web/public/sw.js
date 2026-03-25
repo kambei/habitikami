@@ -85,9 +85,10 @@ self.addEventListener('widgetresume', (event) => {
 // Widget action clicked
 self.addEventListener('widgetclick', (event) => {
   console.log('[SW] widgetclick event received:', event.action);
-  if (event.action === 'open-app' || event.action === 'complete-next') {
+  if (event.action === 'open-app' || event.action === 'complete-next' || event.action === 'skip-next') {
+    const url = event.action === 'skip-next' ? '/?action=skip-next' : '/';
     event.waitUntil(
-      clients.openWindow('/').then(() => updateWidget(event.widget))
+      clients.openWindow(url).then(() => updateWidget(event.widget))
     );
   }
 });

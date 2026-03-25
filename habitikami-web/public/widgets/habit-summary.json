@@ -5,27 +5,50 @@
   "body": [
     {
       "type": "Container",
-      "style": "emphasis",
       "items": [
         {
-          "type": "TextBlock",
-          "text": "🏯 Habitikami",
-          "size": "Medium",
-          "weight": "Bolder",
-          "color": "Accent"
-        },
-        {
-          "type": "TextBlock",
-          "text": "${date}",
-          "size": "Small",
-          "isSubtle": true,
-          "spacing": "None"
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "auto",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "🏯",
+                  "size": "ExtraLarge"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "verticalContentAlignment": "Center",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "Habitikami",
+                  "size": "Medium",
+                  "weight": "Bolder",
+                  "color": "Accent",
+                  "wrap": true
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "${date}",
+                  "size": "Small",
+                  "isSubtle": true,
+                  "spacing": "None"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     {
       "type": "Container",
-      "spacing": "Medium",
+      "spacing": "Large",
       "items": [
         {
           "type": "ColumnSet",
@@ -38,15 +61,17 @@
                   "type": "TextBlock",
                   "text": "Completed",
                   "size": "Small",
-                  "isSubtle": true
+                  "isSubtle": true,
+                  "horizontalAlignment": "Center"
                 },
                 {
                   "type": "TextBlock",
                   "text": "${completedCount} / ${totalCount}",
-                  "size": "ExtraLarge",
+                  "size": "Large",
                   "weight": "Bolder",
                   "color": "Good",
-                  "spacing": "None"
+                  "spacing": "None",
+                  "horizontalAlignment": "Center"
                 }
               ]
             },
@@ -58,15 +83,17 @@
                   "type": "TextBlock",
                   "text": "🔥 Streak",
                   "size": "Small",
-                  "isSubtle": true
+                  "isSubtle": true,
+                  "horizontalAlignment": "Center"
                 },
                 {
                   "type": "TextBlock",
                   "text": "${currentStreak} days",
-                  "size": "ExtraLarge",
+                  "size": "Large",
                   "weight": "Bolder",
                   "color": "Warning",
-                  "spacing": "None"
+                  "spacing": "None",
+                  "horizontalAlignment": "Center"
                 }
               ]
             }
@@ -77,18 +104,23 @@
     {
       "type": "Container",
       "spacing": "Medium",
+      "separator": true,
       "items": [
         {
           "type": "TextBlock",
           "text": "Next up",
           "size": "Small",
-          "isSubtle": true
+          "isSubtle": true,
+          "horizontalAlignment": "Center"
         },
         {
           "type": "TextBlock",
           "text": "${nextHabitName}",
+          "size": "Medium",
           "weight": "Bolder",
-          "spacing": "None"
+          "spacing": "None",
+          "horizontalAlignment": "Center",
+          "wrap": true
         }
       ]
     }
@@ -96,13 +128,19 @@
   "actions": [
     {
       "type": "Action.Execute",
-      "title": "Open Habitikami",
-      "verb": "open-app"
+      "title": "✅ Complete Next",
+      "verb": "complete-next",
+      "style": "positive"
     },
     {
       "type": "Action.Execute",
-      "title": "✅ Complete Next",
-      "verb": "complete-next"
+      "title": "⏭️ Skip",
+      "verb": "skip-next"
+    },
+    {
+      "type": "Action.Execute",
+      "title": "🏠 Open App",
+      "verb": "open-app"
     }
   ]
 }

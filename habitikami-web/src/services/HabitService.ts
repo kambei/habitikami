@@ -634,7 +634,7 @@ class HabitServiceImpl {
         return letter;
     }
 
-    async updateCell(sheetName: string, rowIndex: number, colIndex: number, value: boolean) {
+    async updateCell(sheetName: string, rowIndex: number, colIndex: number, value: boolean | 'SKIP') {
         try {
             await this.ensureClient();
             const colLetter = this.getColumnLetter(colIndex);

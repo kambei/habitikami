@@ -6,6 +6,7 @@ import type { HabitData } from "../types";
 import { Checkbox } from "./ui/Checkbox";
 import { motion } from "framer-motion";
 import { Grid3X3, Table } from "lucide-react";
+import { toast } from 'sonner';
 
 import { useSheetData } from "../hooks/useSheetData";
 import { useHabitColors } from "../hooks/useHabitColors";
@@ -68,7 +69,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     const colors: Record<string, string> = habitColors ?? {};
 
     // Optimistic local overrides for toggles only (avoids round-trip flicker)
-    const [optimisticOverrides, setOptimisticOverrides] = useState<Record<string, boolean>>({});
+    const [optimisticOverrides, setOptimisticOverrides] = useState<Record<string, boolean | 'skipped'>>({});
 
     // Clear overrides when fresh data arrives
     useEffect(() => {
@@ -133,10 +134,10 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
         // Calculate stats
         const relevantHabits = Object.entries(todayRow.habits);
         const totalCount = relevantHabits.length;
-        const completedCount = relevantHabits.filter(([_, checked]) => checked === true).length;
+        const completedCount = relevantHabits.filter(([_, value]) => value === true).length;
         
-        // Find first pending habit
-        const nextHabitPair = relevantHabits.find(([_, checked]) => !checked);
+        // Find first pending habit (not checked AND not skipped)
+        const nextHabitPair = relevantHabits.find(([_, value]) => value === false);
         const nextHabitName = nextHabitPair ? nextHabitPair[0] : (t('habitTableAllDone' as any) || 'Tutti completati!');
 
         const summary = {
@@ -155,17 +156,46 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
         }
     }, [queryData, headers, meta, isToday, tArray, t]);
 
+    // Handle skip-next action from URL (Windows 11 Widget)
+    useEffect(() => {
+        if (!meta || queryData.length === 0 || loading) return;
+        
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('action') === 'skip-next') {
+            const todayRow = queryData.find(row => isToday(row.date));
+            if (!todayRow) return;
+
+            const relevantHabits = Object.entries(todayRow.habits);
+            const nextHabitPair = relevantHabits.find(([_, value]) => value === false);
+            
+            if (nextHabitPair) {
+                const habitName = nextHabitPair[0];
+                const rowIndex = queryData.indexOf(todayRow);
+                const sheetRow = dataStartRow + rowIndex;
+                const colIndex = meta.startCol + headers.indexOf(habitName);
+
+                // Clean up URL to avoid re-triggering
+                const newUrl = window.location.pathname + window.location.hash;
+                window.history.replaceState({}, '', newUrl);
+
+                toast.info(`Skipping: ${habitName}`);
+                mutations.updateCell.mutate({ sheetName, rowIndex: sheetRow, colIndex, value: 'SKIP' });
+            }
+        }
+    }, [meta, queryData, loading, isToday, headers, dataStartRow, mutations.updateCell, sheetName]);
+
     const changeMonth = (delta: number) => {
         const newDate = new Date(currentDate);
         newDate.setMonth(newDate.getMonth() + delta);
         setCurrentDate(newDate);
     };
 
-    const handleToggle = useCallback((rowIndex: number, habit: string, currentValue: boolean) => {
+    const handleToggle = useCallback((rowIndex: number, habit: string, currentValue: boolean | 'skipped') => {
         if (!meta) return;
 
         const overrideKey = `${rowIndex}:${habit}`;
-        const newValue = !currentValue;
+        // If it's 'skipped', toggle to true. If it's false, toggle to true. If it's true, toggle to false.
+        const newValue = currentValue === true ? false : true;
 
         // Optimistic update
         setOptimisticOverrides(prev => ({ ...prev, [overrideKey]: newValue }));
@@ -388,9 +418,10 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                             <td key={h} className="p-4 text-center">
                                                 <div className="flex justify-center">
                                                     <Checkbox
-                                                        checked={checked}
+                                                        checked={checked === true}
                                                         disabled={isPending}
                                                         onCheckedChange={() => handleToggle(rIndex, h, checked)}
+                                                        className={checked === 'skipped' ? "opacity-50 ring-2 ring-amber-500/30" : ""}
                                                     />
                                                 </div>
                                             </td>

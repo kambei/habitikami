@@ -11,9 +11,9 @@ interface CheckboxGridViewProps {
     colors: Record<string, string>;
     meta: { startCol: number; headerRowIndex: number; dataStartRow: number } | null;
     dataStartRow: number;
-    onToggle: (rowIndex: number, habit: string, currentValue: boolean) => void;
+    onToggle: (rowIndex: number, habit: string, currentValue: boolean | 'skipped') => void;
     isPending: boolean;
-    optimisticOverrides: Record<string, boolean>;
+    optimisticOverrides: Record<string, boolean | 'skipped'>;
     sheetName: string;
     year: number;
     month: number;
@@ -68,25 +68,25 @@ export function CheckboxGridView({
         // Merge current sheet data with other sheet data, sorted by date
         const hasOtherSheet = otherSheet && otherData.length > 0 && selectedHabit in (otherData[0]?.habits ?? {});
 
-        type DayEntry = { checked: boolean; dateMs: number };
+        type DayEntry = { checked: boolean | 'skipped'; dateMs: number };
         const entries: DayEntry[] = [];
 
         // Add current sheet entries
         for (let i = 0; i < data.length; i++) {
             const overrideKey = `${i}:${selectedHabit}`;
-            const checked = overrideKey in optimisticOverrides
+            const checkedValue = (overrideKey in optimisticOverrides
                 ? optimisticOverrides[overrideKey]
-                : data[i].habits[selectedHabit];
+                : data[i].habits[selectedHabit]) as boolean | 'skipped';
             const dateMs = parseDate(data[i].date)?.getTime() ?? 0;
-            entries.push({ checked, dateMs });
+            entries.push({ checked: checkedValue, dateMs });
         }
 
         // Add other sheet entries if habit exists there
         if (hasOtherSheet) {
             for (let i = 0; i < otherData.length; i++) {
-                const checked = otherData[i].habits[selectedHabit];
+                const checkedValue = otherData[i].habits[selectedHabit] as boolean | 'skipped';
                 const dateMs = parseDate(otherData[i].date)?.getTime() ?? 0;
-                entries.push({ checked, dateMs });
+                entries.push({ checked: checkedValue, dateMs });
             }
         }
 
@@ -99,7 +99,7 @@ export function CheckboxGridView({
         let streak = 0;
 
         for (const entry of entries) {
-            if (entry.checked) {
+            if (entry.checked === true) {
                 completed++;
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
@@ -108,14 +108,14 @@ export function CheckboxGridView({
             }
         }
 
-        // Current streak: from most recent backwards, skip trailing unchecked
+        // Current streak: from most recent backwards, skip trailing unchecked/skipped
         let currentStreak = 0;
         let started = false;
         for (let i = entries.length - 1; i >= 0; i--) {
             if (!started) {
-                if (entries[i].checked) { started = true; currentStreak = 1; }
+                if (entries[i].checked === true) { started = true; currentStreak = 1; }
             } else {
-                if (entries[i].checked) currentStreak++;
+                if (entries[i].checked === true) currentStreak++;
                 else break;
             }
         }
@@ -199,12 +199,14 @@ export function CheckboxGridView({
                                     return (
                                         <button
                                             key={row.date + rIndex}
-                                            title={`${row.date}: ${checked ? '✓' : '✗'}`}
+                                            title={`${row.date}: ${checked === true ? '✓' : checked === 'skipped' ? '⏭' : '✗'}`}
                                             disabled={isPending}
                                             onClick={() => onToggle(rIndex, habit, checked)}
                                             className={`w-6 h-6 md:h-8 md:flex-1 md:min-w-[28px] md:max-w-[48px] rounded-sm transition-all duration-150 cursor-pointer hover:scale-110 active:scale-95 disabled:cursor-not-allowed shrink-0 md:shrink md:aspect-square ${today ? 'ring-1 ring-primary ring-offset-1 ring-offset-background' : ''}`}
-                                            style={checked
+                                            style={checked === true
                                                 ? { backgroundColor: color, boxShadow: `0 0 6px ${color}40` }
+                                                : checked === 'skipped'
+                                                ? { backgroundColor: 'transparent', border: `2px solid #fbbf2450`, boxShadow: `inset 0 0 4px #fbbf2430` }
                                                 : { backgroundColor: 'transparent', border: `2px solid ${color}50` }
                                             }
                                         />

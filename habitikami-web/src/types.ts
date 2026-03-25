@@ -7,7 +7,7 @@ export interface UserProfile {
 export interface HabitData {
     day: string;
     date: string;
-    habits: Record<string, boolean>;
+    habits: Record<string, boolean | 'skipped'>;
     // ... potentially other fields
 }
 

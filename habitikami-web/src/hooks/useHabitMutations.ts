@@ -7,7 +7,7 @@ export function useUpdateCell() {
 
     return useMutation({
         mutationFn: async ({ sheetName, rowIndex, colIndex, value }: {
-            sheetName: string, rowIndex: number, colIndex: number, value: boolean
+            sheetName: string, rowIndex: number, colIndex: number, value: boolean | 'SKIP'
         }) => {
             // rowIndex here is SHEET row index (global).
             // But habitService.updateCell expects SHEET row index.

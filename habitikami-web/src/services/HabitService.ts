@@ -1510,6 +1510,36 @@ class HabitServiceImpl {
         }
     }
 
+    async getLatestConsolidatedSummary(): Promise<{ content: string; date: string } | null> {
+        try {
+            await this.ensureClient();
+            const folderId = await this.findOrCreateWorksheetFolder();
+            
+            // Search for summary documents
+            const searchQuery = `'${folderId}' in parents and name contains 'Riepilogo Consolidato -' and trashed = false`;
+            const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(searchQuery)}&fields=files(id,name,createdTime)&orderBy=createdTime desc&pageSize=1&spaces=drive`;
+            
+            const res = await fetch(url, { headers: { 'Authorization': `Bearer ${this.accessToken}` } });
+
+            if (!res.ok) return null;
+            const data = await res.json();
+            if (!data.files || data.files.length === 0) return null;
+
+            const file = data.files[0];
+            const exportUrl = `https://www.googleapis.com/drive/v3/files/${file.id}/export?mimeType=text/plain`;
+            const contentRes = await fetch(exportUrl, { headers: { 'Authorization': `Bearer ${this.accessToken}` } });
+            
+            if (contentRes.ok) {
+                const content = await contentRes.text();
+                return { content, date: file.name.replace('Riepilogo Consolidato - ', '') };
+            }
+            return null;
+        } catch (e) {
+            console.error("Failed to fetch latest summary:", e);
+            return null;
+        }
+    }
+
     async archiveWorksheets(fileIds: string[]): Promise<{ success: boolean } | { error: string }> {
         try {
             await this.ensureClient();

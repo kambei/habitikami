@@ -65,27 +65,39 @@ export function MoodGraph({ onBack }: Props) {
     const checkCache = async () => {
         const cached = localStorage.getItem(AI_CACHE_KEY);
         const cachedIds = localStorage.getItem(AI_CACHE_IDS_KEY);
-        if (!cached || !cachedIds) return;
-
-        try {
-            const meta = await habitService.getWorksheetMetadata(analysisLimit);
-            if ('error' in meta) return;
-            
-            const currentIds = meta.map(f => f.id).join(',');
-            if (currentIds === cachedIds) {
-                setAiInsights(JSON.parse(cached));
-                setIsCacheHit(true);
-            } else {
-                // Cache invalid, clear it
-                localStorage.removeItem(AI_CACHE_KEY);
-                localStorage.removeItem(AI_CACHE_IDS_KEY);
-                setIsCacheHit(false);
+        
+        let hasValidCache = false;
+        if (cached && cachedIds) {
+            try {
+                const meta = await habitService.getWorksheetMetadata(analysisLimit);
+                if (!('error' in meta)) {
+                    const currentIds = meta.map(f => f.id).join(',');
+                    if (currentIds === cachedIds) {
+                        setAiInsights(JSON.parse(cached));
+                        setIsCacheHit(true);
+                        hasValidCache = true;
+                    }
+                }
+            } catch (e) {
+                console.error("Cache check failed", e);
             }
-        } catch (e) {
-            console.error("Cache check failed", e);
+        }
+
+        if (!hasValidCache) {
+            // Cache invalid or missing, clear it
             localStorage.removeItem(AI_CACHE_KEY);
             localStorage.removeItem(AI_CACHE_IDS_KEY);
             setIsCacheHit(false);
+
+            // Fetch latest consolidated summary as fallback
+            const latestSummary = await habitService.getLatestConsolidatedSummary();
+            if (latestSummary) {
+                setAiInsights({
+                    insightText: `### ${t('moodGraphConsolidateSuccess')}\n\n${latestSummary.content}`,
+                    chartData: [],
+                    emotionsData: []
+                });
+            }
         }
     };
 
@@ -233,9 +245,17 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
             // Archive the files
             await habitService.archiveWorksheets(archiveIds);
 
-            toast.success(t('moodGraphConsolidateSuccess'));
-            setAiInsights(null); // Force refresh
+            // Update local state to show the summary immediately
+            setAiInsights({
+                insightText: `### ${t('moodGraphConsolidateSuccess')}\n\n${summaryText}`,
+                chartData: [],
+                emotionsData: []
+            });
+            localStorage.removeItem(AI_CACHE_KEY);
             localStorage.removeItem(AI_CACHE_IDS_KEY);
+
+            toast.success(t('moodGraphConsolidateSuccess'));
+            onBack();
         } catch (err: any) {
             toast.error(err.message || "Consolidation failed");
         } finally {

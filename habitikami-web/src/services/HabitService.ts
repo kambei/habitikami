@@ -160,6 +160,8 @@ class HabitServiceImpl {
             `state=${state}&` +
             `code_challenge=${challenge}&` +
             `code_challenge_method=S256&` +
+            `access_type=offline&` +
+            `prompt=consent&` +
             `include_granted_scopes=true`;
 
         window.location.href = authUrl;

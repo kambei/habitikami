@@ -289,6 +289,7 @@ export const en = {
   moodGraphAITitle: 'Worksheets Analysis (AI)',
   moodGraphAIAnalyze: 'Generate AI Insights',
   moodGraphAIProcessing: 'Analyzing worksheets...',
+  moodGraphAIConsolidating: 'Consolidating history...',
   moodGraphAINoData: 'Analyze your recent worksheets to get AI insights about your habits and emotions.',
   moodGraphAILimit: 'Analysis range',
   moodGraphAILimit7: 'Last 7 worksheets',

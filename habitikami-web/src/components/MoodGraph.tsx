@@ -370,11 +370,11 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                         >
                             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-purple-500/5 pointer-events-none" />
                             <div className="relative flex justify-between items-start mb-4">
-                                <div className="flex items-center gap-2 text-primary">
+                                <div className="flex items-center gap-2 text-primary shrink-0 mb-1 sm:mb-0">
                                     <Sparkles className="w-5 h-5" />
-                                    <h3 className="font-semibold">{t('moodGraphAITitle')}</h3>
+                                    <h3 className="font-semibold text-sm sm:text-base">{t('moodGraphAITitle')}</h3>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center justify-end gap-1.5 ml-auto">
                                     {latestConsolidated && !isAnalyzing && (
                                         <button
                                             onClick={() => {
@@ -431,10 +431,12 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                 </div>
                             )}
                             
-                            {isAnalyzing && (
-                                <div className="flex flex-col items-center justify-center py-6 gap-3 text-muted-foreground">
-                                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                                    <span className="text-sm">{t('moodGraphAIProcessing')}</span>
+                            {(isAnalyzing || isConsolidating) && (
+                                <div className="flex flex-col items-center justify-center py-8 gap-3 text-muted-foreground bg-background/30 rounded-lg border border-border/30 backdrop-blur-sm">
+                                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                    <span className="text-sm font-medium">
+                                        {isConsolidating ? t('moodGraphAIConsolidating') : t('moodGraphAIProcessing')}
+                                    </span>
                                 </div>
                             )}
 

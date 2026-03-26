@@ -290,6 +290,7 @@ export const it: Record<TranslationKey, string | string[]> = {
   moodGraphAITitle: 'Analisi Schede (AI)',
   moodGraphAIAnalyze: 'Genera Analisi con AI',
   moodGraphAIProcessing: 'Analisi schede in corso...',
+  moodGraphAIConsolidating: 'Consolidamento cronologia in corso...',
   moodGraphAINoData: 'Analizza le tue schede recenti per ottenere approfondimenti AI sulle tue abitudini ed emozioni.',
   moodGraphAILimit: 'Intervallo analisi',
   moodGraphAILimit7: 'Ultime 7 schede',

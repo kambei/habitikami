@@ -15,6 +15,14 @@ All notable changes to this project will be documented in this file.
 ### 🖼️ Widget Previews
 - **All 10 widgets** now show fancy preview layouts in the Android widget picker with sample data — no more blank placeholders.
 
+## 🌐 Web 5.2.4 - 2026-03-26
+### 📦 History Consolidation & Persistence
+- **Full History Consolidation**: Move all past worksheets to an archive folder with a single tap, keeping your active workspace clean.
+- **Persistent Analytics**: Consolidated summaries now embed their graph data directly in the Google Doc, ensuring trend and emotion charts are preserved forever.
+- **Smart UI Toggle**: Added a "View Consolidated" vs "View Recent" toggle to the Mood Tracker for instant switching between long-term history and current week trends.
+- **Progress Feedback**: New prominent loading states for consolidation and saving tasks to keep you informed during long-running background processes.
+- **Enhanced Formatting**: Improved Markdown-to-HTML conversion for Google Drive, ensuring bullet points and paragraphs render perfectly in exported documents.
+
 ## 🌐 Web 5.2.3 - 2026-03-25
 ### 📊 Desktop Support & UI Polish
 - **Universal Expansion**: The "Expand" button is now available on desktop as well! Hover over any graph to reveal the button and view it in a distraction-free fullscreen overlay.

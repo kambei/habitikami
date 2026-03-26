@@ -13,7 +13,6 @@ interface CheckboxGridViewProps {
     dataStartRow: number;
     onToggle: (rowIndex: number, habit: string, currentValue: boolean | 'skipped') => void;
     isPending: boolean;
-    optimisticOverrides: Record<string, boolean | 'skipped'>;
     sheetName: string;
     year: number;
     month: number;
@@ -25,7 +24,6 @@ export function CheckboxGridView({
     colors,
     onToggle,
     isPending,
-    optimisticOverrides,
     sheetName,
     year,
     month,
@@ -73,10 +71,7 @@ export function CheckboxGridView({
 
         // Add current sheet entries
         for (let i = 0; i < data.length; i++) {
-            const overrideKey = `${i}:${selectedHabit}`;
-            const checkedValue = (overrideKey in optimisticOverrides
-                ? optimisticOverrides[overrideKey]
-                : data[i].habits[selectedHabit]) as boolean | 'skipped';
+            const checkedValue = data[i].habits[selectedHabit] as boolean | 'skipped';
             const dateMs = parseDate(data[i].date)?.getTime() ?? 0;
             entries.push({ checked: checkedValue, dateMs });
         }
@@ -123,7 +118,7 @@ export function CheckboxGridView({
         const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
         const merged = !!hasOtherSheet;
         return { total, completed, percentage, currentStreak, bestStreak, merged };
-    }, [selectedHabit, data, otherData, otherSheet, optimisticOverrides, parseDate]);
+    }, [selectedHabit, data, otherData, otherSheet, parseDate]);
 
     return (
         <div className="flex-1 flex overflow-y-auto p-4">
@@ -190,10 +185,7 @@ export function CheckboxGridView({
                         return (
                             <div key={habit} className="flex gap-1 md:gap-2 h-6 md:h-8">
                                 {data.map((row, rIndex) => {
-                                    const overrideKey = `${rIndex}:${habit}`;
-                                    const checked = overrideKey in optimisticOverrides
-                                        ? optimisticOverrides[overrideKey]
-                                        : row.habits[habit];
+                                    const checked = row.habits[habit];
                                     const today = isToday(row.date);
 
                                     return (

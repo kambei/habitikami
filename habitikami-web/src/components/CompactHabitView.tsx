@@ -1,98 +1,101 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, SkipForward, RefreshCw, Trophy, Calendar } from 'lucide-react';
-import { habitService } from '../services/HabitService';
-import { parseSheetData } from '../utils/parser';
 import type { SheetType } from '../types';
 import { useTranslation } from '../i18n';
+import { useSheetData } from '../hooks/useSheetData';
+import { useUpdateCell } from '../hooks/useHabitMutations';
 
 interface CompactHabitViewProps {
     refreshKey?: number;
 }
 
-export function CompactHabitView({ refreshKey }: CompactHabitViewProps) {
+export function CompactHabitView({ }: CompactHabitViewProps) {
     const { t } = useTranslation();
-    const [loading, setLoading] = useState(true);
-    const [habits, setHabits] = useState<string[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [completedCount, setCompletedCount] = useState(0);
-    const [todayStr, setTodayStr] = useState('');
-    const [sheetName, setSheetName] = useState<SheetType>('Weekdays');
-    const [meta, setMeta] = useState<{ headerRowIndex: number, startCol: number, headers: string[], rowHeight: number } | null>(null);
 
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            const now = new Date();
-            const day = now.getDay();
-            const isWeekend = day === 0 || day === 6;
-            const currentSheet: SheetType = isWeekend ? 'Weekend' : 'Weekdays';
-            setSheetName(currentSheet);
+    const now = new Date();
+    const day = now.getDay();
+    const isWeekend = day === 0 || day === 6;
+    const sheetName: SheetType = isWeekend ? 'Weekend' : 'Weekdays';
+    const year = now.getFullYear();
+    const month = now.getMonth();
 
-            const pad = (n: number) => n < 10 ? '0' + n : n;
-            const todayFormatted = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
-            setTodayStr(todayFormatted);
+    const pad = (n: number) => n < 10 ? '0' + n : n;
+    const todayStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
 
-            const rawData = await habitService.getData(currentSheet);
-            if (!Array.isArray(rawData) && 'error' in rawData) throw new Error(rawData.error);
+    const { data: sheetData, isLoading: loading, refetch } = useSheetData(sheetName, year, month);
+    const updateCellMutation = useUpdateCell();
 
-            const { headers, data, meta: parsedMeta } = parseSheetData(rawData);
+    const { habits, completedCount, meta } = useMemo(() => {
+        if (!sheetData) return { habits: [], completedCount: 0, meta: null };
 
-            const todayRowIndex = data.findIndex(d => d.date === todayFormatted);
+        const todayRowIndex = sheetData.data.findIndex(d => d.date === todayStr);
+        if (todayRowIndex === -1) return { habits: [], completedCount: 0, meta: null };
 
-            if (todayRowIndex !== -1 && parsedMeta) {
-                const todayData = data[todayRowIndex];
-                const incompleteHabits = headers.filter(h => !todayData.habits[h]);
+        const todayData = sheetData.data[todayRowIndex];
+        // Incomplete means habit is false (not true AND not skipped)
+        const incompleteHabits = sheetData.headers.filter(h => todayData.habits[h] === false);
+        const skippedCount = sheetData.headers.filter(h => todayData.habits[h] === 'skipped').length;
+        const checkedCount = sheetData.headers.filter(h => todayData.habits[h] === true).length;
 
-                setHabits(incompleteHabits);
-                setMeta({
-                    ...parsedMeta,
-                    headers,
-                    rowHeight: todayRowIndex
-                });
-
-                setCurrentIndex(0);
-                setCompletedCount(headers.length - incompleteHabits.length);
-            } else {
-                setHabits([]);
+        return {
+            habits: incompleteHabits,
+            completedCount: checkedCount + skippedCount,
+            meta: {
+                ...sheetData.meta,
+                headers: sheetData.headers,
+                rowHeight: todayRowIndex
             }
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchData();
-    }, [refreshKey]);
+        };
+    }, [sheetData, todayStr]);
 
     const handleComplete = async () => {
-        if (!meta) return;
+        if (!meta || habits.length === 0) return;
         const currentHabit = habits[currentIndex];
-
-        const nextHabits = [...habits];
-        nextHabits.splice(currentIndex, 1);
-        setHabits(nextHabits);
-
-        try {
-            const sheetRow = meta.headerRowIndex + 1 + meta.rowHeight + 1;
-            const headerIndex = meta.headers.indexOf(currentHabit);
-            const colIndex = meta.startCol + headerIndex;
-
-            await habitService.updateCell(sheetName, sheetRow, colIndex, true);
-            setCompletedCount(prev => prev + 1);
-        } catch (e) {
-            console.error("Failed to mark complete", e);
-        }
-    };
-
-    const handleSkip = () => {
-        if (currentIndex < habits.length - 1) {
-            setCurrentIndex(currentIndex + 1);
-        } else {
+        
+        // Adjust currentIndex if we are at the last habit
+        if (currentIndex >= habits.length - 1 && habits.length > 1) {
             setCurrentIndex(0);
         }
+
+        const sheetRow = meta.dataStartRow + meta.rowHeight;
+        const headerIndex = meta.headers.indexOf(currentHabit);
+        const colIndex = meta.startCol + headerIndex;
+
+        updateCellMutation.mutate({ 
+            sheetName, 
+            rowIndex: sheetRow, 
+            colIndex, 
+            value: true,
+            year,
+            month,
+            habitName: currentHabit
+        });
+    };
+
+    const handleSkip = async () => {
+        if (!meta || habits.length === 0) return;
+        const currentHabit = habits[currentIndex];
+
+        // Adjust currentIndex if we are at the last habit
+        if (currentIndex >= habits.length - 1 && habits.length > 1) {
+            setCurrentIndex(0);
+        }
+
+        const sheetRow = meta.dataStartRow + meta.rowHeight;
+        const headerIndex = meta.headers.indexOf(currentHabit);
+        const colIndex = meta.startCol + headerIndex;
+
+        updateCellMutation.mutate({ 
+            sheetName, 
+            rowIndex: sheetRow, 
+            colIndex, 
+            value: 'SKIP',
+            year,
+            month,
+            habitName: currentHabit
+        });
     };
 
     if (loading) {
@@ -110,7 +113,7 @@ export function CompactHabitView({ refreshKey }: CompactHabitViewProps) {
                     <p className="text-muted-foreground mt-2 max-w-sm">{t('focusNoDataHint')}</p>
                 </div>
                 <button
-                    onClick={fetchData}
+                    onClick={() => refetch()}
                     className="flex items-center gap-2 px-6 py-3 bg-secondary hover:bg-secondary/80 rounded-full transition-all"
                 >
                     <RefreshCw size={20} /> {t('refresh')}
@@ -130,7 +133,7 @@ export function CompactHabitView({ refreshKey }: CompactHabitViewProps) {
                     <p className="text-muted-foreground mt-2">{t('focusNoPending')} ({todayStr}).</p>
                 </div>
                 <button
-                    onClick={fetchData}
+                    onClick={() => refetch()}
                     className="flex items-center gap-2 px-6 py-3 bg-secondary hover:bg-secondary/80 rounded-full transition-all"
                 >
                     <RefreshCw size={20} /> {t('refresh')}
@@ -139,6 +142,8 @@ export function CompactHabitView({ refreshKey }: CompactHabitViewProps) {
         );
     }
 
+    // Safety check for index
+    const displayedIndex = currentIndex >= habits.length ? 0 : currentIndex;
     const progress = Math.round((completedCount / (completedCount + habits.length)) * 100);
 
     return (
@@ -163,7 +168,7 @@ export function CompactHabitView({ refreshKey }: CompactHabitViewProps) {
             <div className="flex-1 flex flex-col items-center justify-center relative min-h-[300px]">
                 <AnimatePresence mode="wait">
                     <motion.div
-                        key={habits[currentIndex]}
+                        key={habits[displayedIndex]}
                         initial={{ opacity: 0, x: 50, scale: 0.9 }}
                         animate={{ opacity: 1, x: 0, scale: 1 }}
                         exit={{ opacity: 0, x: -50, scale: 0.9 }}
@@ -173,7 +178,7 @@ export function CompactHabitView({ refreshKey }: CompactHabitViewProps) {
                         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-purple-500" />
 
                         <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-                            {habits[currentIndex]}
+                            {habits[displayedIndex]}
                         </h2>
 
                         <p className="text-muted-foreground text-lg">
@@ -183,14 +188,16 @@ export function CompactHabitView({ refreshKey }: CompactHabitViewProps) {
                         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto mt-4">
                             <button
                                 onClick={handleSkip}
-                                className="flex-1 sm:flex-none px-8 py-4 rounded-xl border border-border bg-secondary/10 hover:bg-secondary/30 text-foreground font-semibold flex items-center justify-center gap-2 transition-all"
+                                disabled={updateCellMutation.isPending}
+                                className="flex-1 sm:flex-none px-8 py-4 rounded-xl border border-border bg-secondary/10 hover:bg-secondary/30 text-foreground font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                             >
                                 <SkipForward size={24} />
                                 {t('focusSkip')}
                             </button>
                             <button
                                 onClick={handleComplete}
-                                className="flex-1 sm:flex-none px-10 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg shadow-lg hover:shadow-primary/25 flex items-center justify-center gap-3 transition-all transform hover:scale-105 active:scale-95"
+                                disabled={updateCellMutation.isPending}
+                                className="flex-1 sm:flex-none px-10 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg shadow-lg hover:shadow-primary/25 flex items-center justify-center gap-3 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100"
                             >
                                 <Check size={28} />
                                 {t('focusComplete')}
@@ -206,3 +213,4 @@ export function CompactHabitView({ refreshKey }: CompactHabitViewProps) {
         </div>
     );
 }
+

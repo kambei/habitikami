@@ -68,13 +68,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     const dataStartRow: number = sheetData?.meta?.dataStartRow ?? 0;
     const colors: Record<string, string> = habitColors ?? {};
 
-    // Optimistic local overrides for toggles only (avoids round-trip flicker)
-    const [optimisticOverrides, setOptimisticOverrides] = useState<Record<string, boolean | 'skipped'>>({});
 
-    // Clear overrides when fresh data arrives
-    useEffect(() => {
-        setOptimisticOverrides({});
-    }, [sheetData]);
 
     const mutations = {
         updateCell: useUpdateCell(),
@@ -193,26 +187,24 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     const handleToggle = useCallback((rowIndex: number, habit: string, currentValue: boolean | 'skipped') => {
         if (!meta) return;
 
-        const overrideKey = `${rowIndex}:${habit}`;
         // If it's 'skipped', toggle to true. If it's false, toggle to true. If it's true, toggle to false.
         const newValue = currentValue === true ? false : true;
-
-        // Optimistic update
-        setOptimisticOverrides(prev => ({ ...prev, [overrideKey]: newValue }));
 
         const sheetRow = dataStartRow + rowIndex;
         const colIndex = meta.startCol + headers.indexOf(habit);
 
         mutations.updateCell.mutate(
-            { sheetName, rowIndex: sheetRow, colIndex, value: newValue },
-            {
-                onError: () => {
-                    // Revert optimistic override
-                    setOptimisticOverrides(prev => ({ ...prev, [overrideKey]: currentValue }));
-                },
+            { 
+                sheetName, 
+                rowIndex: sheetRow, 
+                colIndex, 
+                value: newValue,
+                year,
+                month,
+                habitName: habit
             }
         );
-    }, [meta, dataStartRow, headers, sheetName, mutations.updateCell]);
+    }, [meta, dataStartRow, headers, sheetName, mutations.updateCell, year, month]);
 
     const handleAddHabitSubmit = (habitName: string) => {
         mutations.addHabit.mutate({ sheetName, habitName }, {
@@ -332,7 +324,6 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                             dataStartRow={dataStartRow}
                             onToggle={handleToggle}
                             isPending={mutations.updateCell.isPending}
-                            optimisticOverrides={optimisticOverrides}
                             sheetName={sheetName}
                             year={year}
                             month={month}
@@ -409,23 +400,20 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                         <span className="hidden md:inline">{row.date}</span>
                                     </td>
                                     {headers.map((h) => {
-                                        const overrideKey = `${rIndex}:${h}`;
-                                        const checked = overrideKey in optimisticOverrides
-                                            ? optimisticOverrides[overrideKey]
-                                            : row.habits[h];
-                                        const isPending = mutations.updateCell.isPending;
-                                        return (
-                                            <td key={h} className="p-4 text-center">
-                                                <div className="flex justify-center">
-                                                    <Checkbox
-                                                        checked={checked === true}
-                                                        disabled={isPending}
-                                                        onCheckedChange={() => handleToggle(rIndex, h, checked)}
-                                                        className={checked === 'skipped' ? "opacity-50 ring-2 ring-amber-500/30" : ""}
-                                                    />
-                                                </div>
-                                            </td>
-                                        );
+                                         const checked = row.habits[h];
+                                         const isPending = mutations.updateCell.isPending;
+                                         return (
+                                             <td key={h} className="p-4 text-center">
+                                                 <div className="flex justify-center">
+                                                     <Checkbox
+                                                         checked={checked === true}
+                                                         disabled={isPending}
+                                                         onCheckedChange={() => handleToggle(rIndex, h, checked)}
+                                                         className={checked === 'skipped' ? "opacity-50 ring-2 ring-amber-500/30" : ""}
+                                                     />
+                                                 </div>
+                                             </td>
+                                         );
                                     })}
                                     <td></td>
                                 </motion.tr>

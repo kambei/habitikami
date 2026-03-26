@@ -3,30 +3,67 @@ import { habitService } from '../services/HabitService';
 import { toast } from 'sonner';
 
 export function useUpdateCell() {
-
+    const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async ({ sheetName, rowIndex, colIndex, value }: {
-            sheetName: string, rowIndex: number, colIndex: number, value: boolean | 'SKIP'
+            sheetName: string, rowIndex: number, colIndex: number, value: boolean | 'SKIP',
+            year?: number, month?: number, habitName?: string
         }) => {
-            // rowIndex here is SHEET row index (global).
-            // But habitService.updateCell expects SHEET row index.
-            // The hook caller (HabitTable) must provide the correct global row index.
             return habitService.updateCell(sheetName, rowIndex, colIndex, value);
         },
-        onSuccess: () => {
-            // Invalidate the query to refetch data (or we could optimistically update)
-            // For now, simpler to invalidate.
-            // queryClient.invalidateQueries({ queryKey: ['sheetData', variables.sheetName] });
+        onMutate: async (variables) => {
+            const { sheetName, year, month, habitName, value } = variables;
+            if (year === undefined || month === undefined || !habitName) return;
 
-            // Actually, we should optimistically update to avoid flickering.
-            // But for MVP, let's just toast and maybe silent refresh?
-            // If we don't invalidate, the UI state (local) is already updated by the user click.
-            // We just need to ensure backend sync status.
+            const queryKey = ['sheetData', sheetName, year, month];
+            
+            // Cancel any outgoing refetches
+            await queryClient.cancelQueries({ queryKey });
+
+            // Snapshot the previous value
+            const previousData = queryClient.getQueryData(queryKey);
+
+            // Optimistically update to the new value
+            queryClient.setQueryData(queryKey, (old: any) => {
+                if (!old || !old.data) return old;
+                
+                const newData = old.data.map((row: any) => {
+                    // We need to identify the row. 
+                    // variables.rowIndex is the ABSOLUTE sheet row.
+                    // old.meta.dataStartRow is the 1-based start row.
+                    const relativeIndex = variables.rowIndex - old.meta.dataStartRow;
+                    
+                    if (old.data.indexOf(row) === relativeIndex) {
+                        return {
+                            ...row,
+                            habits: {
+                                ...row.habits,
+                                [habitName]: value === 'SKIP' ? 'skipped' : value
+                            }
+                        };
+                    }
+                    return row;
+                });
+
+                return { ...old, data: newData };
+            });
+
+            return { previousData };
         },
-        onError: (error) => {
-            toast.error(`Failed to update cell: ${error.message}`);
-        }
+        onError: (err, variables, context) => {
+            const { sheetName, year, month } = variables;
+            if (year !== undefined && month !== undefined) {
+                queryClient.setQueryData(['sheetData', sheetName, year, month], context?.previousData);
+            }
+            toast.error(`Failed to update cell: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        },
+        onSettled: (data, error, variables) => {
+            const { sheetName, year, month } = variables;
+            if (year !== undefined && month !== undefined) {
+                queryClient.invalidateQueries({ queryKey: ['sheetData', sheetName, year, month] });
+            }
+        },
     });
 }
 

@@ -655,7 +655,7 @@ function parseHeadersForConfig(headers) {
 
     headers.forEach(h => {
         if (!h || typeof h !== 'string') return;
-        
+
         if (h.startsWith('_config|')) {
             const parts = h.split('|');
             parts.forEach(p => {
@@ -679,7 +679,7 @@ function parseHeadersForConfig(headers) {
         }
     });
 
-    return { 
+    return {
         temptations: Object.values(temptationsMap),
         enabled_tabs,
         default_tab
@@ -698,18 +698,18 @@ app.post('/api/user/preferences', apiLimiter, validateOrigin, async (req, res) =
         try {
             const spreadsheetId = await resolveSpreadsheetId(req);
             const sheets = await getSheetsClientForRequest(req);
-            
+
             // Get current rows to preserve data columns
             const response = await sheets.spreadsheets.values.get({
                 spreadsheetId,
                 range: 'Counters!1:1',
             });
             const currentHeaders = response.data.values?.[0] || ['Date'];
-            
+
             // Reconstruct headers
             const newHeaders = ['Date'];
             const actionIdToHeader = {};
-            
+
             if (temptations && Array.isArray(temptations)) {
                 temptations.forEach(t => {
                     t.actions.forEach(a => {
@@ -750,9 +750,9 @@ app.post('/api/user/preferences', apiLimiter, validateOrigin, async (req, res) =
         // 2. Keep local copy for fallback (optional but safe)
         await saveUsersAtomic(users => {
             const existing = users[email] || {};
-            users[email] = { 
-                ...(typeof existing === 'object' ? existing : {}), 
-                enabled_tabs: enabled_tabs || existing.enabled_tabs, 
+            users[email] = {
+                ...(typeof existing === 'object' ? existing : {}),
+                enabled_tabs: enabled_tabs || existing.enabled_tabs,
                 default_tab: default_tab || existing.default_tab,
                 temptations: temptations || existing.temptations || null
             };
@@ -1406,6 +1406,8 @@ app.post('/api/anthropic/chat', geminiLimiter, validateOrigin, async (req, res) 
             return res.status(400).json({ error: 'Missing apiKey or messages' });
         }
 
+        console.log(`[Anthropic Proxy] Requesting chat: system length=${system?.length}, messages count=${messages?.length}`);
+
         const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: {
@@ -1557,7 +1559,7 @@ app.get('/api/changelog', async (req, res) => {
         const distPath = path.join(__dirname, 'dist', 'CHANGELOG.md');
         const localPath = path.join(__dirname, 'CHANGELOG.md');
         const rootPath = path.join(__dirname, '..', 'CHANGELOG.md');
-        
+
         let changelogPath = null;
         if (fs.existsSync(distPath)) changelogPath = distPath;
         else if (fs.existsSync(localPath)) changelogPath = localPath;
@@ -1581,9 +1583,9 @@ app.get('*', (req, res) => {
     // Prevent SPA fallback for static assets (folders or file-like paths)
     // This ensures that missing assets return 404 instead of index.html,
     // which is required for PWA Widgets / Manifest / Icons to work correctly.
-    if (req.path.includes('.') || 
-        req.path.startsWith('/assets/') || 
-        req.path.startsWith('/icons/') || 
+    if (req.path.includes('.') ||
+        req.path.startsWith('/assets/') ||
+        req.path.startsWith('/icons/') ||
         req.path.startsWith('/widgets/')) {
         return res.status(404).send('Not Found');
     }

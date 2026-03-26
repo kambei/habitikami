@@ -108,6 +108,11 @@ export async function callAI(
             content: msg.content,
         }));
 
+        if (anthropicMessages.length === 0) {
+            console.error('[AI] Attempted to call Anthropic with zero messages. System Prompt:', systemPrompt);
+            throw new Error('AI Provider error: At least one message is required for Anthropic.');
+        }
+
         const response = await fetch('/api/anthropic/chat', {
             method: 'POST',
             headers,

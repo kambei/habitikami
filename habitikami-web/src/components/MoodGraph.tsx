@@ -71,37 +71,52 @@ export function MoodGraph({ onBack }: Props) {
         const cached = localStorage.getItem(AI_CACHE_KEY);
         const cachedIds = localStorage.getItem(AI_CACHE_IDS_KEY);
         
-        let hasValidCache = false;
-        if (cached && cachedIds) {
+        let worksheets: { id: string; name: string }[] = [];
+        try {
+            const meta = await habitService.getWorksheetMetadata(analysisLimit);
+            if (!('error' in meta)) {
+                worksheets = meta as { id: string; name: string }[];
+            }
+        } catch (e) {
+            console.error("Failed to fetch metadata", e);
+        }
+
+        const currentIds = worksheets.map(f => f.id).join(',');
+        
+        if (cached && (cachedIds === currentIds || (currentIds === "" && cachedIds === ""))) {
             try {
-                const meta = await habitService.getWorksheetMetadata(analysisLimit);
-                if (!('error' in meta)) {
-                    const currentIds = meta.map(f => f.id).join(',');
-                    if (currentIds === cachedIds) {
-                        setAiInsights(JSON.parse(cached));
-                        setIsCacheHit(true);
-                        hasValidCache = true;
-                    }
-                }
+                const parsed = JSON.parse(cached);
+                setAiInsights(parsed);
+                setIsCacheHit(true);
+                setIsConsolidatedSummary(localStorage.getItem("AI_CACHE_TYPE") === "consolidated");
+                return;
             } catch (e) {
-                console.error("Cache check failed", e);
+                console.error("Failed to parse cache", e);
             }
         }
 
-        if (!hasValidCache) {
-            // Cache invalid or missing, clear it
-            localStorage.removeItem(AI_CACHE_KEY);
-            localStorage.removeItem(AI_CACHE_IDS_KEY);
-            setIsCacheHit(false);
+        // Cache invalid or missing
+        setIsCacheHit(false);
+        setIsConsolidatedSummary(false);
 
-            // Fetch latest consolidated summary as fallback
+        // If NO current worksheets (all archived), try to load latest consolidation from Drive
+        if (worksheets.length === 0) {
             const latestSummary = await habitService.getLatestConsolidatedSummary();
             if (latestSummary) {
-                setAiInsights({
-                    insightText: latestSummary.content, // Summary already has headers or is clear enough
-                    chartData: [],
-                    emotionsData: []
-                });
+                // Try to see if current cache matches this summary text
+                const cachedObj = cached ? JSON.parse(cached) : null;
+                if (cachedObj && cachedObj.insightText === latestSummary.content) {
+                    setAiInsights(cachedObj);
+                    setIsConsolidatedSummary(true);
+                    setIsCacheHit(true);
+                } else {
+                    setAiInsights({
+                        insightText: latestSummary.content,
+                        chartData: [],
+                        emotionsData: []
+                    });
+                    setIsConsolidatedSummary(true);
+                }
             }
         }
     };
@@ -258,12 +273,15 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
             const allIds = worksheets.map(f => f.id);
             await habitService.archiveWorksheets(allIds);
 
-            // Update local state to show the summary immediately
+            // Update local state and CACHE
             setAiInsights(parsed);
             setIsConsolidatedSummary(true);
             setSavedUrl(null);
-            localStorage.removeItem(AI_CACHE_KEY);
-            localStorage.removeItem(AI_CACHE_IDS_KEY);
+            
+            // Persist full result to cache with EMPTY IDs (since worksheets are archived)
+            localStorage.setItem(AI_CACHE_KEY, JSON.stringify(parsed));
+            localStorage.setItem(AI_CACHE_IDS_KEY, "");
+            localStorage.setItem("AI_CACHE_TYPE", "consolidated");
 
             toast.success(t('moodGraphConsolidateSuccess'));
         } catch (err: any) {

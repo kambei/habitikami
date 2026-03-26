@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Sparkles, TrendingUp, Target, Zap, Github, Smartphone } from 'lucide-react';
+import { Sparkles, TrendingUp, Target, Zap, Github } from 'lucide-react';
 import { useTranslation } from '../i18n';
 
 interface LandingPageProps {
@@ -294,63 +294,6 @@ export function LandingPage({ onSignIn, isLoading }: LandingPageProps) {
                         delay={1.0}
                     />
                 </div>
-
-                {/* Android App Tester Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 1.1 }}
-                    className="w-full max-w-sm"
-                >
-                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl p-6 shadow-[0_8px_40px_hsl(265_80%_60%/0.12)]">
-                        <div className="flex flex-col gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                                    <Smartphone className="w-4 h-4 text-primary" />
-                                </div>
-                                <h3 className="text-sm font-bold text-foreground">{t('landingAndroidTitle')}</h3>
-                            </div>
-                            
-                            <p className="text-xs text-muted-foreground/80 leading-relaxed italic">
-                                {t('landingAndroidSubtitle')}
-                            </p>
-
-                            <div className="space-y-3 mt-1">
-                                <div className="flex flex-col gap-1">
-                                    <a 
-                                        href="https://groups.google.com/g/habitikam" 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="text-primary hover:underline text-xs font-semibold"
-                                    >
-                                        1. {t('landingAndroidStep1')}
-                                    </a>
-                                    <span className="text-[11px] text-muted-foreground/60 ml-4">
-                                        {t('landingAndroidStep1Desc')}
-                                    </span>
-                                </div>
-                                
-                                <div className="flex flex-col gap-1">
-                                    <a 
-                                        href="https://play.google.com/apps/testing/dev.kambei.habitikami" 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="text-primary hover:underline text-xs font-semibold"
-                                    >
-                                        2. {t('landingAndroidStep2')}
-                                    </a>
-                                    <span className="text-[11px] text-muted-foreground/60 ml-4">
-                                        {t('landingAndroidStep2Desc')}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <p className="text-[10px] text-muted-foreground/40 leading-tight mt-2">
-                                {t('landingAndroidFooter')}
-                            </p>
-                        </div>
-                    </div>
-                </motion.div>
 
                 {/* Footer Links */}
                 <motion.div 

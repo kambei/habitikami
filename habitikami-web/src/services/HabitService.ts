@@ -95,6 +95,7 @@ class HabitServiceImpl {
             .replace(/\//g, '_')
             .replace(/=+$/, '');
         
+        sessionStorage.setItem('habitikami_code_challenge', base64);
         return base64;
     }
 
@@ -131,7 +132,7 @@ class HabitServiceImpl {
     private async initTokenClient() {
         if (this.tokenClient) return;
 
-        const code_challenge = await this.generatePKCE();
+        await this.generatePKCE();
         this.oauthState = crypto.randomUUID();
 
         this.tokenClient = (window as any).google.accounts.oauth2.initCodeClient({
@@ -140,8 +141,6 @@ class HabitServiceImpl {
             ux_mode: 'popup',
             include_granted_scopes: true,
             state: this.oauthState,
-            code_challenge: code_challenge,
-            code_challenge_method: 'S256',
             callback: async (response: any) => {
                 if (response.error) {
                     console.error("Auth Error:", response);
@@ -198,7 +197,10 @@ class HabitServiceImpl {
                 if (!this.accessToken) resolve({ error: this.authError || "Auth timed out" });
             }, 60000);
 
-            this.tokenClient.requestCode();
+            this.tokenClient.requestCode({
+                code_challenge: sessionStorage.getItem('habitikami_code_challenge'),
+                code_challenge_method: 'S256'
+            });
         });
     }
 

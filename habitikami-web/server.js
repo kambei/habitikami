@@ -395,7 +395,7 @@ function validateOrigin(req, res, next) {
 
 app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => {
     try {
-        const { code, code_verifier } = req.body;
+        const { code, code_verifier, redirect_uri } = req.body;
         if (!code) return res.status(400).json({ error: 'Missing authorization code' });
 
         const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
@@ -404,17 +404,17 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
             return res.status(500).json({ error: 'Server misconfiguration' });
         }
 
-        // Validate redirect_uri — require explicit APP_ORIGIN in production
-        const redirectUri = req.headers.origin || process.env.APP_ORIGIN;
-        if (!redirectUri) {
-            return res.status(400).json({ error: 'Missing origin' });
+        // Use redirect_uri from request if provided, otherwise fall back to header or env
+        const redirectUriUsed = redirect_uri || req.headers.origin || process.env.APP_ORIGIN;
+        if (!redirectUriUsed) {
+            return res.status(400).json({ error: 'Missing redirect_uri' });
         }
 
         const params = new URLSearchParams({
             code,
             client_id: clientId,
             client_secret: clientSecret,
-            redirect_uri: redirectUri,
+            redirect_uri: redirectUriUsed,
             grant_type: 'authorization_code',
         });
 

@@ -170,11 +170,12 @@ class HabitServiceImpl {
 
     private async exchangeCodeForTokens(code: string) {
         try {
+            const redirectUri = window.location.origin + window.location.pathname;
             const verifier = this.codeVerifier || sessionStorage.getItem('habitikami_code_verifier');
             const response = await fetch('/api/auth/exchange', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code, code_verifier: verifier }),
+                body: JSON.stringify({ code, code_verifier: verifier, redirect_uri: redirectUri }),
             });
 
             const data = await response.json();

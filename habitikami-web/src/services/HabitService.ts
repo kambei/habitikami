@@ -30,6 +30,7 @@ class HabitServiceImpl {
     private tokenExpiry: number = 0;
     private authError: string | null = null;
     private oauthState: string | null = null;
+    private codeVerifier: string | null = null;
     private email: string | null = null;
     private spreadsheetId: string | null = null;
 
@@ -77,6 +78,26 @@ class HabitServiceImpl {
 
     private initError: string | null = null;
 
+    private async generatePKCE() {
+        const array = new Uint32Array(56);
+        window.crypto.getRandomValues(array);
+        const verifier = Array.from(array, dec => ('0' + dec.toString(16)).substr(-2)).join('');
+        this.codeVerifier = verifier;
+        sessionStorage.setItem('habitikami_code_verifier', verifier);
+
+        const encoder = new TextEncoder();
+        const data = encoder.encode(verifier);
+        const hash = await window.crypto.subtle.digest('SHA-256', data);
+        
+        // Base64Url encode
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(hash)))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
+        
+        return base64;
+    }
+
     private loadGapi() {
         const script = document.createElement('script');
         script.src = "https://apis.google.com/js/api.js";
@@ -85,7 +106,6 @@ class HabitServiceImpl {
                 try {
                     console.log("Initializing GAPI client...");
                     await gapi.client.init({
-                        // apiKey: API_KEY, // Optional if we use OAuth
                         discoveryDocs: DISCOVERY_DOCS,
                     });
                     console.log("GAPI client initialized.");
@@ -105,39 +125,40 @@ class HabitServiceImpl {
         gisScript.src = 'https://accounts.google.com/gsi/client';
         gisScript.async = true;
         gisScript.defer = true;
-        gisScript.onload = () => {
-            try {
-                // Generate a random state token for CSRF protection
-                this.oauthState = crypto.randomUUID();
-
-                this.tokenClient = (window as any).google.accounts.oauth2.initCodeClient({
-                    client_id: CLIENT_ID,
-                    scope: SCOPES,
-                    ux_mode: 'popup',
-                    include_granted_scopes: true,
-                    state: this.oauthState,
-                    callback: async (response: any) => {
-                        if (response.error) {
-                            console.error("Auth Error:", response);
-                            return;
-                        }
-                        // Verify state to prevent CSRF attacks (only if state is returned by GIS)
-                        if (response.state && response.state !== this.oauthState) {
-                            console.error("OAuth state mismatch — possible CSRF attack");
-                            this.authError = "Security error: OAuth state mismatch";
-                            return;
-                        }
-                        if (response.code) {
-                            await this.exchangeCodeForTokens(response.code);
-                        }
-                    },
-                });
-            } catch (e: any) {
-                console.error("GIS init error:", e);
-                this.initError = "GIS init error: " + e.message;
-            }
-        };
         document.body.appendChild(gisScript);
+    }
+
+    private async initTokenClient() {
+        if (this.tokenClient) return;
+
+        const code_challenge = await this.generatePKCE();
+        this.oauthState = crypto.randomUUID();
+
+        this.tokenClient = (window as any).google.accounts.oauth2.initCodeClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            ux_mode: 'popup',
+            include_granted_scopes: true,
+            state: this.oauthState,
+            code_challenge: code_challenge,
+            code_challenge_method: 'S256',
+            callback: async (response: any) => {
+                if (response.error) {
+                    console.error("Auth Error:", response);
+                    this.authError = response.error_description || response.error;
+                    return;
+                }
+                // Verify state to prevent CSRF attacks
+                if (response.state && response.state !== this.oauthState) {
+                    console.error("OAuth state mismatch — possible CSRF attack");
+                    this.authError = "Security error: OAuth state mismatch";
+                    return;
+                }
+                if (response.code) {
+                    await this.exchangeCodeForTokens(response.code);
+                }
+            },
+        });
     }
 
     /**
@@ -148,15 +169,16 @@ class HabitServiceImpl {
             return { error: "Missing CLIENT_ID environment variable" };
         }
 
+        try {
+            await this.initTokenClient();
+        } catch (e: any) {
+            return { error: "Failed to initialize Auth: " + e.message };
+        }
+
         return new Promise((resolve) => {
             if (!this.tokenClient) {
                 return resolve({ error: "Google Identity Services not loaded yet. Try again in a moment." });
             }
-
-            // Hook into the callback execution flow by waiting for internal state change
-            // This is a bit tricky with code flow as the callback is defined in init.
-            // We can wrap the exchangeCodeForTokens or assume success if no error thrown.
-            // For better UX, we'll return a promise that resolves when tokens are set.
 
             this.authError = null;
 
@@ -182,16 +204,20 @@ class HabitServiceImpl {
 
     private async exchangeCodeForTokens(code: string) {
         try {
+            const verifier = this.codeVerifier || sessionStorage.getItem('habitikami_code_verifier');
             const response = await fetch('/api/auth/exchange', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code }),
+                body: JSON.stringify({ code, code_verifier: verifier }),
             });
 
             const data = await response.json();
             if (!response.ok || data.error) throw new Error(data.error || 'Token exchange failed');
 
             this.saveSession(data);
+            // Clear verifier after use
+            this.codeVerifier = null;
+            sessionStorage.removeItem('habitikami_code_verifier');
         } catch (e) {
             console.error('Error exchanging code:', e);
             this.authError = e instanceof Error ? e.message : 'Authentication failed';
@@ -281,6 +307,7 @@ class HabitServiceImpl {
                         this.tokenExpiry = session.expiry_date;
                         this.email = session.email || null;
                         this.spreadsheetId = session.spreadsheet_id || null;
+                        this.codeVerifier = sessionStorage.getItem('habitikami_code_verifier');
 
                         if (Date.now() >= this.tokenExpiry - 60000) {
                             const refreshed = await this.refreshAccessToken();

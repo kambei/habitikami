@@ -395,7 +395,7 @@ function validateOrigin(req, res, next) {
 
 app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => {
     try {
-        const { code } = req.body;
+        const { code, code_verifier } = req.body;
         if (!code) return res.status(400).json({ error: 'Missing authorization code' });
 
         const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
@@ -417,6 +417,10 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
             redirect_uri: redirectUri,
             grant_type: 'authorization_code',
         });
+
+        if (code_verifier) {
+            params.append('code_verifier', code_verifier);
+        }
 
         const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
             method: 'POST',

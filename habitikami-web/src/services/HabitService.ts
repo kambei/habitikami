@@ -24,15 +24,14 @@ interface SessionData {
 }
 
 class HabitServiceImpl {
-    private tokenClient: any;
     private accessToken: string | null = null;
     private refreshToken: string | null = null;
     private tokenExpiry: number = 0;
     private authError: string | null = null;
-    private oauthState: string | null = null;
     private codeVerifier: string | null = null;
     private email: string | null = null;
     private spreadsheetId: string | null = null;
+    private redirectPromise: Promise<void> | null = null;
 
     constructor() {
         this.loadGapi();
@@ -48,6 +47,10 @@ class HabitServiceImpl {
 
     getEmail(): string | null {
         return this.email;
+    }
+
+    getAuthError(): string | null {
+        return this.authError;
     }
 
     /** Returns spreadsheetId regardless of whether email is also set. */
@@ -95,7 +98,6 @@ class HabitServiceImpl {
             .replace(/\//g, '_')
             .replace(/=+$/, '');
         
-        sessionStorage.setItem('habitikami_code_challenge', base64);
         return base64;
     }
 
@@ -106,102 +108,64 @@ class HabitServiceImpl {
             gapi.load('client', async () => {
                 try {
                     console.log("Initializing GAPI client...");
-                    await gapi.client.init({
-                        discoveryDocs: DISCOVERY_DOCS,
-                    });
+                    await gapi.client.init({ discoveryDocs: DISCOVERY_DOCS });
                     console.log("GAPI client initialized.");
                 } catch (e: any) {
                     console.error("GAPI init error:", e);
-                    this.initError = e.result?.error?.message || e.message || JSON.stringify(e);
+                    this.initError = (e.result?.error?.message || e.message || JSON.stringify(e));
                 }
             });
         };
-        script.onerror = () => {
-            this.initError = "Failed to load Google API script.";
-        };
+        script.onerror = () => { this.initError = "Failed to load Google API script."; };
         document.body.appendChild(script);
 
-        // Initialize GIS (Google Identity Services) for Auth
-        const gisScript = document.createElement('script');
-        gisScript.src = 'https://accounts.google.com/gsi/client';
-        gisScript.async = true;
-        gisScript.defer = true;
-        document.body.appendChild(gisScript);
+        // Check for Auth code in URL (Redirect Flow)
+        this.redirectPromise = this.handleRedirectCallback();
     }
 
-    private async initTokenClient() {
-        if (this.tokenClient) return;
+    private async handleRedirectCallback() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const state = urlParams.get('state');
+        const storedState = sessionStorage.getItem('habitikami_oauth_state');
 
-        await this.generatePKCE();
-        this.oauthState = crypto.randomUUID();
+        if (code) {
+            // Remove code from URL for cleaner UX
+            window.history.replaceState({}, document.title, window.location.pathname);
 
-        this.tokenClient = (window as any).google.accounts.oauth2.initCodeClient({
-            client_id: CLIENT_ID,
-            scope: SCOPES,
-            ux_mode: 'popup',
-            include_granted_scopes: true,
-            state: this.oauthState,
-            callback: async (response: any) => {
-                if (response.error) {
-                    console.error("Auth Error:", response);
-                    this.authError = response.error_description || response.error;
-                    return;
-                }
-                // Verify state to prevent CSRF attacks
-                if (response.state && response.state !== this.oauthState) {
-                    console.error("OAuth state mismatch — possible CSRF attack");
-                    this.authError = "Security error: OAuth state mismatch";
-                    return;
-                }
-                if (response.code) {
-                    await this.exchangeCodeForTokens(response.code);
-                }
-            },
-        });
-    }
-
-    /**
-     * Trigger the Login Popup (Code Flow)
-     */
-    async auth(): Promise<{ success?: boolean, error?: string }> {
-        if (!CLIENT_ID) {
-            return { error: "Missing CLIENT_ID environment variable" };
-        }
-
-        try {
-            await this.initTokenClient();
-        } catch (e: any) {
-            return { error: "Failed to initialize Auth: " + e.message };
-        }
-
-        return new Promise((resolve) => {
-            if (!this.tokenClient) {
-                return resolve({ error: "Google Identity Services not loaded yet. Try again in a moment." });
+            if (state && state !== storedState) {
+                console.error("OAuth state mismatch");
+                this.authError = "Security error: State mismatch";
+                return;
             }
 
-            this.authError = null;
+            console.log("Authorization code found in URL, exchanging...");
+            await this.exchangeCodeForTokens(code);
+        }
+    }
 
-            const checkToken = setInterval(() => {
-                if (this.accessToken) {
-                    clearInterval(checkToken);
-                    resolve({ success: true });
-                } else if (this.authError) {
-                    clearInterval(checkToken);
-                    resolve({ error: this.authError });
-                }
-            }, 500);
+    async auth(): Promise<{ success?: boolean, error?: string }> {
+        if (!CLIENT_ID) return { error: "Missing CLIENT_ID environment variable" };
 
-            // Timeout after 60s
-            setTimeout(() => {
-                clearInterval(checkToken);
-                if (!this.accessToken) resolve({ error: this.authError || "Auth timed out" });
-            }, 60000);
+        const challenge = await this.generatePKCE();
+        const state = crypto.randomUUID();
+        sessionStorage.setItem('habitikami_oauth_state', state);
 
-            this.tokenClient.requestCode({
-                code_challenge: sessionStorage.getItem('habitikami_code_challenge'),
-                code_challenge_method: 'S256'
-            });
-        });
+        const redirectUri = window.location.origin + window.location.pathname;
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+            `client_id=${CLIENT_ID}&` +
+            `response_type=code&` +
+            `scope=${encodeURIComponent(SCOPES)}&` +
+            `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+            `state=${state}&` +
+            `code_challenge=${challenge}&` +
+            `code_challenge_method=S256&` +
+            `include_granted_scopes=true`;
+
+        window.location.href = authUrl;
+
+        // Return a promise that will never resolve here because the page redirects
+        return new Promise(() => {});
     }
 
     private async exchangeCodeForTokens(code: string) {
@@ -217,9 +181,6 @@ class HabitServiceImpl {
             if (!response.ok || data.error) throw new Error(data.error || 'Token exchange failed');
 
             this.saveSession(data);
-            // Clear verifier after use
-            this.codeVerifier = null;
-            sessionStorage.removeItem('habitikami_code_verifier');
         } catch (e) {
             console.error('Error exchanging code:', e);
             this.authError = e instanceof Error ? e.message : 'Authentication failed';
@@ -291,6 +252,8 @@ class HabitServiceImpl {
     }
 
     async tryRestoreSession(): Promise<boolean> {
+        if (this.redirectPromise) await this.redirectPromise;
+
         return new Promise((resolve) => {
             const checkGapi = async () => {
                 let attempts = 0;
@@ -309,7 +272,6 @@ class HabitServiceImpl {
                         this.tokenExpiry = session.expiry_date;
                         this.email = session.email || null;
                         this.spreadsheetId = session.spreadsheet_id || null;
-                        this.codeVerifier = sessionStorage.getItem('habitikami_code_verifier');
 
                         if (Date.now() >= this.tokenExpiry - 60000) {
                             const refreshed = await this.refreshAccessToken();

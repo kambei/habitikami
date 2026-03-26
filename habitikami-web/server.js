@@ -16,6 +16,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 1); // for express-rate-limit behind reverse proxy
 const PORT = process.env.PORT || 80;
 
 // ─── User store (email → spreadsheetId) ──────────────────────────────────────
@@ -531,6 +532,7 @@ app.post('/api/auth/refresh', authLimiter, validateOrigin, async (req, res) => {
 
         const users = loadUsers();
         const spreadsheetId = (email && getUserSpreadsheetId(users, email)) || (email === process.env.OWNER_EMAIL ? process.env.VITE_SPREADSHEET_ID : null) || null;
+        console.log(`Auth refresh: email=${email}, spreadsheet_id=${spreadsheetId ? 'found' : 'MISSING'}, has_refresh_token=${!!data.refresh_token}`);
 
         res.json({
             access_token: data.access_token,
@@ -851,12 +853,16 @@ app.post('/api/user/apikey', apiLimiter, validateOrigin, async (req, res) => {
             }
             // Add new key
             const entry = { email, spreadsheetId, createdAt: new Date().toISOString() };
-            if (encryptedRefreshToken) entry.refreshToken = encryptedRefreshToken;
+            if (encryptedRefreshToken) {
+                entry.refreshToken = encryptedRefreshToken;
+                console.log(`API key generated for ${email} WITH refresh token`);
+            } else {
+                console.log(`API key generated for ${email} WITHOUT refresh token!`);
+            }
             apiKeys[newKey] = entry;
             return apiKeys;
         });
 
-        console.log(`API key generated for ${email}`);
         res.json({ success: true, api_key: newKey });
     } catch (error) {
         console.error('Generate API key error:', error);

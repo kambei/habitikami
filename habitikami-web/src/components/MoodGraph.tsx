@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Trash2, TrendingDown, TrendingUp, Minus, Sparkles, Loader2 } from 'lucide-react';
+import { BarChart3, Trash2, TrendingDown, TrendingUp, Minus, Sparkles, Loader2, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, BarChart, Bar, Cell, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { useTranslation } from '../i18n';
@@ -208,14 +208,21 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
             const toArchive = worksheets.slice(5);
             const archiveIds = toArchive.map(f => f.id);
 
-            const prompt = `Analizza questi documenti e crea un UNICO documento di riepilogo testuale che sintetizzi l'andamento del periodo.
+            const systemPrompt = "Sei un esperto psicologo. Analizza i documenti e crea un UNICO documento di riepilogo testuale che sintetizzi l'andamento del periodo. Restituisci solo il testo del riepilogo in Markdown, senza commenti extra.";
+            const userPrompt = `Analizza questi documenti e crea un UNICO documento di riepilogo testuale che sintetizzi l'andamento del periodo.
             DOCUMENTI:
             ${toArchive.map(w => `TITOLO: ${w.title}\nCONTENUTO: ${w.content}`).join('\n---\n')}
             
             Restituisci solo il testo del riepilogo in Markdown, senza commenti extra.`;
 
             const accessToken = habitService.getAccessToken();
-            const summaryText = await callAI(providerConfig, prompt, "Riepilogo Storico", [], accessToken);
+            const summaryText = await callAI(
+                providerConfig, 
+                systemPrompt, 
+                "Riepilogo Storico", 
+                [{ role: 'user', content: userPrompt }], 
+                accessToken
+            );
 
             // Save summary
             const now = new Date();
@@ -379,7 +386,7 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                                 disabled={isConsolidating}
                                                 className="w-full py-2 bg-secondary/50 hover:bg-secondary text-[10px] font-bold rounded-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                                             >
-                                                {isConsolidating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                                                {isConsolidating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                                                 {t('moodGraphConsolidate')}
                                             </button>
                                         </div>

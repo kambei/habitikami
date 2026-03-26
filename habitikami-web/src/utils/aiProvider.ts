@@ -93,6 +93,7 @@ export async function callAI(
     systemAck: string,
     messages: AIMessage[],
     accessToken: string | null,
+    responseFormat: 'json' | 'text' = 'json',
 ): Promise<string> {
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -102,7 +103,6 @@ export async function callAI(
     }
 
     if (config.provider === 'anthropic') {
-        // Convert 'model' role to 'assistant' for Anthropic
         const anthropicMessages = messages.map(msg => ({
             role: msg.role === 'model' ? 'assistant' as const : 'user' as const,
             content: msg.content,
@@ -126,9 +126,8 @@ export async function callAI(
         const data = await response.json();
         const textResponse = data.content?.[0]?.text;
         if (!textResponse) throw new Error('Empty response from AI');
-        return extractJSON(textResponse);
+        return responseFormat === 'json' ? extractJSON(textResponse) : textResponse;
     } else {
-        // Gemini format
         const apiMessages = [
             { role: 'user', parts: [{ text: systemPrompt }] },
             { role: 'model', parts: [{ text: systemAck }] },
@@ -138,16 +137,21 @@ export async function callAI(
             })),
         ];
 
+        const body: any = {
+            apiKey: config.apiKey,
+            contents: apiMessages,
+        };
+
+        if (responseFormat === 'json') {
+            body.generationConfig = {
+                responseMimeType: 'application/json',
+            };
+        }
+
         const response = await fetch('/api/gemini/chat', {
             method: 'POST',
             headers,
-            body: JSON.stringify({
-                apiKey: config.apiKey,
-                contents: apiMessages,
-                generationConfig: {
-                    responseMimeType: 'application/json',
-                },
-            }),
+            body: JSON.stringify(body),
         });
 
         if (!response.ok) {
@@ -158,6 +162,6 @@ export async function callAI(
         const data = await response.json();
         const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!textResponse) throw new Error('Empty response from AI');
-        return extractJSON(textResponse);
+        return responseFormat === 'json' ? extractJSON(textResponse) : textResponse;
     }
 }

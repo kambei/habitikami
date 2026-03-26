@@ -221,7 +221,8 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                 systemPrompt, 
                 "Riepilogo Storico", 
                 [{ role: 'user', content: userPrompt }], 
-                accessToken
+                accessToken,
+                'text'
             );
 
             // Save summary

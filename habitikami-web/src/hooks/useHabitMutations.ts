@@ -58,7 +58,7 @@ export function useUpdateCell() {
             }
             toast.error(`Failed to update cell: ${err instanceof Error ? err.message : 'Unknown error'}`);
         },
-        onSettled: (data, error, variables) => {
+        onSettled: (_data, _error, variables) => {
             const { sheetName, year, month } = variables;
             if (year !== undefined && month !== undefined) {
                 queryClient.invalidateQueries({ queryKey: ['sheetData', sheetName, year, month] });

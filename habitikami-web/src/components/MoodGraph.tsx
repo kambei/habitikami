@@ -221,33 +221,45 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                 return;
             }
 
-            const systemPrompt = "Sei un esperto psicologo. Analizza i documenti e crea un UNICO documento di riepilogo testuale che sintetizzi l'andamento del periodo. Restituisci solo il testo del riepilogo in Markdown, senza commenti extra.";
-            const userPrompt = `Analizza questi documenti e crea un UNICO documento di riepilogo testuale che sintetizzi l'andamento del periodo.
+            const systemPrompt = `Sei un esperto psicologo e analista dati. Analizza i documenti forniti e crea un UNICO documento di riepilogo testuale che sintetizzi l'andamento del periodo.
+            Inoltre, estrai i trend principali e le emozioni prevalenti.
+            Rispondi UNICAMENTE in JSON valido con questa struttura esatta:
+            {
+              "insightText": "Il riepilogo in Markdown del periodo (può essere lungo e dettagliato).",
+              "chartData": [
+                { "name": "Trend 1", "score": 80 },
+                { "name": "Trend 2", "score": -40 }
+              ],
+              "emotionsData": [
+                { "emotion": "Gioia", "score": 90 },
+                { "emotion": "Ansia", "score": 30 }
+              ]
+            }`;
+
+            const userPrompt = `Analizza questi documenti, crea un riepilogo consolidato e popola i dati per i grafici:
             DOCUMENTI:
             ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO: ${w.content}`).join('\n---\n')}
             
-            Restituisci solo il testo del riepilogo in Markdown, senza commenti extra.`;
+            Restituisci solo il JSON.`;
 
             const accessToken = habitService.getAccessToken();
-            const summaryText = await callAI(
+            const responseText = await callAI(
                 providerConfig, 
                 systemPrompt, 
-                "Riepilogo Storico", 
+                '{"insightText":"","chartData":[],"emotionsData":[]}', 
                 [{ role: 'user', content: userPrompt }], 
-                accessToken,
-                'text'
+                accessToken
             );
+
+            const parsed = JSON.parse(responseText);
+            if (!parsed.insightText) throw new Error("Invalid AI response");
 
             // Archive ALL worksheets
             const allIds = worksheets.map(f => f.id);
             await habitService.archiveWorksheets(allIds);
 
             // Update local state to show the summary immediately
-            setAiInsights({
-                insightText: summaryText,
-                chartData: [],
-                emotionsData: []
-            });
+            setAiInsights(parsed);
             setIsConsolidatedSummary(true);
             setSavedUrl(null);
             localStorage.removeItem(AI_CACHE_KEY);
@@ -377,21 +389,23 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                     <div className="text-sm text-foreground/90 leading-relaxed bg-background/50 p-4 rounded-lg border border-border/50 overflow-hidden">
                                         {renderMarkdown(aiInsights.insightText)}
                                     </div>
-                                    <div className="h-48 w-full">
-                                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                                            <BarChart data={aiInsights.chartData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#333" />
-                                                <XAxis type="number" domain={[-100, 100]} tick={{ fontSize: 10, fill: '#888' }} />
-                                                <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#ccc' }} width={80} />
-                                                <Tooltip cursor={{ fill: '#ffffff10' }} contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: 8, fontSize: 12 }} />
-                                                <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                                                    {aiInsights.chartData.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={entry.score > 0 ? '#34d399' : '#fb923c'} />
-                                                    ))}
-                                                </Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
+                                    {aiInsights.chartData && aiInsights.chartData.length > 0 && (
+                                        <div className="h-48 w-full">
+                                            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                                                <BarChart data={aiInsights.chartData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#333" />
+                                                    <XAxis type="number" domain={[-100, 100]} tick={{ fontSize: 10, fill: '#888' }} />
+                                                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#ccc' }} width={80} />
+                                                    <Tooltip cursor={{ fill: '#ffffff10' }} contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: 8, fontSize: 12 }} />
+                                                    <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                                                        {aiInsights.chartData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.score > 0 ? '#34d399' : '#fb923c'} />
+                                                        ))}
+                                                    </Bar>
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    )}
                                     {aiInsights.emotionsData && aiInsights.emotionsData.length > 0 && (
                                         <div className="h-56 w-full pt-4 border-t border-border/50">
                                             <ResponsiveContainer width="100%" height="100%" minWidth={0}>

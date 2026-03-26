@@ -15,20 +15,30 @@ export function markdownToHtml(md: string): string {
     // Blockquotes
     html = html.replace(/^> (.+)$/gm, '<blockquote style="border-left:3px solid #ccc;padding-left:12px;color:#666;margin:8px 0;">$1</blockquote>');
 
-    // List items
-    html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
-
-    // Horizontal rules
-    html = html.replace(/^---$/gm, '<hr/>');
-
-    // Tables
+    // List items (and wrapping in UL)
     const lines = html.split('\n');
     const result: string[] = [];
+    let inList = false;
     let inTable = false;
     let headerDone = false;
 
     for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
+        let line = lines[i].trim();
+        
+        // List handling
+        if (line.match(/^- (.+)$/)) {
+            if (!inList) {
+                result.push('<ul>');
+                inList = true;
+            }
+            result.push(`<li>${line.replace(/^- /, '')}</li>`);
+            continue;
+        } else if (inList) {
+            result.push('</ul>');
+            inList = false;
+        }
+
+        // Table handling (already implemented but kept clean here)
         if (line.startsWith('|') && line.endsWith('|')) {
             const cells = line.split('|').filter(c => c.trim() !== '');
             const nextLine = lines[i + 1]?.trim() || '';
@@ -51,32 +61,29 @@ export function markdownToHtml(md: string): string {
                 `<${tag} style="border:1px solid #ddd;padding:8px;text-align:left;">${c.trim()}</${tag}>`
             ).join('');
             result.push(`<tr>${row}</tr>`);
-        } else {
-            if (inTable) {
-                result.push('</table>');
-                inTable = false;
-                headerDone = false;
+            continue;
+        } else if (inTable) {
+            result.push('</table>');
+            inTable = false;
+        }
+
+        // Regular line handling
+        if (line === '---') {
+            result.push('<hr/>');
+        } else if (line !== '') {
+            // If it's not a tag already, wrap in P or at least handle breaks
+            if (!line.startsWith('<')) {
+                result.push(`<p>${line}</p>`);
+            } else {
+                result.push(line);
             }
-            result.push(line);
         }
     }
+
+    if (inList) result.push('</ul>');
     if (inTable) result.push('</table>');
 
-    html = result.join('\n');
-
-    // Paragraphs - wrap loose text
-    html = html.replace(/\n\n/g, '</p><p>');
-    html = `<p>${html}</p>`;
-    // Clean empty paragraphs
-    html = html.replace(/<p>\s*<\/p>/g, '');
-    html = html.replace(/<p>(<h[1-3]>)/g, '$1');
-    html = html.replace(/(<\/h[1-3]>)<\/p>/g, '$1');
-    html = html.replace(/<p>(<table)/g, '$1');
-    html = html.replace(/(<\/table>)<\/p>/g, '$1');
-    html = html.replace(/<p>(<hr\/>)/g, '$1');
-    html = html.replace(/(<hr\/>)<\/p>/g, '$1');
-    html = html.replace(/<p>(<blockquote)/g, '$1');
-    html = html.replace(/(<\/blockquote>)<\/p>/g, '$1');
+    const bodyHtml = result.join('\n');
 
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; color: #333; line-height: 1.6; }
@@ -86,5 +93,6 @@ export function markdownToHtml(md: string): string {
         table { border-collapse: collapse; width: 100%; }
         th { background-color: #f8f9fa; font-weight: bold; }
         li { margin: 4px 0; }
-    </style></head><body>${html}</body></html>`;
+        p { margin: 8px 0; }
+    </style></head><body>${bodyHtml}</body></html>`;
 }

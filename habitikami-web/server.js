@@ -1033,6 +1033,54 @@ async function resolveSpreadsheetId(req) {
 
 const HEADER_PATTERN = /giorno|date|day/i;
 
+const parseCounterRows = (rows, oldest, newest) => {
+    if (!rows || rows.length === 0) return { entries: [], metadata: {} };
+
+    const headers = rows[0];
+    const dateIdx = headers.findIndex(h => h && /date|giorno/i.test(h.split('|')[0]));
+    if (dateIdx === -1) return { entries: [], metadata: {} };
+
+    const colMap = {};
+    const metadata = {};
+
+    headers.forEach((h, i) => {
+        if (i === dateIdx || !h || h.startsWith('_config')) return;
+        
+        const parts = h.split('|');
+        const id = parts[0].toLowerCase();
+        colMap[id] = i;
+
+        if (parts.length > 1) {
+            const [actionId, icon, color, label, categoryId, categoryLabel, type] = parts;
+            metadata[id] = {
+                id,
+                icon,
+                color,
+                label: label || actionId,
+                categoryId: categoryId || 'shared',
+                categoryLabel: categoryLabel || 'Temptations',
+                type: type || 'other'
+            };
+        }
+    });
+
+    const entries = rows.slice(1).filter(row => {
+        const rowDate = row[dateIdx];
+        if (!rowDate) return false;
+        if (oldest && rowDate < oldest) return false;
+        if (newest && rowDate > newest) return false;
+        return true;
+    }).map(row => {
+        const entry = { date: row[dateIdx] };
+        Object.keys(colMap).forEach(key => {
+            entry[key] = parseInt(row[colMap[key]] || '0', 10);
+        });
+        return entry;
+    });
+
+    return { entries, metadata, headers, dateIdx };
+};
+
 const rowsToObjects = (rows) => {
     if (!rows || rows.length === 0) return [];
 
@@ -1167,7 +1215,13 @@ app.get('/api/export', authenticate, async (req, res) => {
                 if (!range) return;
                 if (range.startsWith('Weekdays')) result.weekdays = filterData(rowsToObjects(rangeData.values), oldest, newest);
                 else if (range.startsWith('Weekend')) result.weekend = filterData(rowsToObjects(rangeData.values), oldest, newest);
-                else if (range.startsWith('Counters')) result.counters = filterData(rowsToObjects(rangeData.values), oldest, newest);
+                else if (range.startsWith('Counters')) {
+                    const { entries, metadata } = parseCounterRows(rangeData.values, oldest, newest);
+                    result.counters = entries;
+                    // Inject counter metadata into the colors object
+                    if (!result.colors.counters) result.colors.counters = {};
+                    Object.assign(result.colors.counters, metadata);
+                }
                 else if (range.startsWith('MobNotes')) result.notes = filterData(rowsToObjects(rangeData.values), oldest, newest);
             });
         }
@@ -1226,45 +1280,20 @@ app.get('/api/counter', authenticate, async (req, res) => {
         const rows = response.data.values || [];
         if (rows.length === 0) return res.json({ success: true, entries: [] });
 
-        const headers = rows[0];
-        const dateIdx = headers.findIndex(h => h && /date/i.test(h.split('|')[0]));
-        if (dateIdx === -1) return res.status(500).json({ error: 'Counters sheet missing Date column' });
-
-        // Map column indices using the ActionID part of the header
-        const colMap = {};
-        headers.forEach((h, i) => {
-            if (i !== dateIdx && h && !h.startsWith('_config')) {
-                const id = h.split('|')[0].toLowerCase();
-                colMap[id] = i;
-            }
-        });
+        const { entries, metadata, headers, dateIdx } = parseCounterRows(rows, oldest, newest);
 
         // If no date params, return today only
         if (!oldest && !newest) {
-            const todayRow = rows.find(r => r[dateIdx] === todayStr);
-            const result = {};
-            Object.keys(colMap).forEach(key => {
-                result[key] = parseInt(todayRow?.[colMap[key]] || '0', 10);
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayEntry = entries.find(e => e.date === todayStr) || { date: todayStr };
+            // Ensure all discovered counters exist in today's entry even if 0
+            Object.keys(metadata).forEach(key => {
+                if (todayEntry[key] === undefined) todayEntry[key] = 0;
             });
-            return res.json({ success: true, date: todayStr, counters: result });
+            return res.json({ success: true, date: todayStr, counters: todayEntry, metadata });
         }
 
-        // With date params, return array of daily entries
-        const entries = rows.slice(1).filter(row => {
-            const rowDate = row[dateIdx];
-            if (!rowDate) return false;
-            if (oldest && rowDate < oldest) return false;
-            if (newest && rowDate > newest) return false;
-            return true;
-        }).map(row => {
-            const entry = { date: row[dateIdx] };
-            Object.keys(colMap).forEach(key => {
-                entry[key] = parseInt(row[colMap[key]] || '0', 10);
-            });
-            return entry;
-        });
-
-        res.json({ success: true, entries });
+        res.json({ success: true, entries, metadata });
     } catch (error) {
         console.error('Counter GET Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });

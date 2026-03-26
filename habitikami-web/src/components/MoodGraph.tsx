@@ -7,6 +7,8 @@ import { cn } from '../lib/utils';
 import { getActiveProvider, callAI } from '../utils/aiProvider';
 import { habitService } from '../services/HabitService';
 import { toast } from 'sonner';
+import { renderMarkdown } from '../lib/renderMarkdown';
+import { markdownToHtml } from '../lib/markdownUtils';
 
 export interface MoodEntry {
     date: string;        // ISO date string
@@ -93,7 +95,7 @@ export function MoodGraph({ onBack }: Props) {
             const latestSummary = await habitService.getLatestConsolidatedSummary();
             if (latestSummary) {
                 setAiInsights({
-                    insightText: `### ${t('moodGraphConsolidateSuccess')}\n\n${latestSummary.content}`,
+                    insightText: latestSummary.content, // Summary already has headers or is clear enough
                     chartData: [],
                     emotionsData: []
                 });
@@ -237,17 +239,18 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                 'text'
             );
 
-            // Save summary
+            // Save summary with proper HTML conversion for Google Docs
             const now = new Date();
             const dateStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-            await habitService.createDriveDocument(`Riepilogo Consolidato - ${dateStr}`, summaryText);
+            const htmlContent = markdownToHtml(summaryText);
+            await habitService.createDriveDocument(`Riepilogo Consolidato - ${dateStr}`, htmlContent);
 
             // Archive the files
             await habitService.archiveWorksheets(archiveIds);
 
             // Update local state to show the summary immediately
             setAiInsights({
-                insightText: `### ${t('moodGraphConsolidateSuccess')}\n\n${summaryText}`,
+                insightText: summaryText,
                 chartData: [],
                 emotionsData: []
             });
@@ -355,9 +358,9 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
 
                             {aiInsights && !isAnalyzing && (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-                                    <p className="text-sm text-foreground/90 leading-relaxed bg-background/50 p-3 rounded-lg border border-border/50">
-                                        {aiInsights.insightText}
-                                    </p>
+                                    <div className="text-sm text-foreground/90 leading-relaxed bg-background/50 p-4 rounded-lg border border-border/50 overflow-hidden">
+                                        {renderMarkdown(aiInsights.insightText)}
+                                    </div>
                                     <div className="h-48 w-full">
                                         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                                             <BarChart data={aiInsights.chartData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>

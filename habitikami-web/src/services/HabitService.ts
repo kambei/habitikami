@@ -1441,6 +1441,7 @@ class HabitServiceImpl {
             }
 
             const result = await response.json();
+            console.log(`[HabitService] Document saved successfully. ID: ${result.id}`);
             return { fileId: result.id, fileUrl: result.webViewLink };
         } catch (e: any) {
             return { error: e.message || 'Failed to create Drive document' };
@@ -1546,15 +1547,20 @@ class HabitServiceImpl {
             const folderId = await this.findOrCreateWorksheetFolder();
             const archiveId = await this.findOrCreateArchiveFolder();
 
+            console.log(`[HabitService] Archiving ${fileIds.length} worksheets to folder: ${archiveId}`);
+
             for (const fileId of fileIds) {
                 // To move a file, we remove current parent and add new parent
-                await fetch(
+                const patchRes = await fetch(
                     `https://www.googleapis.com/drive/v3/files/${fileId}?removeParents=${folderId}&addParents=${archiveId}`,
                     {
                         method: 'PATCH',
                         headers: { 'Authorization': `Bearer ${this.accessToken}` },
                     }
                 );
+                if (!patchRes.ok) {
+                    console.error(`[HabitService] Failed to archive file: ${fileId}`);
+                }
             }
             return { success: true };
         } catch (e: any) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Trash2, TrendingDown, TrendingUp, Minus, Sparkles, Loader2, Save } from 'lucide-react';
+import { BarChart3, Trash2, TrendingDown, TrendingUp, Minus, Sparkles, Loader2, Save, Check, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, BarChart, Bar, Cell, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { useTranslation } from '../i18n';
@@ -56,6 +56,9 @@ export function MoodGraph({ onBack }: Props) {
     const [analysisLimit, setAnalysisLimit] = useState(10);
     const [isConsolidating, setIsConsolidating] = useState(false);
     const [isCacheHit, setIsCacheHit] = useState(false);
+    const [isConsolidatedSummary, setIsConsolidatedSummary] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [savedUrl, setSavedUrl] = useState<string | null>(null);
 
     const providerConfig = getActiveProvider();
 
@@ -213,19 +216,15 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
             if ('error' in worksheetsRes) throw new Error(worksheetsRes.error);
             
             const worksheets = worksheetsRes as { id: string; title: string; content: string }[];
-            if (worksheets.length < 5) {
-                toast.error("Not enough worksheets to consolidate (min 5)");
+            if (worksheets.length < 2) {
+                toast.error("Not enough worksheets to consolidate (min 2)");
                 return;
             }
-
-            // Move all but the last 5 to archive
-            const toArchive = worksheets.slice(5);
-            const archiveIds = toArchive.map(f => f.id);
 
             const systemPrompt = "Sei un esperto psicologo. Analizza i documenti e crea un UNICO documento di riepilogo testuale che sintetizzi l'andamento del periodo. Restituisci solo il testo del riepilogo in Markdown, senza commenti extra.";
             const userPrompt = `Analizza questi documenti e crea un UNICO documento di riepilogo testuale che sintetizzi l'andamento del periodo.
             DOCUMENTI:
-            ${toArchive.map(w => `TITOLO: ${w.title}\nCONTENUTO: ${w.content}`).join('\n---\n')}
+            ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO: ${w.content}`).join('\n---\n')}
             
             Restituisci solo il testo del riepilogo in Markdown, senza commenti extra.`;
 
@@ -239,14 +238,9 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                 'text'
             );
 
-            // Save summary with proper HTML conversion for Google Docs
-            const now = new Date();
-            const dateStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-            const htmlContent = markdownToHtml(summaryText);
-            await habitService.createDriveDocument(`Riepilogo Consolidato - ${dateStr}`, htmlContent);
-
-            // Archive the files
-            await habitService.archiveWorksheets(archiveIds);
+            // Archive ALL worksheets
+            const allIds = worksheets.map(f => f.id);
+            await habitService.archiveWorksheets(allIds);
 
             // Update local state to show the summary immediately
             setAiInsights({
@@ -254,15 +248,37 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                 chartData: [],
                 emotionsData: []
             });
+            setIsConsolidatedSummary(true);
+            setSavedUrl(null);
             localStorage.removeItem(AI_CACHE_KEY);
             localStorage.removeItem(AI_CACHE_IDS_KEY);
 
             toast.success(t('moodGraphConsolidateSuccess'));
-            onBack();
         } catch (err: any) {
             toast.error(err.message || "Consolidation failed");
         } finally {
             setIsConsolidating(false);
+        }
+    };
+    const handleSaveToDrive = async () => {
+        if (!aiInsights || !aiInsights.insightText) return;
+        setIsSaving(true);
+        try {
+            const now = new Date();
+            const pad = (n: number) => n < 10 ? '0' + n : String(n);
+            const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+            
+            const htmlContent = markdownToHtml(aiInsights.insightText);
+            const res = await habitService.createDriveDocument(`Riepilogo Consolidato - ${dateStr}`, htmlContent);
+            
+            if ('error' in res) throw new Error(res.error);
+            
+            setSavedUrl(res.fileUrl || null);
+            toast.success(t('schedaSaved'));
+        } catch (err: any) {
+            toast.error(err.message || "Failed to save to Drive");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -405,14 +421,46 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                             <p className="text-[10px] text-muted-foreground leading-tight">
                                                 {t('moodGraphConsolidateDesc')}
                                             </p>
-                                            <button
-                                                onClick={handleConsolidate}
-                                                disabled={isConsolidating}
-                                                className="w-full py-2 bg-secondary/50 hover:bg-secondary text-[10px] font-bold rounded-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                                            >
-                                                {isConsolidating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-                                                {t('moodGraphConsolidate')}
-                                            </button>
+                                            
+                                            {isConsolidatedSummary ? (
+                                                <div className="space-y-3">
+                                                    {!savedUrl ? (
+                                                        <button
+                                                            onClick={handleSaveToDrive}
+                                                            disabled={isSaving}
+                                                            className="w-full py-2 bg-primary/20 hover:bg-primary/30 text-primary-foreground text-[10px] font-bold rounded-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50 border border-primary/20"
+                                                        >
+                                                            {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                                            {t('schedaSaveToDrive')}
+                                                        </button>
+                                                    ) : (
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center gap-2 text-emerald-400 text-[10px] font-medium px-1">
+                                                                <Check className="w-3 h-3" />
+                                                                {t('schedaSaved')}
+                                                            </div>
+                                                            <a
+                                                                href={savedUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="w-full py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded-md transition-colors flex items-center justify-center gap-2 border border-emerald-500/20"
+                                                            >
+                                                                <ExternalLink className="w-3 h-3" />
+                                                                {t('schedaOpenInDrive')}
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={handleConsolidate}
+                                                    disabled={isConsolidating}
+                                                    className="w-full py-2 bg-secondary/50 hover:bg-secondary text-[10px] font-bold rounded-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                                                >
+                                                    {isConsolidating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                                    {t('moodGraphConsolidate')}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </motion.div>

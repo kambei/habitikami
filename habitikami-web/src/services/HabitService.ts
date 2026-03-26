@@ -1511,7 +1511,7 @@ class HabitServiceImpl {
         }
     }
 
-    async getLatestConsolidatedSummary(): Promise<{ content: string; date: string } | null> {
+    async getLatestConsolidatedSummary(): Promise<{ content: string; date: string; data?: any } | null> {
         try {
             await this.ensureClient();
             const folderId = await this.findOrCreateWorksheetFolder();
@@ -1531,8 +1531,26 @@ class HabitServiceImpl {
             const contentRes = await fetch(exportUrl, { headers: { 'Authorization': `Bearer ${this.accessToken}` } });
             
             if (contentRes.ok) {
-                const content = await contentRes.text();
-                return { content, date: file.name.replace('Riepilogo Consolidato - ', '') };
+                let content = await contentRes.text();
+                let jsonData: any = undefined;
+
+                // Extract embedded JSON if present
+                const dataMatch = content.match(/--- JSON_DATA ---\s*([\s\S]*?)\s*--- END_JSON_DATA ---/);
+                if (dataMatch) {
+                    try {
+                        jsonData = JSON.parse(dataMatch[1]);
+                        // Remove the JSON block from visible content
+                        content = content.replace(dataMatch[0], '').trim();
+                    } catch (e) {
+                        console.error("Failed to parse embedded JSON", e);
+                    }
+                }
+
+                return { 
+                    content, 
+                    date: file.name.replace('Riepilogo Consolidato - ', ''),
+                    data: jsonData
+                };
             }
             return null;
         } catch (e) {

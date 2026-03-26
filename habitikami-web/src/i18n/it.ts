@@ -296,6 +296,8 @@ export const it: Record<TranslationKey, string | string[]> = {
   moodGraphAILimit15: 'Ultime 15 schede',
   moodGraphAILimit30: 'Ultime 30 schede',
   moodGraphAICacheHit: 'Mostrando analisi salvata dall\'ultima sessione',
+  moodGraphAIRecent: 'Vedi Recenti',
+  moodGraphAIConsolidated: 'Vedi Consolidato',
   moodGraphConsolidate: 'Consolida Storico',
   moodGraphConsolidateDesc: 'Riassume le vecchie schede in un unico documento e le archivia per mantenere l\'app veloce.',
   moodGraphConsolidateSuccess: 'Storico consolidato con successo!',

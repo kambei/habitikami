@@ -295,6 +295,8 @@ export const en = {
   moodGraphAILimit15: 'Last 15 worksheets',
   moodGraphAILimit30: 'Last 30 worksheets',
   moodGraphAICacheHit: 'Showing cached analysis from last session',
+  moodGraphAIRecent: 'View Recent',
+  moodGraphAIConsolidated: 'View Consolidated',
   moodGraphConsolidate: 'Consolidate History',
   moodGraphConsolidateDesc: 'Summarize old worksheets into a single document and archive them to keep the app fast.',
   moodGraphConsolidateSuccess: 'History consolidated successfully!',

@@ -18,6 +18,12 @@ export interface MoodEntry {
     label: string;       // e.g. "Guided Session", "Emotion Diary"
 }
 
+export interface AiInsights {
+    insightText: string;
+    chartData: { name: string; score: number }[];
+    emotionsData: { emotion: string; score: number }[];
+}
+
 const MOOD_STORAGE_KEY = 'habitikami_mood_history';
 const AI_CACHE_KEY = 'habitikami_ai_insights_cache';
 const AI_CACHE_IDS_KEY = 'habitikami_ai_insights_ids';
@@ -47,11 +53,7 @@ export function MoodGraph({ onBack }: Props) {
     const { t } = useTranslation();
     const [entries, setEntries] = useState<MoodEntry[]>([]);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [aiInsights, setAiInsights] = useState<{
-        insightText: string;
-        chartData: { name: string; score: number }[];
-        emotionsData: { emotion: string; score: number }[];
-    } | null>(null);
+    const [aiInsights, setAiInsights] = useState<AiInsights | null>(null);
     const [aiError, setAiError] = useState<string | null>(null);
     const [analysisLimit, setAnalysisLimit] = useState(10);
     const [isConsolidating, setIsConsolidating] = useState(false);
@@ -59,6 +61,7 @@ export function MoodGraph({ onBack }: Props) {
     const [isConsolidatedSummary, setIsConsolidatedSummary] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [savedUrl, setSavedUrl] = useState<string | null>(null);
+    const [latestConsolidated, setLatestConsolidated] = useState<AiInsights | null>(null);
 
     const providerConfig = getActiveProvider();
 
@@ -100,15 +103,27 @@ export function MoodGraph({ onBack }: Props) {
         setIsConsolidatedSummary(false);
 
         // If NO current worksheets (all archived), try to load latest consolidation from Drive
-        if (worksheets.length === 0) {
-            const latestSummary = await habitService.getLatestConsolidatedSummary();
-            if (latestSummary) {
+        const latestSummary = await habitService.getLatestConsolidatedSummary();
+        if (latestSummary) {
+            // Extract analytical data if present
+            const consolidatedInsights: AiInsights | null = latestSummary.data ? {
+                insightText: latestSummary.content,
+                chartData: latestSummary.data.chartData || [],
+                emotionsData: latestSummary.data.emotionsData || []
+            } : null;
+
+            setLatestConsolidated(consolidatedInsights);
+
+            if (worksheets.length === 0) {
                 // Try to see if current cache matches this summary text
                 const cachedObj = cached ? JSON.parse(cached) : null;
                 if (cachedObj && cachedObj.insightText === latestSummary.content) {
                     setAiInsights(cachedObj);
                     setIsConsolidatedSummary(true);
                     setIsCacheHit(true);
+                } else if (consolidatedInsights) {
+                    setAiInsights(consolidatedInsights);
+                    setIsConsolidatedSummary(true);
                 } else {
                     setAiInsights({
                         insightText: latestSummary.content,
@@ -294,11 +309,16 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
         if (!aiInsights || !aiInsights.insightText) return;
         setIsSaving(true);
         try {
-            const now = new Date();
-            const pad = (n: number) => n < 10 ? '0' + n : String(n);
-            const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+            const dateStr = new Date().toLocaleDateString();
+            const rawContent = aiInsights.insightText;
             
-            const htmlContent = markdownToHtml(aiInsights.insightText);
+            // Embed JSON data for persistence
+            const extraData = `\n\n--- JSON_DATA ---\n${JSON.stringify({
+                chartData: aiInsights.chartData,
+                emotionsData: aiInsights.emotionsData
+            })}\n--- END_JSON_DATA ---\n`;
+            
+            const htmlContent = markdownToHtml(rawContent + extraData);
             const res = await habitService.createDriveDocument(`Riepilogo Consolidato - ${dateStr}`, htmlContent);
             
             if ('error' in res) throw new Error(res.error);
@@ -355,6 +375,28 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                     <h3 className="font-semibold">{t('moodGraphAITitle')}</h3>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                    {latestConsolidated && !isAnalyzing && (
+                                        <button
+                                            onClick={() => {
+                                                if (isConsolidatedSummary && !isCacheHit) {
+                                                    // Switch back to recent (trigger re-check or analysis)
+                                                    checkCache();
+                                                } else {
+                                                    setAiInsights(latestConsolidated);
+                                                    setIsConsolidatedSummary(true);
+                                                    setIsCacheHit(false);
+                                                }
+                                            }}
+                                            className={cn(
+                                                "px-2 py-1 text-[10px] font-medium rounded border transition-all",
+                                                isConsolidatedSummary 
+                                                    ? "bg-primary/10 border-primary/30 text-primary" 
+                                                    : "bg-background/50 border-border text-muted-foreground hover:border-primary/30"
+                                            )}
+                                        >
+                                            {isConsolidatedSummary ? t('moodGraphAIRecent') || 'Vedi Recenti' : t('moodGraphAIConsolidated') || 'Vedi Consolidato'}
+                                        </button>
+                                    )}
                                     <select 
                                         value={analysisLimit}
                                         onChange={(e) => setAnalysisLimit(Number(e.target.value))}

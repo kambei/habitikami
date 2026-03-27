@@ -1204,7 +1204,7 @@ class HabitServiceImpl {
     }
 
     async getChangelog(): Promise<{ content: string; hash: string }> {
-        const response = await fetch('/api/changelog');
+        const response = await fetch(`/api/changelog?t=${Date.now()}`);
         if (!response.ok) {
             throw new Error('Failed to fetch changelog');
         }

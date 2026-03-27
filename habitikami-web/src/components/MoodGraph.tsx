@@ -336,7 +336,7 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
             
             // Embed JSON data on a hidden new page, with an empty buffer page before it
             const extraData = `\n\n<div style="page-break-before: always;">&nbsp;</div>
-<div style="page-break-before: always; border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px; color: #ffffff; font-size: 1px; font-family: monospace; opacity: 0.05;">
+<div style="page-break-before: always; border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px; color: #000000; font-size: 6px; font-family: monospace;">
 --- JSON_DATA ---
 ${JSON.stringify({
                 insightText: aiInsights.insightText,

@@ -197,6 +197,7 @@ function App() {
   const [hasNewUpdates, setHasNewUpdates] = useState(false);
   const [showUpdatesOverlay, setShowUpdatesOverlay] = useState(false);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
+  const [latestHash, setLatestHash] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -212,7 +213,10 @@ function App() {
     if (!isLoggedIn) return;
     const checkUpdates = async () => {
       try {
-        const { hash } = await habitService.getChangelog();
+        const data = await habitService.getChangelog();
+        if (!data) return;
+        const { hash } = data;
+        setLatestHash(hash);
         const lastSeen = localStorage.getItem('lastSeenChangelogHash');
         if (hash && lastSeen && hash !== lastSeen) {
           setHasNewUpdates(true);
@@ -702,7 +706,10 @@ function App() {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => window.location.reload()}
+                      onClick={() => {
+                        if (latestHash) localStorage.setItem('lastSeenChangelogHash', latestHash);
+                        window.location.reload();
+                      }}
                       className="flex-1 bg-primary text-primary-foreground text-xs font-bold py-2 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
                     >
                       <RefreshCw className="w-3 h-3" />

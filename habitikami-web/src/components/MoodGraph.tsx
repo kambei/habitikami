@@ -334,12 +334,17 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
             const dateStr = new Date().toLocaleDateString();
             const rawContent = aiInsights.insightText;
             
-            // Embed JSON data for persistence on a new page
-            const extraData = `\n\n<div style="page-break-before: always;"></div>\n\n--- JSON_DATA ---\n${JSON.stringify({
+            // Embed JSON data on a hidden new page, with an empty buffer page before it
+            const extraData = `\n\n<div style="page-break-before: always;">&nbsp;</div>
+<div style="page-break-before: always; border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px; color: #ffffff; font-size: 1px; font-family: monospace; opacity: 0.05;">
+--- JSON_DATA ---
+${JSON.stringify({
                 insightText: aiInsights.insightText,
                 chartData: aiInsights.chartData,
                 emotionsData: aiInsights.emotionsData
-            })}\n--- END_JSON_DATA ---\n`;
+            })}
+--- END_JSON_DATA ---
+</div>\n`;
             
             const htmlContent = markdownToHtml(rawContent + extraData);
             const res = await habitService.createDriveDocument(`Riepilogo Consolidato - ${dateStr}`, htmlContent);

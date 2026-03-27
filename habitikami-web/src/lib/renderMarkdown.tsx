@@ -63,7 +63,13 @@ export function renderMarkdown(text: string): React.ReactNode {
         } else if (trimmed.startsWith('### ')) {
             flushList();
             elements.push(<h3 key={`h3-${elements.length}`} className="text-lg font-bold mt-5 mb-2 text-foreground/90 leading-tight">{inlineFormat(trimmed.slice(4))}</h3>);
-        } 
+        } else if (trimmed.startsWith('#### ')) {
+            flushList();
+            elements.push(<h4 key={`h4-${elements.length}`} className="text-base font-bold mt-4 mb-2 text-foreground/80 leading-tight">{inlineFormat(trimmed.slice(5))}</h4>);
+        } else if (trimmed.startsWith('##### ')) {
+            flushList();
+            elements.push(<h5 key={`h5-${elements.length}`} className="text-sm font-bold mt-3 mb-1 text-foreground/70 leading-tight">{inlineFormat(trimmed.slice(6))}</h5>);
+        }
         else if (trimmed.startsWith('> ')) {
             flushList();
             elements.push(

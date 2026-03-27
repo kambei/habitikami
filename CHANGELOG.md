@@ -15,6 +15,13 @@ All notable changes to this project will be documented in this file.
 ### 🖼️ Widget Previews
 - **All 10 widgets** now show fancy preview layouts in the Android widget picker with sample data — no more blank placeholders.
 
+## 🌐 Web 5.2.5 - 2026-03-27
+### 📊 Precise Analytics & Document Polish
+- **Intuitive Mood Charts**: Negative trends (Stress, Anxiety) now correctly point to the left in the analytics bar chart.
+- **Improved Consolidation**: Added support for `####`/`#####` markdown headers. JSON metadata is now tucked on a hidden separate page at the end of the document.
+- **Real-time Update Banner**: Added periodic background checks (every 30m) and a "Reload Now" banner for seamless updates.
+- **Supportive & Localized**: All temptation phrases are now fully translated and refined to be more encouraging.
+
 ## 🌐 Web 5.2.4 - 2026-03-26
 ### 📦 History Consolidation & Persistence
 - **Full History Consolidation**: Move all past worksheets to an archive folder with a single tap, keeping your active workspace clean.

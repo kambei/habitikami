@@ -334,8 +334,8 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
             const dateStr = new Date().toLocaleDateString();
             const rawContent = aiInsights.insightText;
             
-            // Embed JSON data for persistence
-            const extraData = `\n\n--- JSON_DATA ---\n${JSON.stringify({
+            // Embed JSON data for persistence on a new page
+            const extraData = `\n\n<div style="page-break-before: always;"></div>\n\n--- JSON_DATA ---\n${JSON.stringify({
                 insightText: aiInsights.insightText,
                 chartData: aiInsights.chartData,
                 emotionsData: aiInsights.emotionsData

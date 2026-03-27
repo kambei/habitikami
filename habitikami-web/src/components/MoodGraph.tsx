@@ -107,10 +107,14 @@ export function MoodGraph({ onBack }: Props) {
         if (latestSummary) {
             // Extract analytical data if present
             const consolidatedInsights: AiInsights | null = latestSummary.data ? {
-                insightText: latestSummary.content,
+                insightText: latestSummary.data.insightText || latestSummary.content,
                 chartData: latestSummary.data.chartData || [],
                 emotionsData: latestSummary.data.emotionsData || []
-            } : null;
+            } : {
+                insightText: latestSummary.content,
+                chartData: [],
+                emotionsData: []
+            };
 
             setLatestConsolidated(consolidatedInsights);
 
@@ -315,6 +319,7 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
             
             // Embed JSON data for persistence
             const extraData = `\n\n--- JSON_DATA ---\n${JSON.stringify({
+                insightText: aiInsights.insightText,
                 chartData: aiInsights.chartData,
                 emotionsData: aiInsights.emotionsData
             })}\n--- END_JSON_DATA ---\n`;

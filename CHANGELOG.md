@@ -15,6 +15,11 @@ All notable changes to this project will be documented in this file.
 ### 🖼️ Widget Previews
 - **All 10 widgets** now show fancy preview layouts in the Android widget picker with sample data — no more blank placeholders.
 
+## 🌐 Web 5.2.6 - 2026-03-27
+### 🧪 Test Update
+- This is a test entry to verify the new update notification system.
+- If you see this, the reload and cache-busting logic is working!
+
 ## 🌐 Web 5.2.5 - 2026-03-27
 ### 📊 Precise Analytics & Document Polish
 - **Intuitive Mood Charts**: Negative trends (Stress, Anxiety) now correctly point to the left in the analytics bar chart.

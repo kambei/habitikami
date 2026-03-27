@@ -4,7 +4,7 @@ import { cn } from './lib/utils'
 import { habitService } from './services/HabitService'
 import { Toaster, toast } from 'sonner'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LayoutDashboard, Settings, Github, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone } from 'lucide-react'
+import { LayoutDashboard, Settings, Github, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone, RefreshCw } from 'lucide-react'
 import { useTranslation } from './i18n'
 
 const HabitTable = React.lazy(() => import('./components/HabitTable').then(m => ({ default: m.HabitTable })))
@@ -196,6 +196,7 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hasNewUpdates, setHasNewUpdates] = useState(false);
   const [showUpdatesOverlay, setShowUpdatesOverlay] = useState(false);
+  const [showUpdatePopup, setShowUpdatePopup] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -207,23 +208,37 @@ function App() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [menuOpen]);
 
-  // Check for updates
   useEffect(() => {
     if (!isLoggedIn) return;
     const checkUpdates = async () => {
       try {
         const { hash } = await habitService.getChangelog();
         const lastSeen = localStorage.getItem('lastSeenChangelogHash');
-        if (hash && hash !== lastSeen) {
+        if (hash && lastSeen && hash !== lastSeen) {
           setHasNewUpdates(true);
+          setShowUpdatePopup(true);
+        } else if (hash && !lastSeen) {
+          // First time seeing changelog, just mark as seen to avoid immediate popup
+          localStorage.setItem('lastSeenChangelogHash', hash);
         }
       } catch { /* silent fail */ }
     };
+    
+    // Initial check
     checkUpdates();
 
-    const handleSeen = () => setHasNewUpdates(false);
+    // Periodic check every 30 minutes
+    const interval = setInterval(checkUpdates, 30 * 60 * 1000);
+
+    const handleSeen = () => {
+      setHasNewUpdates(false);
+      setShowUpdatePopup(false);
+    };
     window.addEventListener('changelogSeen', handleSeen);
-    return () => window.removeEventListener('changelogSeen', handleSeen);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('changelogSeen', handleSeen);
+    };
   }, [isLoggedIn]);
 
   // Persist view selection & sync to history
@@ -659,6 +674,51 @@ function App() {
             </Suspense>
           )}
           <Toaster position="top-center" theme="dark" />
+
+          {/* Update Notification Popup */}
+          <AnimatePresence>
+            {showUpdatePopup && (
+              <motion.div
+                initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[150] w-[90%] max-w-sm"
+              >
+                <div className="bg-card/95 backdrop-blur-md border border-amber-500/30 p-4 rounded-2xl shadow-2xl flex flex-col gap-3 ring-1 ring-amber-500/20">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-amber-500/20 p-2 rounded-xl">
+                      <Info className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-bold text-foreground">{t('updateAvailableTitle' as any)}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('updateAvailableMsg' as any)}</p>
+                    </div>
+                    <button 
+                      onClick={() => setShowUpdatePopup(false)}
+                      className="text-muted-foreground hover:text-foreground p-1"
+                    >
+                      <Menu className="w-4 h-4 rotate-45" /> {/* Close with an X-like icon */}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="flex-1 bg-primary text-primary-foreground text-xs font-bold py-2 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      {t('updateReloadBtn' as any)}
+                    </button>
+                    <button
+                      onClick={() => { setShowUpdatesOverlay(true); setShowUpdatePopup(false); }}
+                      className="flex-1 bg-secondary text-secondary-foreground text-xs font-bold py-2 rounded-lg hover:bg-secondary/80 transition-all"
+                    >
+                      {t('updateViewBtn' as any)}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Updates Overlay */}
           <AnimatePresence>

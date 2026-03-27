@@ -162,6 +162,27 @@ export const en = {
   smokeCaffeineOverload: 'Caffeine Overload!',
   smokeCaffeineMsg: 'Energy surging...',
   smokeQuote: '"The best way to break a habit is to drop it."',
+  smokeStayStrong: 'Stay strong!',
+  smokeNoTemptations: 'No temptations configured yet. Go to <strong>Settings</strong> to add your first temptation tracker.',
+  smokeSettingsPath: 'Menu &rarr; Settings &rarr; Temptations',
+  smokePositivePhrases: [
+    "You're stronger than you think!",
+    "One more victory under your belt!",
+    "Your future self thanks you!",
+    "Willpower level: legendary!",
+    "That's the spirit! Keep going!",
+    "You chose yourself today!",
+    "Discipline is freedom!"
+  ],
+  smokeNegativePhrases: [
+    "Don't be too hard on yourself.",
+    "Tomorrow is a new chance...",
+    "Don't let this define you.",
+    "Get back up. You've got this.",
+    "One slip doesn't erase your progress.",
+    "Acknowledge it. Move forward.",
+    "Fall seven times, stand up eight."
+  ],
 
   // Mobius Notes
   mobiusTitle: 'Mobius Notes',
@@ -179,6 +200,7 @@ export const en = {
   temptationSmoked: 'Smoked',
   temptationCoffee: 'Coffee',
   temptationNoData: 'No data in this period',
+  moodGraphIntensity: 'Intensity',
   viewDaily: 'Daily',
   viewMonthly: 'Monthly',
 
@@ -238,6 +260,10 @@ export const en = {
   settingsSpreadsheetCreated: 'Sheet created and linked!',
   settingsSpreadsheetCreateError: 'Failed to create sheet.',
   helpEditKeys: 'Edit API Keys',
+  updateAvailableTitle: 'Update Available',
+  updateAvailableMsg: 'A new version of Habitikami is ready! Reload to apply changes.',
+  updateReloadBtn: 'Reload Now',
+  updateViewBtn: 'What\'s New',
   helpAreaTitle: 'AI Help Area',
   helpRestartSession: 'Restart session',
   helpRemoveKey: 'Remove API Key',

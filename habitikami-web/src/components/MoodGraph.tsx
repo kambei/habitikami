@@ -479,12 +479,27 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                     {aiInsights.chartData && aiInsights.chartData.length > 0 && (
                                         <div className="h-48 w-full">
                                             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                                                <BarChart data={aiInsights.chartData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                                                <BarChart 
+                                                    data={aiInsights.chartData.map(d => {
+                                                        const negativeKeywords = ['ansia', 'stress', 'rabbia', 'tristezza', 'paura', 'alcol', 'fumo', 'negativo', 'peggioramento', 'frustrazione'];
+                                                        const isNegative = d.sentiment === 'negative' || (!d.sentiment && negativeKeywords.some(kw => d.name.toLowerCase().includes(kw)));
+                                                        return {
+                                                            ...d,
+                                                            displayScore: isNegative ? -Math.abs(d.score) : Math.abs(d.score)
+                                                        };
+                                                    })} 
+                                                    layout="vertical" 
+                                                    margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                                                >
                                                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#333" />
                                                     <XAxis type="number" domain={[-100, 100]} tick={{ fontSize: 10, fill: '#888' }} />
                                                     <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#ccc' }} width={80} />
-                                                    <Tooltip cursor={{ fill: '#ffffff10' }} contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: 8, fontSize: 12 }} />
-                                                    <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                                                    <Tooltip 
+                                                        cursor={{ fill: '#ffffff10' }} 
+                                                        contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: 8, fontSize: 12 }}
+                                                        formatter={(value: number | undefined) => [value !== undefined ? Math.abs(value) : '-', t('moodGraphIntensity' as any)]} 
+                                                    />
+                                                    <Bar dataKey="displayScore" radius={[0, 4, 4, 0]}>
                                                         {aiInsights.chartData.map((entry, index) => {
                                                             const negativeKeywords = ['ansia', 'stress', 'rabbia', 'tristezza', 'paura', 'alcol', 'fumo', 'negativo', 'peggioramento', 'frustrazione'];
                                                             const isNegativeHeuristic = negativeKeywords.some(kw => entry.name.toLowerCase().includes(kw));

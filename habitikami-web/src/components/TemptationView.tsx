@@ -5,30 +5,10 @@ import { habitService } from '../services/HabitService';
 import { cn } from '../lib/utils';
 import { useTranslation } from '../i18n';
 
-const POSITIVE_PHRASES = [
-    "You're stronger than you think!",
-    "One more victory under your belt!",
-    "Your future self thanks you!",
-    "Willpower level: legendary!",
-    "That's the spirit! Keep going!",
-    "You chose yourself today!",
-    "Discipline is freedom!",
-];
-
-const NEGATIVE_PHRASES = [
-    "You are the worst!",
-    "Tomorrow is a new chance...",
-    "Don't let this define you.",
-    "Get back up. You've got this.",
-    "One slip doesn't erase your progress.",
-    "Acknowledge it. Move forward.",
-    "Fall seven times, stand up eight.",
-];
-
 const getRandomPhrase = (phrases: string[]) => phrases[Math.floor(Math.random() * phrases.length)];
 
 export const TemptationView = () => {
-    const { t } = useTranslation();
+    const { t, tArray } = useTranslation();
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [actionId, setActionId] = useState<string | null>(null);
@@ -48,7 +28,8 @@ export const TemptationView = () => {
         setErrorMessage(null);
 
         const isPositive = action.type === 'positive' || action.type === 'resist';
-        setSuccessPhrase(getRandomPhrase(isPositive ? POSITIVE_PHRASES : NEGATIVE_PHRASES));
+        const phrases = isPositive ? tArray('smokePositivePhrases' as any) : tArray('smokeNegativePhrases' as any);
+        setSuccessPhrase(getRandomPhrase(phrases));
 
         try {
             const result = await habitService.incrementCounter(action.id);
@@ -77,12 +58,10 @@ export const TemptationView = () => {
         <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-4">
             <Flame className="w-16 h-16 text-muted-foreground/40" />
             <h2 className="text-2xl font-bold text-foreground">{t('tabSmokeTemptation')}</h2>
-            <p className="text-muted-foreground max-w-sm">
-                No temptations configured yet. Go to <strong>Settings</strong> to add your first temptation tracker.
-            </p>
+            <p className="text-muted-foreground max-w-sm" dangerouslySetInnerHTML={{ __html: t('smokeNoTemptations' as any) }} />
             <div className="flex items-center gap-2 text-primary">
                 <Settings className="w-4 h-4" />
-                <span className="text-sm font-medium">Menu &rarr; Settings &rarr; Temptations</span>
+                <span className="text-sm font-medium" dangerouslySetInnerHTML={{ __html: t('smokeSettingsPath' as any) }} />
             </div>
         </div>
     );
@@ -133,7 +112,7 @@ export const TemptationView = () => {
                     {activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking' ? t('smokeFeeling') : activeTemptation.label}
                 </h2>
                 <p className="text-muted-foreground text-base md:text-lg mt-1">
-                    {activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking' ? t('smokeStronger') : "Stay strong!"}
+                    {activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking' ? t('smokeStronger') : t('smokeStayStrong' as any)}
                 </p>
             </motion.div>
 

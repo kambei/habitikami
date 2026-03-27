@@ -163,6 +163,27 @@ export const it: Record<TranslationKey, string | string[]> = {
   smokeCaffeineOverload: 'Overload di Caffeina!',
   smokeCaffeineMsg: 'Energia in aumento...',
   smokeQuote: '"Il modo migliore per rompere un\'abitudine è abbandonarla."',
+  smokeStayStrong: 'Resta forte!',
+  smokeNoTemptations: 'Nessuna tentazione configurata.',
+  smokeSettingsPath: 'Menu &rarr; Impostazioni &rarr; Tentazioni',
+  smokePositivePhrases: [
+    "Sei più forte di quanto pensi!",
+    "Un'altra vittoria portata a casa!",
+    "Il tuo 'te futuro' ti ringrazia!",
+    "Livello forza di volontà: leggendario!",
+    "Questo è lo spirito! Continua così!",
+    "Oggi hai scelto te stesso!",
+    "La disciplina è libertà!"
+  ],
+  smokeNegativePhrases: [
+    "Non essere troppo duro con te stesso.",
+    "Domani è un'altra occasione per ricominciare.",
+    "Non lasciare che questo momento ti definisca.",
+    "Rialzati. Puoi farcela.",
+    "Un passo falso non cancella i tuoi progressi.",
+    "Accettalo e vai avanti, un respiro alla volta.",
+    "Cadi sette volte, rialzati otto."
+  ],
 
   // Mobius Notes
   mobiusTitle: 'Note Mobius',
@@ -180,6 +201,7 @@ export const it: Record<TranslationKey, string | string[]> = {
   temptationSmoked: 'Fumato',
   temptationCoffee: 'Caffè',
   temptationNoData: 'Nessun dato in questo periodo',
+  moodGraphIntensity: 'Intensità',
   viewDaily: 'Giornaliero',
   viewMonthly: 'Mensile',
 
@@ -239,6 +261,10 @@ export const it: Record<TranslationKey, string | string[]> = {
   settingsSpreadsheetCreated: 'Sheet creato e collegato!',
   settingsSpreadsheetCreateError: 'Impossibile creare lo sheet.',
   helpEditKeys: 'Modifica API Keys',
+  updateAvailableTitle: 'Aggiornamento Disponibile',
+  updateAvailableMsg: 'Una nuova versione di Habitikami è pronta! Ricarica per applicare le modifiche.',
+  updateReloadBtn: 'Ricarica Ora',
+  updateViewBtn: 'Vedi Novità',
   helpAreaTitle: 'AI Help Area',
   helpRestartSession: 'Riavvia sessione',
   helpRemoveKey: 'Rimuovi API Key',

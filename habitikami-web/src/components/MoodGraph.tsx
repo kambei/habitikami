@@ -184,6 +184,7 @@ export function MoodGraph({ onBack }: Props) {
         setIsAnalyzing(true);
         setAiError(null);
         setIsCacheHit(false);
+        setIsConsolidatedSummary(false);
         try {
             const worksheetsRes = await habitService.getRecentWorksheets(analysisLimit);
             if ('error' in worksheetsRes) throw new Error(worksheetsRes.error);
@@ -407,7 +408,7 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                         <option value={15}>{t('moodGraphAILimit15')}</option>
                                         <option value={30}>{t('moodGraphAILimit30')}</option>
                                     </select>
-                                    {!aiInsights && !isAnalyzing && (
+                                    {(!aiInsights || isConsolidatedSummary) && !isAnalyzing && (
                                         <button
                                             onClick={handleAnalyze}
                                             className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-lg hover:bg-primary/90 transition-all shadow-sm"
@@ -448,7 +449,7 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
 
                             {aiInsights && !isAnalyzing && (
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-                                    <div className="text-sm text-foreground/90 leading-relaxed bg-background/50 p-4 rounded-lg border border-border/50 overflow-hidden">
+                                    <div className="text-sm text-foreground/90 leading-relaxed bg-background/50 p-4 rounded-lg border border-border/50">
                                         {renderMarkdown(aiInsights.insightText)}
                                     </div>
                                     {aiInsights.chartData && aiInsights.chartData.length > 0 && (

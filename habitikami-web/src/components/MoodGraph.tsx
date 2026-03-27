@@ -20,7 +20,7 @@ export interface MoodEntry {
 
 export interface AiInsights {
     insightText: string;
-    chartData: { name: string; score: number }[];
+    chartData: { name: string; score: number; sentiment?: 'positive' | 'negative' | 'neutral' }[];
     emotionsData: { emotion: string; score: number }[];
 }
 
@@ -205,15 +205,15 @@ export function MoodGraph({ onBack }: Props) {
 {
   "insightText": "Un paragrafo molto breve e incoraggiante con le tue deduzioni (max 3 frasi).",
   "chartData": [
-    { "name": "Categoria 1 (max 2 parole)", "score": 80 },
-    { "name": "Categoria 2", "score": -40 }
+    { "name": "Categoria 1 (max 2 parole)", "score": 80, "sentiment": "positive" },
+    { "name": "Categoria 2", "score": 40, "sentiment": "negative" }
   ],
   "emotionsData": [
     { "emotion": "Rabbia", "score": 80 },
     { "emotion": "Gioia", "score": 90 }
   ]
 }
-Per 'chartData' (max 5) iscrivi nel 'name' l'abitudine/evento, e in 'score' un valore da -100 (impatto negativo) a +100 (impatto positivo).
+Per 'chartData' (max 5) iscrivi nel 'name' l'abitudine/evento, e in 'sentiment' usa 'positive' per trend incoraggianti e 'negative' per trend preoccupanti (es. Stress, Alcol). 'score' è sempre l'intensità (0-100).
 Per 'emotionsData' (max 6), estrai le emozioni prevalenti dai testi (es. Ansia, Felicità, Stress) e assegna un'intensità da 0 a 100.`;
 
             const prompt = `DatI UMORE (ultimi 10): ${JSON.stringify(entries.slice(-10))}
@@ -267,12 +267,13 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
             {
               "insightText": "Il riepilogo (Markdown) consolidato e cumulativo.",
               "chartData": [
-                { "name": "Trend 1", "score": 80 }
+                { "name": "Trend 1", "score": 80, "sentiment": "positive" }
               ],
               "emotionsData": [
                 { "emotion": "Gioia", "score": 90 }
               ]
-            }`;
+            }
+            Usa 'positive' per trend buoni (es. Miglioramento sonno) e 'negative' per trend cattivi (es. Aumento stress).`;
 
             const userPrompt = `Analizza questi documenti e uniscili al riepilogo precedente se presente:
             ${previousText ? `\nRIEPILOGO PRECEDENTE DA INCORPORARE:\n${previousText}\n` : ''}
@@ -484,9 +485,23 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                                     <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#ccc' }} width={80} />
                                                     <Tooltip cursor={{ fill: '#ffffff10' }} contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: 8, fontSize: 12 }} />
                                                     <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                                                        {aiInsights.chartData.map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={entry.score > 0 ? '#34d399' : '#fb923c'} />
-                                                        ))}
+                                                        {aiInsights.chartData.map((entry, index) => {
+                                                            const negativeKeywords = ['ansia', 'stress', 'rabbia', 'tristezza', 'paura', 'alcol', 'fumo', 'negativo', 'peggioramento', 'frustrazione'];
+                                                            const isNegativeHeuristic = negativeKeywords.some(kw => entry.name.toLowerCase().includes(kw));
+                                                            
+                                                            let fill = '#34d399'; // Default positive (green)
+                                                            if (entry.sentiment === 'negative' || (!entry.sentiment && isNegativeHeuristic)) {
+                                                                fill = '#fb923c'; // Negative (orange)
+                                                            } else if (entry.sentiment === 'neutral') {
+                                                                fill = '#94a3b8'; // Neutral (gray)
+                                                            } else if (entry.sentiment === 'positive') {
+                                                                fill = '#34d399'; // Explicitly positive
+                                                            } else if (entry.score < 0) {
+                                                                fill = '#fb923c'; // Fallback for raw scores
+                                                            }
+
+                                                            return <Cell key={`cell-${index}`} fill={fill} />;
+                                                        })}
                                                     </Bar>
                                                 </BarChart>
                                             </ResponsiveContainer>

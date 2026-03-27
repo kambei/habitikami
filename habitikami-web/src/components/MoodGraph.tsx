@@ -256,26 +256,31 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                 return;
             }
 
+            // Fetch previous consolidated summary to merge
+            const previousConsolidated = await habitService.getLatestConsolidatedSummary();
+            const previousText = previousConsolidated ? previousConsolidated.content : "";
+
             const systemPrompt = `Sei un esperto psicologo e analista dati. Analizza i documenti forniti e crea un UNICO documento di riepilogo testuale che sintetizzi l'andamento del periodo.
+            Incorporate the information from the PREVIOUS SUMMARY (if provided) into the new summary to maintain a continuous and cumulative narrative.
             Inoltre, estrai i trend principali e le emozioni prevalenti.
             Rispondi UNICAMENTE in JSON valido con questa struttura esatta:
             {
-              "insightText": "Il riepilogo in Markdown del periodo (può essere lungo e dettagliato).",
+              "insightText": "Il riepilogo (Markdown) consolidato e cumulativo.",
               "chartData": [
-                { "name": "Trend 1", "score": 80 },
-                { "name": "Trend 2", "score": -40 }
+                { "name": "Trend 1", "score": 80 }
               ],
               "emotionsData": [
-                { "emotion": "Gioia", "score": 90 },
-                { "emotion": "Ansia", "score": 30 }
+                { "emotion": "Gioia", "score": 90 }
               ]
             }`;
 
-            const userPrompt = `Analizza questi documenti, crea un riepilogo consolidato e popola i dati per i grafici:
-            DOCUMENTI:
+            const userPrompt = `Analizza questi documenti e uniscili al riepilogo precedente se presente:
+            ${previousText ? `\nRIEPILOGO PRECEDENTE DA INCORPORARE:\n${previousText}\n` : ''}
+            
+            NUOVI DOCUMENTI DA AGGIUNGERE:
             ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO: ${w.content}`).join('\n---\n')}
             
-            Restituisci solo il JSON.`;
+            Restituisci lo stato aggiornato in formato JSON. Sii conciso ma esaustivo.`;
 
             const accessToken = habitService.getAccessToken();
             const responseText = await callAI(
@@ -286,7 +291,18 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                 accessToken
             );
 
-            const parsed = JSON.parse(responseText);
+            let parsed;
+            try {
+                parsed = JSON.parse(responseText);
+            } catch (e) {
+                // Try regex extraction if raw JSON fails
+                const match = responseText.match(/\{[\s\S]*\}/);
+                if (match) {
+                    parsed = JSON.parse(match[0]);
+                } else {
+                    throw new Error("Invalid AI response format");
+                }
+            }
             if (!parsed.insightText) throw new Error("Invalid AI response");
 
             // Archive ALL worksheets
@@ -384,9 +400,11 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                     {latestConsolidated && !isAnalyzing && (
                                         <button
                                             onClick={() => {
-                                                if (isConsolidatedSummary && !isCacheHit) {
-                                                    // Switch back to recent (trigger re-check or analysis)
-                                                    checkCache();
+                                                if (isConsolidatedSummary) {
+                                                    // Switch back to recent
+                                                    setIsConsolidatedSummary(false);
+                                                    setAiInsights(null); // Clear consolidated view
+                                                    checkCache(); // Re-trigger cache check for recent data
                                                 } else {
                                                     setAiInsights(latestConsolidated);
                                                     setIsConsolidatedSummary(true);
@@ -437,11 +455,11 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                 </div>
                             )}
                             
-                            {(isAnalyzing || isConsolidating) && (
+                            {isAnalyzing && (
                                 <div className="flex flex-col items-center justify-center py-8 gap-3 text-muted-foreground bg-background/30 rounded-lg border border-border/30 backdrop-blur-sm">
                                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
                                     <span className="text-sm font-medium">
-                                        {isConsolidating ? t('moodGraphAIConsolidating') : t('moodGraphAIProcessing')}
+                                        {t('moodGraphAIProcessing')}
                                     </span>
                                 </div>
                             )}
@@ -506,10 +524,16 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                             
                                             {isConsolidatedSummary ? (
                                                 <div className="space-y-3">
+                                                    {isConsolidating && (
+                                                        <div className="flex items-center justify-center py-4 gap-3 text-primary animate-pulse">
+                                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                                            <span className="text-xs font-medium">{t('moodGraphAIConsolidating')}</span>
+                                                        </div>
+                                                    )}
                                                     {!savedUrl ? (
                                                         <button
                                                             onClick={handleSaveToDrive}
-                                                            disabled={isSaving}
+                                                            disabled={isSaving || isConsolidating}
                                                             className="w-full py-2 bg-primary/20 hover:bg-primary/30 text-primary-foreground text-[10px] font-bold rounded-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50 border border-primary/20"
                                                         >
                                                             {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
@@ -518,8 +542,8 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                                     ) : (
                                                         <div className="space-y-2">
                                                             <div className="flex items-center gap-2 text-emerald-400 text-[10px] font-medium px-1">
-                                                                <Check className="w-3 h-3" />
-                                                                {t('schedaSaved')}
+                                                                 <Check className="w-3 h-3" />
+                                                                 {t('schedaSaved')}
                                                             </div>
                                                             <a
                                                                 href={savedUrl}
@@ -534,14 +558,22 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
                                                     )}
                                                 </div>
                                             ) : (
-                                                <button
-                                                    onClick={handleConsolidate}
-                                                    disabled={isConsolidating}
-                                                    className="w-full py-2 bg-secondary/50 hover:bg-secondary text-[10px] font-bold rounded-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                                                >
-                                                    {isConsolidating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-                                                    {t('moodGraphConsolidate')}
-                                                </button>
+                                                <div className="space-y-3">
+                                                     {isConsolidating && (
+                                                        <div className="flex items-center justify-center py-4 gap-3 text-primary animate-pulse">
+                                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                                            <span className="text-xs font-medium">{t('moodGraphAIConsolidating')}</span>
+                                                        </div>
+                                                    )}
+                                                    <button
+                                                        onClick={handleConsolidate}
+                                                        disabled={isConsolidating}
+                                                        className="w-full py-2 bg-secondary/50 hover:bg-secondary text-[10px] font-bold rounded-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                                                    >
+                                                        {isConsolidating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                                        {t('moodGraphConsolidate')}
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
                                     </div>

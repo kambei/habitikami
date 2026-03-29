@@ -1,6 +1,7 @@
-import { gapi } from 'gapi-script';
-// We use gapi-script for loading, but types come from @types/gapi
-// and we need to initialize the client.
+// We load gapi manually via script tag. Types come from @types/gapi.
+// Declare gapi globally to satisfy TypeScript since we removed gapi-script.
+declare const gapi: any;
+
 import { hexToSheetColor, sheetColorToHex } from '../utils/colors';
 import { findHeaderRowIndex } from '../utils/parser';
 

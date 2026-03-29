@@ -106,16 +106,19 @@ class HabitServiceImpl {
         const script = document.createElement('script');
         script.src = "https://apis.google.com/js/api.js";
         script.onload = () => {
-            gapi.load('client', async () => {
-                try {
-                    console.log("Initializing GAPI client...");
-                    await gapi.client.init({ discoveryDocs: DISCOVERY_DOCS });
-                    console.log("GAPI client initialized.");
-                } catch (e: any) {
-                    console.error("GAPI init error:", e);
-                    this.initError = (e.result?.error?.message || e.message || JSON.stringify(e));
-                }
-            });
+            const g = (window as any).gapi;
+            if (g) {
+                g.load('client', async () => {
+                    try {
+                        console.log("Initializing GAPI client...");
+                        await g.client.init({ discoveryDocs: DISCOVERY_DOCS });
+                        console.log("GAPI client initialized.");
+                    } catch (e: any) {
+                        console.error("GAPI init error:", e);
+                        this.initError = (e.result?.error?.message || e.message || JSON.stringify(e));
+                    }
+                });
+            }
         };
         script.onerror = () => { this.initError = "Failed to load Google API script."; };
         document.body.appendChild(script);
@@ -231,7 +234,8 @@ class HabitServiceImpl {
         const expires_in = data.expires_in || 3599;
         this.tokenExpiry = Date.now() + (expires_in * 1000);
 
-        if (gapi.client) (gapi.client as any).setToken({ access_token: this.accessToken });
+        const g = (window as any).gapi;
+        if (g?.client) (g.client as any).setToken({ access_token: this.accessToken });
 
         const session: SessionData = {
             access_token: this.accessToken!,
@@ -261,11 +265,12 @@ class HabitServiceImpl {
         return new Promise((resolve) => {
             const checkGapi = async () => {
                 let attempts = 0;
-                while (!gapi.client && attempts < 20) {
+                while (!(window as any).gapi?.client && attempts < 20) {
                     await new Promise(r => setTimeout(r, 100));
                     attempts++;
                 }
-                if (!gapi.client) { resolve(false); return; }
+                const g = (window as any).gapi;
+                if (!g?.client) { resolve(false); return; }
 
                 try {
                     const stored = localStorage.getItem(SESSION_KEY);
@@ -281,7 +286,8 @@ class HabitServiceImpl {
                             const refreshed = await this.refreshAccessToken();
                             resolve(refreshed);
                         } else {
-                            (gapi.client as any).setToken({ access_token: this.accessToken });
+                            const g = (window as any).gapi;
+                            if (g?.client) (g.client as any).setToken({ access_token: this.accessToken });
                             // If spreadsheetId missing (stale session), try fetching from server
                             if (!this.spreadsheetId && this.accessToken) {
                                 try {
@@ -325,15 +331,17 @@ class HabitServiceImpl {
             await this.refreshAccessToken();
         }
 
-        if (this.accessToken && gapi.client && gapi.client.sheets && gapi.client.drive) return;
+        const g = (window as any).gapi;
+        if (this.accessToken && g?.client?.sheets && g?.client?.drive) return;
 
         let retries = 0;
-        while ((!gapi.client || !gapi.client.sheets || !gapi.client.drive) && retries < 50) {
+        while (!(window as any).gapi?.client?.sheets && retries < 50) {
             if (this.initError) throw new Error("GAPI failed to initialize: " + this.initError);
             await new Promise(r => setTimeout(r, 100));
             retries++;
         }
-        if (!gapi.client || !gapi.client.sheets || !gapi.client.drive) throw new Error("Google APIs not initialized");
+        const gFinal = (window as any).gapi;
+        if (!gFinal?.client?.sheets || !gFinal?.client?.drive) throw new Error("Google APIs not initialized");
     }
 
     async createInitialTemplate(): Promise<{ spreadsheetId?: string; error?: string }> {

@@ -7,7 +7,7 @@ export function useUpdateCell() {
 
     return useMutation({
         mutationFn: async ({ sheetName, rowIndex, colIndex, value }: {
-            sheetName: string, rowIndex: number, colIndex: number, value: boolean | 'SKIP',
+            sheetName: string, rowIndex: number, colIndex: number, value: boolean | 'SKIP' | 'HALF',
             year?: number, month?: number, habitName?: string
         }) => {
             return habitService.updateCell(sheetName, rowIndex, colIndex, value);
@@ -39,7 +39,7 @@ export function useUpdateCell() {
                             ...row,
                             habits: {
                                 ...row.habits,
-                                [habitName]: value === 'SKIP' ? 'skipped' : value
+                                [habitName]: value === 'SKIP' ? 'skipped' : (value === 'HALF' ? 'half' : value)
                             }
                         };
                     }

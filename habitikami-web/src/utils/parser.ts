@@ -54,7 +54,7 @@ export function parseSheetData(values: any[][]): {
         // Stop if no date (empty row)
         if (!date) continue;
 
-        const habits: Record<string, boolean | 'skipped'> = {};
+        const habits: Record<string, boolean | 'skipped' | 'half'> = {};
 
         headers.forEach((h: string, index: number) => {
             const colIndex = startCol + index;
@@ -63,6 +63,8 @@ export function parseSheetData(values: any[][]): {
                 habits[h] = true;
             } else if (val === 'SKIP') {
                 habits[h] = 'skipped';
+            } else if (val === 'HALF') {
+                habits[h] = 'half';
             } else {
                 habits[h] = false;
             }

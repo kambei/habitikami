@@ -35,8 +35,11 @@ export function calculateCompletionRates(data: HabitData[], headers: string[]): 
         headers.forEach(h => {
             if (stats[h] && Object.prototype.hasOwnProperty.call(row.habits, h)) {
                 stats[h].total += 1;
-                if (row.habits[h]) {
+                const val = row.habits[h];
+                if (val === true) {
                     stats[h].completed += 1;
+                } else if (val === 'half') {
+                    stats[h].completed += 0.5;
                 }
             }
         });
@@ -72,8 +75,10 @@ export function calculateDailyTrends(data: HabitData[], limit = 30): DailyTrend[
         let completed = 0;
 
         Object.keys(row.habits).forEach(h => {
+            const val = row.habits[h];
             total++;
-            if (row.habits[h]) completed++;
+            if (val === true) completed += 1;
+            else if (val === 'half') completed += 0.5;
         });
 
         trends.push({
@@ -109,7 +114,8 @@ export function calculateDayOfWeekStats(data: HabitData[], displayDayNames?: str
 
         Object.values(row.habits).forEach(val => {
             stats[dayKey].total++;
-            if (val) stats[dayKey].completed++;
+            if (val === true) stats[dayKey].completed += 1;
+            else if (val === 'half') stats[dayKey].completed += 0.5;
         });
     });
 
@@ -147,7 +153,7 @@ export function prepareHeatmapData(data: HabitData[], habit: string): { date: st
 
         return {
             date: dateStr,
-            count: val ? 1 : 0
+            count: val === true ? 1 : (val === 'half' ? 0.5 : 0)
         };
     }).filter(x => x !== null) as { date: string, count: number }[];
 }

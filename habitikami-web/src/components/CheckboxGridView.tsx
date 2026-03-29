@@ -11,7 +11,7 @@ interface CheckboxGridViewProps {
     colors: Record<string, string>;
     meta: { startCol: number; headerRowIndex: number; dataStartRow: number } | null;
     dataStartRow: number;
-    onToggle: (rowIndex: number, habit: string, currentValue: boolean | 'skipped') => void;
+    onToggle: (rowIndex: number, habit: string, currentValue: boolean | 'skipped' | 'half') => void;
     isPending: boolean;
     sheetName: string;
     year: number;
@@ -66,12 +66,12 @@ export function CheckboxGridView({
         // Merge current sheet data with other sheet data, sorted by date
         const hasOtherSheet = otherSheet && otherData.length > 0 && selectedHabit in (otherData[0]?.habits ?? {});
 
-        type DayEntry = { checked: boolean | 'skipped'; dateMs: number };
+        type DayEntry = { checked: boolean | 'skipped' | 'half'; dateMs: number };
         const entries: DayEntry[] = [];
 
         // Add current sheet entries
         for (let i = 0; i < data.length; i++) {
-            const checkedValue = data[i].habits[selectedHabit] as boolean | 'skipped';
+            const checkedValue = data[i].habits[selectedHabit] as boolean | 'skipped' | 'half';
             const dateMs = parseDate(data[i].date)?.getTime() ?? 0;
             entries.push({ checked: checkedValue, dateMs });
         }
@@ -79,7 +79,7 @@ export function CheckboxGridView({
         // Add other sheet entries if habit exists there
         if (hasOtherSheet) {
             for (let i = 0; i < otherData.length; i++) {
-                const checkedValue = otherData[i].habits[selectedHabit] as boolean | 'skipped';
+                const checkedValue = otherData[i].habits[selectedHabit] as boolean | 'skipped' | 'half';
                 const dateMs = parseDate(otherData[i].date)?.getTime() ?? 0;
                 entries.push({ checked: checkedValue, dateMs });
             }
@@ -199,6 +199,8 @@ export function CheckboxGridView({
                                                 ? { backgroundColor: color, boxShadow: `0 0 6px ${color}40` }
                                                 : checked === 'skipped'
                                                 ? { backgroundColor: 'transparent', border: `2px solid #fbbf2450`, boxShadow: `inset 0 0 4px #fbbf2430` }
+                                                : checked === 'half'
+                                                ? { background: `linear-gradient(to bottom right, ${color} 50%, transparent 50%)`, border: `2px solid ${color}` }
                                                 : { backgroundColor: 'transparent', border: `2px solid ${color}50` }
                                             }
                                         />

@@ -38,10 +38,11 @@ export function CompactHabitView({ }: CompactHabitViewProps) {
         const incompleteHabits = sheetData.headers.filter(h => todayData.habits[h] === false);
         const skippedCount = sheetData.headers.filter(h => todayData.habits[h] === 'skipped').length;
         const checkedCount = sheetData.headers.filter(h => todayData.habits[h] === true).length;
+        const halfCount = sheetData.headers.filter(h => todayData.habits[h] === 'half').length;
 
         return {
             habits: incompleteHabits,
-            completedCount: checkedCount + skippedCount,
+            completedCount: checkedCount + skippedCount + halfCount,
             meta: {
                 ...sheetData.meta,
                 headers: sheetData.headers,

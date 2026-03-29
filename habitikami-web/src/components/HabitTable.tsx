@@ -184,11 +184,13 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
         setCurrentDate(newDate);
     };
 
-    const handleToggle = useCallback((rowIndex: number, habit: string, currentValue: boolean | 'skipped') => {
+    const handleToggle = useCallback((rowIndex: number, habit: string, currentValue: boolean | 'skipped' | 'half') => {
         if (!meta) return;
 
-        // If it's 'skipped', toggle to true. If it's false, toggle to true. If it's true, toggle to false.
-        const newValue = currentValue === true ? false : true;
+        let newValue: boolean | 'HALF';
+        if (currentValue === false || currentValue === 'skipped') newValue = true;
+        else if (currentValue === true) newValue = 'HALF';
+        else newValue = false;
 
         const sheetRow = dataStartRow + rowIndex;
         const colIndex = meta.startCol + headers.indexOf(habit);
@@ -406,7 +408,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                              <td key={h} className="p-4 text-center">
                                                  <div className="flex justify-center">
                                                      <Checkbox
-                                                         checked={checked === true}
+                                                         checked={checked === 'half' ? 'half' : (checked === true)}
                                                          disabled={isPending}
                                                          onCheckedChange={() => handleToggle(rIndex, h, checked)}
                                                          className={checked === 'skipped' ? "opacity-50 ring-2 ring-amber-500/30" : ""}

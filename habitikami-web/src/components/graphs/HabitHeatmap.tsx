@@ -78,18 +78,27 @@ export function HabitHeatmap({ data, habitName, completionRate, color }: HabitHe
                 ))}
 
                 {recentData.map((row, i) => {
-                    const isDone = row.habits[habitName];
+                    const status = row.habits[habitName];
+                    const isDone = status === true;
+                    const isHalf = status === 'half';
+                    const isNo = !isDone && !isHalf;
+
                     return (
                         <div
                             key={i}
-                            title={`${row.date}: ${isDone ? 'Done' : 'Missed'}`}
+                            title={`${row.date}: ${isDone ? 'Done' : isHalf ? 'Half' : 'Missed'}`}
                             className={cn(
                                 "w-full aspect-square rounded-sm transition-colors cursor-help",
-                                !color && isDone
-                                    ? "bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)]"
-                                    : !color && !isDone ? "bg-secondary/40 hover:bg-secondary/60" : ""
+                                !color && isDone && "bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.6)]",
+                                !color && isHalf && "border border-green-500/50",
+                                !color && isNo && "bg-secondary/40 hover:bg-secondary/60"
                             )}
-                            style={isDone && color ? { backgroundColor: color, boxShadow: `0 0 4px ${color}80` } : (!isDone ? { backgroundColor: 'rgba(255,255,255,0.05)' } : {})}
+                            style={{
+                                ...(isDone && color ? { backgroundColor: color, boxShadow: `0 0 4px ${color}80` } : {}),
+                                ...(isHalf && color ? { background: `linear-gradient(to bottom right, ${color} 50%, transparent 50%)`, border: `1px solid ${color}80` } : {}),
+                                ...(isHalf && !color ? { background: `linear-gradient(to bottom right, #22c55e 50%, transparent 50%)` } : {}),
+                                ...(isNo ? { backgroundColor: 'rgba(255,255,255,0.05)' } : {})
+                            }}
                         />
                     );
                 })}

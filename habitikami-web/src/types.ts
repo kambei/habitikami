@@ -12,7 +12,15 @@ export interface HabitData {
 }
 
 export type SheetType = 'Weekdays' | 'Weekend' | 'Notes' | 'Counters'; // Added Notes, Counters
-export type ViewType = SheetType | 'Graphs' | 'Focus' | 'MobNotes' | 'SmokeTemptation' | 'Help'; // Added MobNotes, SmokeTemptation, Help
+export type ViewType = SheetType | 'Graphs' | 'Focus' | 'MobNotes' | 'SmokeTemptation' | 'Training' | 'Help'; // Added MobNotes, SmokeTemptation, Training, Help
+
+export interface TrainingLogEntry {
+    date: string;       // DD/MM/YYYY
+    section: string;    // e.g. 'Piano', 'Stretch', 'Sedia', etc.
+    exercise: string;   // exercise name
+    session: string;    // 'Mattina' | 'Pomeriggio' | 'Unica'
+    duration: string;   // e.g. '3×30s', '5 min'
+}
 
 export interface GuidedStep {
     message: string;

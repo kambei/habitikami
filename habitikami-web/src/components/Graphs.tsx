@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
-import { calculateCompletionRates, calculateDailyTrends, calculateDayOfWeekStats, type HabitStats, type DailyTrend, type DayPerformance } from '../utils/analytics';
+import { calculateCompletionRates, calculateDailyTrends, calculateDayOfWeekStats, calculateTrainingStats, type HabitStats, type DailyTrend, type DayPerformance, type TrainingStats } from '../utils/analytics';
 import { CompletionTrends } from './graphs/CompletionTrends';
 import { DayOfWeekPerformance } from './graphs/DayOfWeekPerformance';
 import { HabitHeatmap } from './graphs/HabitHeatmap';
 import { habitService } from "../services/HabitService";
+import type { TrainingLogEntry } from '../types';
 import { parseSheetData } from "../utils/parser";
 import { type HabitData } from '../types';
 import { parseDate } from '../utils/dateParsing';
@@ -26,6 +27,7 @@ export function Graphs() {
     const [dailyTrends, setDailyTrends] = useState<DailyTrend[]>([]);
     const [dayOfWeekStats, setDayOfWeekStats] = useState<DayPerformance[]>([]);
     const [allData, setAllData] = useState<HabitData[]>([]);
+    const [trainingStats, setTrainingStats] = useState<TrainingStats | null>(null);
 
     const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -94,6 +96,22 @@ export function Graphs() {
                 const dayNames = tArray('days');
                 const computedWeekStats = calculateDayOfWeekStats(filteredData, dayNames as string[]);
                 setDayOfWeekStats(computedWeekStats);
+
+                // Training stats
+                try {
+                    const trainingRes = await habitService.getTrainingLog(year, month);
+                    if (!('error' in trainingRes) && trainingRes.entries.length > 0) {
+                        const entries: TrainingLogEntry[] = trainingRes.entries.map(row => ({
+                            date: row[0] || '', section: row[1] || '', exercise: row[2] || '',
+                            session: row[3] || '', duration: row[4] || '',
+                        }));
+                        setTrainingStats(calculateTrainingStats(entries));
+                    } else {
+                        setTrainingStats(null);
+                    }
+                } catch {
+                    setTrainingStats(null);
+                }
 
             } catch (err: any) {
                 setError(err.message);
@@ -372,6 +390,79 @@ export function Graphs() {
                     </div>
                 ))}
             </div>
+
+            {/* Training Stats */}
+            {trainingStats && trainingStats.totalExercises > 0 && (
+                <div className="mt-8 space-y-6">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    <h2 className="text-xl font-bold">{t('trainingStatsTitle' as any)}</h2>
+
+                    {/* Summary cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-card border border-border rounded-xl p-4 text-center">
+                            <div className="text-2xl font-bold text-primary">{trainingStats.totalExercises}</div>
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            <div className="text-xs text-muted-foreground mt-1">{t('trainingTotal' as any)}</div>
+                        </div>
+                        <div className="bg-card border border-border rounded-xl p-4 text-center">
+                            <div className="text-2xl font-bold text-emerald-400">{trainingStats.activeDays}</div>
+                            <div className="text-xs text-muted-foreground mt-1">{t('graphsActiveDays' as any)}</div>
+                        </div>
+                        <div className="bg-card border border-border rounded-xl p-4 text-center">
+                            <div className="text-2xl font-bold text-amber-400">{trainingStats.averagePerDay}</div>
+                            <div className="text-xs text-muted-foreground mt-1">Media/giorno</div>
+                        </div>
+                        <div className="bg-card border border-border rounded-xl p-4 text-center">
+                            <div className="text-2xl font-bold text-purple-400">{trainingStats.sectionBreakdown.length}</div>
+                            <div className="text-xs text-muted-foreground mt-1">Sezioni attive</div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Daily training trend */}
+                        {trainingStats.dailyTrends.length > 0 && (
+                            <ExpandableGraph title={t('graphsDailyTrend')}>
+                                <div className="h-[200px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={trainingStats.dailyTrends} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                                            <XAxis dataKey="date" stroke="#888" tick={{ fontSize: 10 }} />
+                                            <YAxis stroke="#888" tick={{ fontSize: 10 }} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6', fontSize: 12 }}
+                                            />
+                                            <Bar dataKey="total" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Esercizi" />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </ExpandableGraph>
+                        )}
+
+                        {/* Section breakdown */}
+                        {trainingStats.sectionBreakdown.length > 0 && (
+                            /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                            <ExpandableGraph title={t('trainingBySection' as any)}>
+                                <div className="space-y-2 p-2">
+                                    {trainingStats.sectionBreakdown.map(sec => (
+                                        <div key={sec.section} className="flex items-center gap-3">
+                                            <span className="text-sm font-medium w-24 truncate">{sec.section}</span>
+                                            <div className="flex-1 bg-secondary rounded-full h-5 overflow-hidden">
+                                                <div
+                                                    className="h-full rounded-full bg-primary transition-all flex items-center justify-end pr-2"
+                                                    style={{ width: `${Math.max(sec.percentage, 8)}%` }}
+                                                >
+                                                    <span className="text-[10px] font-bold text-primary-foreground">{sec.count}</span>
+                                                </div>
+                                            </div>
+                                            <span className="text-xs text-muted-foreground w-10 text-right">{sec.percentage}%</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </ExpandableGraph>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

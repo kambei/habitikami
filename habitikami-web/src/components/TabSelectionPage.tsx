@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, BarChart2, CheckSquare, Flame, Coffee, StickyNote, Hash, ChevronUp, ChevronDown, Plus, X, Star } from 'lucide-react';
+import { Home, BarChart2, CheckSquare, Flame, Coffee, StickyNote, Hash, Dumbbell, ChevronUp, ChevronDown, Plus, X, Star } from 'lucide-react';
 import { habitService } from '../services/HabitService';
 import { toast } from 'sonner';
 import type { ViewType } from '../types';
@@ -22,6 +22,7 @@ const ALL_TABS: TabInfo[] = [
     { id: 'MobNotes', labelKey: 'tabNotes', descKey: 'tabDescNotes', icon: StickyNote },
     { id: 'SmokeTemptation', labelKey: 'tabSmoke', descKey: 'tabDescSmoke', icon: Flame },
     { id: 'Counters', labelKey: 'tabCounters', descKey: 'tabDescCounters', icon: Hash },
+    { id: 'Training', labelKey: 'tabTraining', descKey: 'tabDescTraining', icon: Dumbbell },
 ];
 
 interface Props {

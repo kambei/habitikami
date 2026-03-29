@@ -1,4 +1,4 @@
-import type { HabitData } from "../types";
+import type { HabitData, TrainingLogEntry } from "../types";
 import { parseDate } from "./dateParsing";
 import { ITALIAN_DAYS } from "./dayTranslation";
 
@@ -150,4 +150,73 @@ export function prepareHeatmapData(data: HabitData[], habit: string): { date: st
             count: val ? 1 : 0
         };
     }).filter(x => x !== null) as { date: string, count: number }[];
+}
+
+// ═══ TRAINING ANALYTICS ═══
+
+export interface TrainingDailyTrend {
+    date: string;       // DD/MM
+    total: number;      // exercises done that day
+}
+
+export interface TrainingSectionStats {
+    section: string;
+    count: number;
+    percentage: number;
+}
+
+export interface TrainingStats {
+    totalExercises: number;
+    activeDays: number;
+    dailyTrends: TrainingDailyTrend[];
+    sectionBreakdown: TrainingSectionStats[];
+    averagePerDay: number;
+}
+
+export function calculateTrainingStats(entries: TrainingLogEntry[]): TrainingStats {
+    if (entries.length === 0) {
+        return { totalExercises: 0, activeDays: 0, dailyTrends: [], sectionBreakdown: [], averagePerDay: 0 };
+    }
+
+    // Group by date
+    const byDate = new Map<string, number>();
+    const bySection = new Map<string, number>();
+
+    for (const entry of entries) {
+        const dateKey = entry.date.substring(0, 5); // DD/MM
+        byDate.set(dateKey, (byDate.get(dateKey) || 0) + 1);
+        bySection.set(entry.section, (bySection.get(entry.section) || 0) + 1);
+    }
+
+    const totalExercises = entries.length;
+    const activeDays = byDate.size;
+
+    // Daily trends sorted by date
+    const dailyTrends: TrainingDailyTrend[] = [];
+    const sortedDates = [...byDate.entries()].sort((a, b) => {
+        // Parse DD/MM to compare
+        const [dA, mA] = a[0].split('/').map(Number);
+        const [dB, mB] = b[0].split('/').map(Number);
+        return mA !== mB ? mA - mB : dA - dB;
+    });
+    for (const [date, total] of sortedDates) {
+        dailyTrends.push({ date, total });
+    }
+
+    // Section breakdown
+    const sectionBreakdown: TrainingSectionStats[] = [...bySection.entries()]
+        .map(([section, count]) => ({
+            section,
+            count,
+            percentage: Math.round((count / totalExercises) * 100),
+        }))
+        .sort((a, b) => b.count - a.count);
+
+    return {
+        totalExercises,
+        activeDays,
+        dailyTrends: dailyTrends.slice(-30), // Last 30 days
+        sectionBreakdown,
+        averagePerDay: activeDays > 0 ? Math.round((totalExercises / activeDays) * 10) / 10 : 0,
+    };
 }

@@ -1607,6 +1607,160 @@ class HabitServiceImpl {
         }
         return { error: "Could not fetch current preferences" };
     }
+
+    // ═══ TRAINING ═══
+
+    /**
+     * Ensure the Training sheet exists; create it if missing.
+     * Headers: Date | Section | Exercise | Session | Duration
+     */
+    async ensureTrainingSheet(): Promise<{ success: boolean } | { error: string }> {
+        try {
+            await this.ensureClient();
+            const spreadsheetId = this.getSpreadsheetId();
+
+            // Check if sheet already exists
+            const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId });
+            const exists = meta.result.sheets?.some((s: any) => s.properties?.title === 'Training');
+            if (exists) return { success: true };
+
+            // Create sheet
+            await gapi.client.sheets.spreadsheets.batchUpdate({
+                spreadsheetId,
+                resource: {
+                    requests: [{ addSheet: { properties: { title: 'Training', gridProperties: { frozenRowCount: 1 } } } }]
+                }
+            });
+
+            // Add headers
+            await gapi.client.sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: 'Training!A1:E1',
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: [['Date', 'Section', 'Exercise', 'Session', 'Duration']] }
+            });
+
+            return { success: true };
+        } catch (e: any) {
+            return { error: e.result?.error?.message || e.message };
+        }
+    }
+
+    /**
+     * Log an exercise as completed. Appends a row to the Training sheet.
+     */
+    async logTrainingExercise(date: string, section: string, exercise: string, session: string, duration: string): Promise<{ success: boolean } | { error: string }> {
+        try {
+            await this.ensureClient();
+            const spreadsheetId = this.getSpreadsheetId();
+
+            await gapi.client.sheets.spreadsheets.values.append({
+                spreadsheetId,
+                range: 'Training!A:E',
+                valueInputOption: 'USER_ENTERED',
+                insertDataOption: 'INSERT_ROWS',
+                resource: { values: [[date, section, exercise, session, duration]] }
+            });
+
+            return { success: true };
+        } catch (e: any) {
+            return { error: e.result?.error?.message || e.message };
+        }
+    }
+
+    /**
+     * Remove a training log entry (undo). Finds and deletes the matching row.
+     */
+    async removeTrainingExercise(date: string, section: string, exercise: string, session: string): Promise<{ success: boolean } | { error: string }> {
+        try {
+            await this.ensureClient();
+            const spreadsheetId = this.getSpreadsheetId();
+
+            // Fetch all training data to find the row
+            const res = await gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId,
+                range: 'Training!A:E',
+            });
+            const values = res.result.values || [];
+
+            // Find the row (skip header at index 0)
+            let rowToDelete = -1;
+            for (let i = 1; i < values.length; i++) {
+                const row = values[i];
+                if (row[0] === date && row[1] === section && row[2] === exercise && row[3] === session) {
+                    rowToDelete = i;
+                    break;
+                }
+            }
+
+            if (rowToDelete === -1) return { error: 'Entry not found' };
+
+            // Get the sheetId for Training
+            const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId });
+            const trainingSheet = meta.result.sheets?.find((s: any) => s.properties?.title === 'Training');
+            if (!trainingSheet) return { error: 'Training sheet not found' };
+
+            await gapi.client.sheets.spreadsheets.batchUpdate({
+                spreadsheetId,
+                resource: {
+                    requests: [{
+                        deleteDimension: {
+                            range: {
+                                sheetId: trainingSheet.properties?.sheetId,
+                                dimension: 'ROWS',
+                                startIndex: rowToDelete,
+                                endIndex: rowToDelete + 1
+                            }
+                        }
+                    }]
+                }
+            });
+
+            return { success: true };
+        } catch (e: any) {
+            return { error: e.result?.error?.message || e.message };
+        }
+    }
+
+    /**
+     * Get all training log entries, optionally filtered by year/month.
+     */
+    async getTrainingLog(year?: number, month?: number): Promise<{ entries: string[][] } | { error: string }> {
+        try {
+            await this.ensureClient();
+            const spreadsheetId = this.getSpreadsheetId();
+
+            const res = await gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId,
+                range: 'Training!A:E',
+            });
+
+            const values = res.result.values || [];
+            if (values.length <= 1) return { entries: [] }; // Only header or empty
+
+            let entries = values.slice(1); // Skip header
+
+            // Filter by year/month if specified
+            if (year !== undefined && month !== undefined) {
+                entries = entries.filter((row: any[]) => {
+                    if (!row[0]) return false;
+                    const parts = row[0].split('/');
+                    if (parts.length < 3) return false;
+                    const m = parseInt(parts[1]) - 1; // 0-indexed
+                    const y = parseInt(parts[2]);
+                    return y === year && m === month;
+                });
+            }
+
+            return { entries };
+        } catch (e: any) {
+            // If sheet doesn't exist yet, return empty
+            if (e.status === 400 || (e.result?.error?.message || '').includes('Unable to parse range')) {
+                return { entries: [] };
+            }
+            return { error: e.result?.error?.message || e.message };
+        }
+    }
 }
 
 export const habitService = new HabitServiceImpl();

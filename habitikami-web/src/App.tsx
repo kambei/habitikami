@@ -4,7 +4,7 @@ import { cn } from './lib/utils'
 import { habitService } from './services/HabitService'
 import { Toaster, toast } from 'sonner'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LayoutDashboard, Settings, Github, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone, RefreshCw } from 'lucide-react'
+import { LayoutDashboard, Settings, Github, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone, RefreshCw, Dumbbell } from 'lucide-react'
 import { useTranslation } from './i18n'
 
 const HabitTable = React.lazy(() => import('./components/HabitTable').then(m => ({ default: m.HabitTable })))
@@ -17,6 +17,7 @@ const LandingPage = React.lazy(() => import('./components/LandingPage').then(m =
 const OnboardingPage = React.lazy(() => import('./components/OnboardingPage').then(m => ({ default: m.OnboardingPage })))
 const TabSelectionPage = React.lazy(() => import('./components/TabSelectionPage').then(m => ({ default: m.TabSelectionPage })))
 const HelpView = React.lazy(() => import('./components/HelpView').then(m => ({ default: m.HelpView })))
+const TrainingView = React.lazy(() => import('./components/TrainingView').then(m => ({ default: m.TrainingView })))
 const UpdatesView = React.lazy(() => import('./components/UpdatesView').then(m => ({ default: m.UpdatesView })))
 const AppTour = React.lazy(() => import('./components/AppTour').then(m => ({ default: m.AppTour })))
 
@@ -131,7 +132,7 @@ function VersionDropdown() {
   );
 }
 
-const ALL_TABS: ViewType[] = ['Weekdays', 'Weekend', 'Focus', 'Graphs', 'MobNotes', 'SmokeTemptation', 'Counters', 'Help'];
+const ALL_TABS: ViewType[] = ['Weekdays', 'Weekend', 'Focus', 'Graphs', 'MobNotes', 'SmokeTemptation', 'Counters', 'Training', 'Help'];
 
 const TAB_LABEL_KEYS: Record<ViewType, string> = {
   Weekdays: 'tabWeekdays',
@@ -142,6 +143,7 @@ const TAB_LABEL_KEYS: Record<ViewType, string> = {
   Graphs: 'tabStats',
   MobNotes: 'tabNotes',
   SmokeTemptation: 'tabSmokeTemptation',
+  Training: 'tabTraining',
   Help: 'tabHelp',
 };
 
@@ -154,6 +156,7 @@ const TAB_ICONS: Record<ViewType, React.ElementType> = {
   MobNotes: StickyNote,
   SmokeTemptation: Flame,
   Counters: Hash,
+  Training: Dumbbell,
   Help: HeartHandshake,
 };
 
@@ -655,6 +658,8 @@ function App() {
                   <TemptationView />
                 ) : activeSheet === 'Counters' ? (
                   <CountersView />
+                ) : activeSheet === 'Training' ? (
+                  <TrainingView />
                 ) : activeSheet === 'Help' ? (
                   <HelpView openSettings={openSettings} onSettingsClosed={() => {
                     setOpenSettings(false);

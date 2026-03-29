@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Check, ExternalLink, Filter } from 'lucide-react';
+import { ChevronDown, Check, ExternalLink /*, Filter*/ } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import { useTranslation } from '../i18n';
@@ -13,7 +13,8 @@ import {
 } from '../data/trainingData';
 import { TRAINING_TRANSLATIONS_EN } from '../data/trainingTranslations';
 
-// Equipment filter definitions
+// Equipment filter definitions (Temporarily disabled)
+/*
 const EQUIPMENT_FILTERS = [
     { key: 'cyclette', icon: '🚴', labelKey: 'trainingEqCyclette' },
     { key: 'bici', icon: '🚲', labelKey: 'trainingEqBici' },
@@ -23,6 +24,7 @@ const EQUIPMENT_FILTERS = [
     { key: 'madmuscles', icon: '📱', labelKey: 'trainingEqMadMuscles' },
     { key: 'yogago', icon: '📱', labelKey: 'trainingEqYogaGo' },
 ] as const;
+*/
 
 // Helper: check if an exercise matches an equipment filter
 function matchesEquipment(ex: { name: string; icon?: string; description?: string }, filterKey: string): boolean {
@@ -126,10 +128,12 @@ export function TrainingView() {
         }
     };
 
+    /*
     const handleEquipmentToggle = (key: string) => {
         setEquipmentFilter(prev => prev === key ? null : key);
         setExpandedId(null);
     };
+    */
 
     // Filtered exercises for equipment view
     const filteredExercises = useMemo(() => {
@@ -192,7 +196,7 @@ export function TrainingView() {
             </div>
 
             {/* Equipment filter bar */}
-            <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border bg-card/30 overflow-x-auto scrollbar-hide shrink-0">
+            {/* <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border bg-card/30 overflow-x-auto scrollbar-hide shrink-0">
                 <Filter className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 {EQUIPMENT_FILTERS.map(eq => (
                     <button
@@ -206,11 +210,11 @@ export function TrainingView() {
                         )}
                     >
                         <span>{eq.icon}</span>
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         {t(eq.labelKey as any)}
                     </button>
                 ))}
-            </div>
+            </div> */}
 
             {/* Today's counter */}
             {!isLoading && (

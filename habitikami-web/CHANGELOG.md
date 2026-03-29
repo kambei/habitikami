@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.4.0 - 2026-03-29
+### 🌓 Half-Done Habits
+- **Partial Completion Support**: You can now mark a habit as "half-done" by placing `HALF` in your Google Sheet.
+- **Diagonal Split Visuals**: Half-done habits are rendered as a square cut diagonally in both the Table and Grid views, using your habit's custom color.
+- **Weighted Analytics**: Individual habit heatmaps show the diagonal cut, and aggregate charts (trends, radar) now count "half" habits as **0.5** completion for more accurate tracking.
+- **Focus Tab Integration**: The daily Focus view correctly tracks your progress by including partially completed tasks in the handled count.
+
 ## 🌐 Web 5.3.1 - 2026-03-29
 ### 🌍 Internationalization (i18n)
 - **Training Module Translation**: Fully translated the InForma! training section into English (including 80+ unique exercise names, targets, steps, progressions).

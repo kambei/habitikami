@@ -42,7 +42,10 @@ export function ColorPickerPopover({ isOpen, onClose, onSelect, onDelete, positi
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 className="fixed z-50 bg-popover border border-border rounded-lg shadow-xl p-3 w-64"
-                style={{ top: position.y + 10, left: position.x }}
+                style={{
+                    top: Math.min(position.y + 10, window.innerHeight - 320),
+                    left: Math.min(position.x, window.innerWidth - 272),
+                }}
             >
                 <div className="text-xs font-semibold mb-2 text-muted-foreground">{t('colorPickerTitle')}</div>
                 <div className="grid grid-cols-5 gap-2 mb-4">

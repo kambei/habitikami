@@ -430,28 +430,38 @@ object ChartRenderer {
         val sorted = habits.entries.sortedBy { it.key }
         val doneCount = sorted.count { it.value }
 
+        // Scale everything based on habit count for maximum readability
+        val n = sorted.size
+        val titleSize = when {
+            n <= 3  -> 28f
+            n <= 5  -> 24f
+            n <= 8  -> 20f
+            n <= 12 -> 18f
+            else    -> 16f
+        }
+
         // Title
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = COLOR_PRIMARY
-            textSize = 18f
+            textSize = titleSize
             typeface = Typeface.DEFAULT_BOLD
         }
-        val titleH = 28f
+        val titleH = titleSize * 1.6f
         canvas.drawText("Today", 12f, titleH - 6f, titlePaint)
 
         // Counter
         val counterPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = COLOR_TEXT_DIM
-            textSize = 14f
+            textSize = titleSize * 0.8f
             textAlign = Paint.Align.RIGHT
         }
         canvas.drawText("$doneCount/${sorted.size}", width - 12f, titleH - 6f, counterPaint)
 
-        // Auto-scale text size
+        // Auto-scale text size — much larger when few habits
         val maxRows = sorted.size
         val availH = height - titleH - 8f
-        val rowH = (availH / maxRows).coerceIn(16f, 32f)
-        val textSize = (rowH * 0.6f).coerceIn(10f, 18f)
+        val rowH = (availH / maxRows).coerceIn(18f, 64f)
+        val textSize = (rowH * 0.55f).coerceIn(12f, 28f)
 
         val namePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = COLOR_TEXT

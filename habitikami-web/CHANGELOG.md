@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.3.1 - 2026-03-29
+### 🌍 Internationalization (i18n)
+- **Training Module Translation**: Fully translated the InForma! training section into English (including 80+ unique exercise names, targets, steps, progressions).
+- **Database Language Consistency**: Fixed a critical synchronization bug where logging exercises in different UI languages caused Google Sheets tracking to fragment across multiple session headers (e.g. "Catalogo" vs "Catalog"). Tracking headers are now standardized regardless of the display language.
+
+## 🌐 Web 5.3.0 - 2026-03-29
+### 🏋️ InForma! Training Section
+- **New Training Tab**: Full InForma! workout plan integrated as an opt-in tab — enable it from tab customization.
+- **7 Exercise Sections**: Piano (daily plan), Stretching, Sedia (chair), Aikido Solo, Shaolin Isometrics, Isometria, Anti-Craving — 70+ exercises with descriptions, progressions, muscle targets, and YouTube links.
+- **Daily Plan View**: Day picker with morning/afternoon sessions (weekdays) and single long sessions (weekends), matching the original InForma! schedule.
+- **Exercise Logging**: Tap ✓ on any exercise to log it to a new "Training" Google Sheet — tracks date, section, exercise name, session, and duration.
+- **Undo Support**: Tap again to remove a logged exercise.
+- **Training Stats in Graphs**: New section in Stats tab showing total exercises, active days, daily trend chart, and section breakdown — same style as daily/weekend stats.
+- **Auto Sheet Creation**: The Training sheet is created automatically on first use — no manual setup needed.
+
 ## 🌐 Web 5.2.7 + 🤖 Android 5.3.2 - 2026-03-29
 ### 🐛 Quick Fixes
 - **Color Picker Popup Fix** (Web): The color assignment and habit deletion popover no longer gets cut off at screen edges — it now repositions to stay fully visible within the viewport.

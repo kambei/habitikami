@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.3.1 - 2026-03-29
+### 🌍 Internationalization (i18n)
+- **Training Module Translation**: Fully translated the InForma! training section into English (including 80+ unique exercise names, targets, steps, progressions).
+- **Database Language Consistency**: Fixed a critical synchronization bug where logging exercises in different UI languages caused Google Sheets tracking to fragment across multiple session headers (e.g. "Catalogo" vs "Catalog"). Tracking headers are now standardized regardless of the display language.
+
 ## 🌐 Web 5.3.0 - 2026-03-29
 ### 🏋️ InForma! Training Section
 - **New Training Tab**: Full InForma! workout plan integrated as an opt-in tab — enable it from tab customization.

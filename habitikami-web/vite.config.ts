@@ -33,17 +33,14 @@ export default defineConfig({
     port: 3000,
   },
   build: {
-    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('recharts')) return 'charts';
-            if (id.includes('framer-motion')) return 'motion';
-            if (id.includes('lucide-react')) return 'lucide';
-            if (id.includes('@tanstack/react-query')) return 'query';
-            if (id.includes('react') || id.includes('react-dom')) return 'vendor';
-          }
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          charts: ['recharts'],
+          motion: ['framer-motion'],
+          lucide: ['lucide-react'],
+          query: ['@tanstack/react-query'],
         }
       }
     }

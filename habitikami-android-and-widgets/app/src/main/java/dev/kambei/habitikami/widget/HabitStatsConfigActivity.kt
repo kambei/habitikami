@@ -100,7 +100,7 @@ class HabitStatsConfigActivity : AppCompatActivity() {
                         for (habit in allHabits) {
                             val rb = RadioButton(this@HabitStatsConfigActivity).apply {
                                 text = habit
-                                setTextColor(0xFFE0E0E0.toInt())
+                                setTextColor(0xFFE6E1E5.toInt())
                                 textSize = 16f
                                 setPadding(8, 16, 8, 16)
                                 val color = export.colors[habit]

@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:padding="8dp">
+    android:padding="12dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,12 +18,12 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Habit"
-            android:textColor="#FF7C3AED"
+            android:textColor="@color/m3_on_primary_container"
             android:textSize="13sp"
-            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
             android:maxLines="1"
             android:ellipsize="end"
-            android:paddingEnd="6dp" />
+            android:paddingEnd="8dp" />
 
         <ImageView
             android:id="@+id/iv_mini_heatmap"
@@ -37,13 +37,13 @@
 
     <ImageButton
         android:id="@+id/btn_refresh_mini"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_gravity="top|end"
-        android:background="@drawable/widget_button"
+        android:background="@drawable/widget_icon_button"
         android:src="@android:drawable/ic_popup_sync"
         android:scaleType="centerInside"
         android:contentDescription="@string/btn_refresh"
-        android:padding="2dp" />
+        android:padding="4dp" />
 
 </FrameLayout>

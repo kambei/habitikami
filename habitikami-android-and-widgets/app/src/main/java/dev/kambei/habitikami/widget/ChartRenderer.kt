@@ -9,14 +9,14 @@ object ChartRenderer {
 
     // ── Colors matching the app theme ──────────────────────────────────────────
 
-    private const val COLOR_BG = 0xFF0A0A0F.toInt()
+    private const val COLOR_BG = 0xFF252430.toInt()       // m3_surface_container
     private const val COLOR_PRIMARY = 0xFF7C3AED.toInt()
     private const val COLOR_GREEN = 0xFF22C55E.toInt()
     private const val COLOR_RED = 0xFFEF4444.toInt()
     private const val COLOR_AMBER = 0xFFF59E0B.toInt()
-    private const val COLOR_MUTED = 0xFF3F3F5F.toInt()
-    private const val COLOR_TEXT = 0xFFE0E0E0.toInt()
-    private const val COLOR_TEXT_DIM = 0xFF888899.toInt()
+    private const val COLOR_MUTED = 0xFF49454F.toInt()    // m3_outline
+    private const val COLOR_TEXT = 0xFFE6E1E5.toInt()     // m3_on_surface
+    private const val COLOR_TEXT_DIM = 0xFFC0BBC5.toInt() // m3_on_surface_variant
 
     // ── Heatmap ────────────────────────────────────────────────────────────────
     // GitHub-style contribution heatmap: rows = habits, cols = days

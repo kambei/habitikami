@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:padding="8dp">
+    android:padding="12dp">
 
     <ImageView
         android:id="@+id/iv_counter_chart"
@@ -17,32 +17,34 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
-        android:textColor="#99FFFFFF"
-        android:textSize="12sp" />
+        android:textColor="@color/m3_on_surface_variant"
+        android:textSize="12sp"
+        android:fontFamily="sans-serif-medium" />
 
     <!-- Filter label: shows current filter (e.g. "All" or "Smoking") -->
     <TextView
         android:id="@+id/tv_chart_filter"
         android:layout_width="wrap_content"
-        android:layout_height="24dp"
+        android:layout_height="28dp"
         android:layout_gravity="top|start"
         android:background="@drawable/widget_button"
         android:gravity="center"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
         android:text="All"
-        android:textColor="#CCFFFFFF"
-        android:textSize="10sp" />
+        android:textColor="@color/m3_on_primary_container"
+        android:textSize="11sp"
+        android:fontFamily="sans-serif-medium" />
 
     <ImageButton
         android:id="@+id/btn_refresh_counter_chart"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:layout_gravity="top|end"
-        android:background="@drawable/widget_button"
+        android:background="@drawable/widget_icon_button"
         android:src="@android:drawable/ic_popup_sync"
         android:scaleType="centerInside"
         android:contentDescription="@string/btn_refresh"
-        android:padding="4dp" />
+        android:padding="6dp" />
 
 </FrameLayout>

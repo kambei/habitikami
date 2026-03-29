@@ -82,14 +82,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun launchTwa() {
+        val deepLink = this@MainActivity.intent?.data
+        val baseUrl = deepLink?.toString() ?: BuildConfig.PWA_URL
+        val separator = if ("?" in baseUrl) "&" else "?"
+        val urlWithVersion = "${baseUrl}${separator}android_version=${BuildConfig.VERSION_NAME}"
+
         val twaIntent = Intent().apply {
             setClassName(
                 this@MainActivity,
                 "com.google.androidbrowserhelper.trusted.LauncherActivity"
             )
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            // Forward any deep-link
-            this@MainActivity.intent?.data?.let { data = it }
+            data = Uri.parse(urlWithVersion)
         }
         startActivity(twaIntent)
         finish()

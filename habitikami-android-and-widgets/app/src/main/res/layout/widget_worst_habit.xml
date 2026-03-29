@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:padding="12dp">
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,18 +17,19 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Needs attention"
-            android:textColor="#FFEF4444"
+            android:textColor="@color/m3_on_error_container"
             android:textSize="12sp"
-            android:textStyle="bold" />
+            android:fontFamily="sans-serif-medium" />
 
         <TextView
             android:id="@+id/tv_worst_habit_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Habit"
-            android:textColor="#FFFFFFFF"
+            android:textColor="@color/m3_on_surface"
             android:textSize="18sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
             android:maxLines="1"
             android:ellipsize="end"
             android:paddingTop="4dp" />
@@ -38,9 +39,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="0%"
-            android:textColor="#FFEF4444"
-            android:textSize="32sp"
+            android:textColor="@color/red"
+            android:textSize="34sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
             android:paddingTop="2dp" />
 
         <ProgressBar
@@ -48,7 +50,7 @@
             style="@android:style/Widget.ProgressBar.Horizontal"
             android:layout_width="match_parent"
             android:layout_height="6dp"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="8dp"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:max="100"
@@ -60,21 +62,22 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="30-day rate"
-            android:textColor="#88FFFFFF"
+            android:textColor="@color/m3_on_surface_variant"
             android:textSize="11sp"
-            android:paddingTop="4dp" />
+            android:fontFamily="sans-serif-medium"
+            android:paddingTop="6dp" />
 
     </LinearLayout>
 
     <ImageButton
         android:id="@+id/btn_refresh_worst"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:layout_gravity="top|end"
-        android:background="@drawable/widget_button"
+        android:background="@drawable/widget_icon_button"
         android:src="@android:drawable/ic_popup_sync"
         android:scaleType="centerInside"
         android:contentDescription="@string/btn_refresh"
-        android:padding="4dp" />
+        android:padding="6dp" />
 
 </FrameLayout>

@@ -6,7 +6,7 @@
     android:background="@drawable/widget_help_background"
     android:clickable="true"
     android:gravity="center"
-    android:padding="8dp">
+    android:padding="12dp">
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -19,16 +19,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="🤖"
-            android:textSize="24sp" />
+            android:textSize="28sp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/label_ai_help"
-            android:textColor="@color/red"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:paddingTop="2dp" />
+            android:textColor="@color/m3_on_primary_container"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-medium"
+            android:paddingTop="4dp" />
 
     </LinearLayout>
 

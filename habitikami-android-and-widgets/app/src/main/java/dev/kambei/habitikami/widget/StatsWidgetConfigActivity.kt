@@ -271,7 +271,7 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
                     val px = (4 * parent.context.resources.displayMetrics.density).toInt()
                     setMargins(0, px, 0, px)
                 }
-                setBackgroundColor(0xFF1A1A2E.toInt())
+                setBackgroundColor(0xFF252430.toInt())
                 setPadding(
                     (4 * parent.context.resources.displayMetrics.density).toInt(),
                     (10 * parent.context.resources.displayMetrics.density).toInt(),
@@ -282,7 +282,7 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
             }
 
             val cb = CheckBox(parent.context).apply {
-                setTextColor(0xFFE0E0E0.toInt())
+                setTextColor(0xFFE6E1E5.toInt())
                 textSize = 16f
                 setPadding(
                     (8 * parent.context.resources.displayMetrics.density).toInt(), 0,

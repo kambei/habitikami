@@ -5,4 +5,19 @@
     <color name="green">#FF22C55E</color>
     <color name="red">#FFEF4444</color>
     <color name="amber">#FFF59E0B</color>
+
+    <!-- Material 3 Widget Surface Tones (dark theme) -->
+    <color name="m3_surface">#FF1C1B22</color>
+    <color name="m3_surface_container">#FF252430</color>
+    <color name="m3_surface_container_high">#FF2D2C3A</color>
+    <color name="m3_on_surface">#FFE6E1E5</color>
+    <color name="m3_on_surface_variant">#FFC0BBC5</color>
+    <color name="m3_outline">#FF49454F</color>
+    <color name="m3_outline_variant">#FF38343D</color>
+    <color name="m3_primary_container">#FF4A2D8A</color>
+    <color name="m3_on_primary_container">#FFEADDFF</color>
+    <color name="m3_secondary_container">#FF2B2D42</color>
+    <color name="m3_on_secondary_container">#FFE2E1EC</color>
+    <color name="m3_error_container">#FF8C1D18</color>
+    <color name="m3_on_error_container">#FFFFDAD6</color>
 </resources>

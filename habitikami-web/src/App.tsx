@@ -72,9 +72,19 @@ function GitHubDropdown() {
   );
 }
 
+function getAndroidVersionFromUrl(): string | null {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('android_version');
+  } catch {
+    return null;
+  }
+}
+
 function VersionDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const androidVersion = getAndroidVersionFromUrl() || (__APP_VERSION_ANDROID__ !== 'unknown' ? __APP_VERSION_ANDROID__ : null);
 
   useEffect(() => {
     if (!open) return;
@@ -103,14 +113,14 @@ function VersionDropdown() {
               <div className="text-[10px] text-muted-foreground">v{__APP_VERSION_WEB__}</div>
             </div>
           </div>
-          {__APP_VERSION_ANDROID__ !== 'unknown' && (
+          {androidVersion && (
             <>
               <div className="border-t border-border/50" />
               <div className="flex items-center gap-2 px-1">
                 <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
                 <div>
                   <div className="text-xs font-medium text-foreground">Android App</div>
-                  <div className="text-[10px] text-muted-foreground">v{__APP_VERSION_ANDROID__}</div>
+                  <div className="text-[10px] text-muted-foreground">v{androidVersion}</div>
                 </div>
               </div>
             </>

@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:padding="8dp">
+    android:padding="12dp">
 
     <ImageView
         android:id="@+id/iv_checklist"
@@ -17,18 +17,19 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
-        android:textColor="#99FFFFFF"
-        android:textSize="12sp" />
+        android:textColor="@color/m3_on_surface_variant"
+        android:textSize="12sp"
+        android:fontFamily="sans-serif-medium" />
 
     <ImageButton
         android:id="@+id/btn_refresh_checklist"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:layout_gravity="top|end"
-        android:background="@drawable/widget_button"
+        android:background="@drawable/widget_icon_button"
         android:src="@android:drawable/ic_popup_sync"
         android:scaleType="centerInside"
         android:contentDescription="@string/btn_refresh"
-        android:padding="4dp" />
+        android:padding="6dp" />
 
 </FrameLayout>

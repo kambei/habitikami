@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="16dp">
 
     <!-- Title row -->
     <TextView
@@ -12,11 +12,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/app_name"
-        android:textColor="@color/primary"
-        android:textSize="16sp"
+        android:textColor="@color/m3_on_primary_container"
+        android:textSize="14sp"
         android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
         android:gravity="center"
-        android:paddingBottom="8dp" />
+        android:paddingBottom="12dp" />
 
     <!-- Counter columns (up to 5 dynamic slots) -->
     <LinearLayout
@@ -40,25 +41,27 @@
                 android:id="@+id/tv_label_0"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/m3_on_surface_variant"
                 android:textSize="11sp"
-                android:textStyle="bold" />
+                android:fontFamily="sans-serif-medium" />
 
             <TextView
                 android:id="@+id/tv_val_0"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textColor="#FFFFFFFF"
-                android:textSize="24sp"
+                android:textColor="@color/m3_on_surface"
+                android:textSize="26sp"
                 android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
                 android:paddingTop="2dp"
-                android:paddingBottom="4dp" />
+                android:paddingBottom="6dp" />
 
             <Button
                 android:id="@+id/btn_inc_0"
                 style="@style/Widget.Habitikami.WidgetButton"
-                android:layout_width="48dp"
-                android:layout_height="32dp"
+                android:layout_width="52dp"
+                android:layout_height="36dp"
                 android:text="@string/btn_plus" />
         </LinearLayout>
 
@@ -77,25 +80,27 @@
                 android:id="@+id/tv_label_1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/m3_on_surface_variant"
                 android:textSize="11sp"
-                android:textStyle="bold" />
+                android:fontFamily="sans-serif-medium" />
 
             <TextView
                 android:id="@+id/tv_val_1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textColor="#FFFFFFFF"
-                android:textSize="24sp"
+                android:textColor="@color/m3_on_surface"
+                android:textSize="26sp"
                 android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
                 android:paddingTop="2dp"
-                android:paddingBottom="4dp" />
+                android:paddingBottom="6dp" />
 
             <Button
                 android:id="@+id/btn_inc_1"
                 style="@style/Widget.Habitikami.WidgetButton"
-                android:layout_width="48dp"
-                android:layout_height="32dp"
+                android:layout_width="52dp"
+                android:layout_height="36dp"
                 android:text="@string/btn_plus" />
         </LinearLayout>
 
@@ -114,25 +119,27 @@
                 android:id="@+id/tv_label_2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/m3_on_surface_variant"
                 android:textSize="11sp"
-                android:textStyle="bold" />
+                android:fontFamily="sans-serif-medium" />
 
             <TextView
                 android:id="@+id/tv_val_2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textColor="#FFFFFFFF"
-                android:textSize="24sp"
+                android:textColor="@color/m3_on_surface"
+                android:textSize="26sp"
                 android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
                 android:paddingTop="2dp"
-                android:paddingBottom="4dp" />
+                android:paddingBottom="6dp" />
 
             <Button
                 android:id="@+id/btn_inc_2"
                 style="@style/Widget.Habitikami.WidgetButton"
-                android:layout_width="48dp"
-                android:layout_height="32dp"
+                android:layout_width="52dp"
+                android:layout_height="36dp"
                 android:text="@string/btn_plus" />
         </LinearLayout>
 
@@ -151,25 +158,27 @@
                 android:id="@+id/tv_label_3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/m3_on_surface_variant"
                 android:textSize="11sp"
-                android:textStyle="bold" />
+                android:fontFamily="sans-serif-medium" />
 
             <TextView
                 android:id="@+id/tv_val_3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textColor="#FFFFFFFF"
-                android:textSize="24sp"
+                android:textColor="@color/m3_on_surface"
+                android:textSize="26sp"
                 android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
                 android:paddingTop="2dp"
-                android:paddingBottom="4dp" />
+                android:paddingBottom="6dp" />
 
             <Button
                 android:id="@+id/btn_inc_3"
                 style="@style/Widget.Habitikami.WidgetButton"
-                android:layout_width="48dp"
-                android:layout_height="32dp"
+                android:layout_width="52dp"
+                android:layout_height="36dp"
                 android:text="@string/btn_plus" />
         </LinearLayout>
 
@@ -188,25 +197,27 @@
                 android:id="@+id/tv_label_4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/m3_on_surface_variant"
                 android:textSize="11sp"
-                android:textStyle="bold" />
+                android:fontFamily="sans-serif-medium" />
 
             <TextView
                 android:id="@+id/tv_val_4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textColor="#FFFFFFFF"
-                android:textSize="24sp"
+                android:textColor="@color/m3_on_surface"
+                android:textSize="26sp"
                 android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
                 android:paddingTop="2dp"
-                android:paddingBottom="4dp" />
+                android:paddingBottom="6dp" />
 
             <Button
                 android:id="@+id/btn_inc_4"
                 style="@style/Widget.Habitikami.WidgetButton"
-                android:layout_width="48dp"
-                android:layout_height="32dp"
+                android:layout_width="52dp"
+                android:layout_height="36dp"
                 android:text="@string/btn_plus" />
         </LinearLayout>
 

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🤖 Android 5.3.1 - 2026-03-29
+### 🎨 Material 3 Widget Redesign
+- **Material 3 Styling**: All 10 home screen widgets redesigned with Google-style Material 3 look — rounded 28dp corners, tonal surfaces, pill-shaped buttons, and consistent M3 color tokens.
+- **Stat Cards**: Habit Stats widget now shows each metric in its own rounded card for better visual hierarchy.
+- **Tonal Icon Buttons**: Refresh buttons use circular tonal backgrounds instead of flat rectangles.
+- **Updated Chart Renderer**: Heatmap and bar chart bitmaps now use M3 surface/text colors for a cohesive look.
+- **Version Display Fix**: Android app version is now correctly shown in the web app's version dropdown when running inside the TWA.
+
 ## 🤖 Android 5.3.0 - 2026-03-25
 ### 📲 Dynamic Temptation Widgets
 - **Dynamic Counter Widget**: Labels, colors, and actions fetched from server — no longer hardcoded. Up to 5 counter slots, auto show/hide.

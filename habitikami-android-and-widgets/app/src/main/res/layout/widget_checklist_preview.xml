@@ -11,9 +11,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Habitikami"
-        android:textColor="#FF7C3AED"
+        android:textColor="@color/m3_on_primary_container"
         android:textSize="18sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -27,14 +28,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Today&apos;s Checklist"
-        android:textColor="#CCFFFFFF"
+        android:textColor="@color/m3_on_surface_variant"
         android:textSize="14sp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Habits with done/not-done"
-        android:textColor="#88FFFFFF"
+        android:textColor="@color/m3_on_surface_variant"
         android:textSize="11sp"
         android:paddingTop="4dp" />
 

@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="3dp"
         android:layout_gravity="top"
-        android:background="#FF7C3AED" />
+        android:background="@color/m3_on_primary_container" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -21,9 +21,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Meditate"
-            android:textColor="#FF7C3AED"
+            android:textColor="@color/m3_on_primary_container"
             android:textSize="15sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
             android:paddingBottom="4dp" />
 
         <LinearLayout
@@ -49,15 +50,16 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="12"
-                        android:textColor="#FF22C55E"
+                        android:textColor="@color/green"
                         android:textSize="28sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="streak"
-                        android:textColor="#88FFFFFF"
+                        android:textColor="@color/m3_on_surface_variant"
                         android:textSize="11sp" />
                 </LinearLayout>
 
@@ -72,15 +74,16 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="21"
-                        android:textColor="#FFF59E0B"
+                        android:textColor="@color/amber"
                         android:textSize="28sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="best"
-                        android:textColor="#88FFFFFF"
+                        android:textColor="@color/m3_on_surface_variant"
                         android:textSize="11sp" />
                 </LinearLayout>
             </LinearLayout>
@@ -102,15 +105,16 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="85%"
-                        android:textColor="#FF3B82F6"
+                        android:textColor="@color/primary"
                         android:textSize="28sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="30d"
-                        android:textColor="#88FFFFFF"
+                        android:textColor="@color/m3_on_surface_variant"
                         android:textSize="11sp" />
                 </LinearLayout>
 
@@ -125,15 +129,16 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="142"
-                        android:textColor="#FFA78BFA"
+                        android:textColor="@color/m3_on_primary_container"
                         android:textSize="28sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="total"
-                        android:textColor="#88FFFFFF"
+                        android:textColor="@color/m3_on_surface_variant"
                         android:textSize="11sp" />
                 </LinearLayout>
             </LinearLayout>

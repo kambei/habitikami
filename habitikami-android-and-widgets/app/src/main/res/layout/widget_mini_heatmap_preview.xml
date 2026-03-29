@@ -16,9 +16,10 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Meditate"
-            android:textColor="#FF7C3AED"
+            android:textColor="@color/m3_on_primary_container"
             android:textSize="13sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
             android:maxLines="1"
             android:paddingEnd="6dp" />
 
@@ -29,20 +30,20 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#33FFFFFF" android:layout_margin="1dp" />
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#33FFFFFF" android:layout_margin="1dp" />
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#33FFFFFF" android:layout_margin="1dp" />
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
-            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="#FF7C3AED" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_on_primary_container" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_on_primary_container" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_outline_variant" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_on_primary_container" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_on_primary_container" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_on_primary_container" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_outline_variant" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_on_primary_container" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_on_primary_container" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_outline_variant" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_on_primary_container" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_on_primary_container" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_on_primary_container" android:layout_margin="1dp" />
+            <TextView android:layout_width="8dp" android:layout_height="8dp" android:background="@color/m3_on_primary_container" android:layout_margin="1dp" />
 
         </LinearLayout>
 

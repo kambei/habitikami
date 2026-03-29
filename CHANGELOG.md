@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.2.7 + 🤖 Android 5.3.2 - 2026-03-29
+### 🐛 Quick Fixes
+- **Color Picker Popup Fix** (Web): The color assignment and habit deletion popover no longer gets cut off at screen edges — it now repositions to stay fully visible within the viewport.
+- **Larger Checklist Widget Text** (Android): The daily checklist widget now scales text dynamically based on habit count — much bigger and more readable when you have few habits.
+
 ## 🤖 Android 5.3.1 - 2026-03-29
 ### 🎨 Material 3 Widget Redesign
 - **Material 3 Styling**: All 10 home screen widgets redesigned with Google-style Material 3 look — rounded 28dp corners, tonal surfaces, pill-shaped buttons, and consistent M3 color tokens.

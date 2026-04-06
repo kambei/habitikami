@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.6.1 - 2026-04-06
+### 🔗 Training Plan Links
+- **External App Launch**: Tapping a MadMuscles or Yoga Go entry in the daily plan now opens the app's website in a new tab, marked with an external-link icon.
+- **Full Plan Navigation**: Every remaining plan exercise now routes somewhere — cardio/equipment entries that previously had no target now fall back to the Isometria section.
+
 ## 🌐 Web 5.6.0 - 2026-04-06
 ### 🏋️ Training Section
 - **Owner-Only Access**: The InForma!/Training tab is now visible and selectable only for the owner account; hidden for all other users.

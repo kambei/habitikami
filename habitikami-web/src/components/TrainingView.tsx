@@ -55,21 +55,27 @@ function findCatalogExercise(planEx: PlanExercise): Exercise | null {
     return null;
 }
 
+// External app links for specific plan entries
+const EXTERNAL_APP_LINKS: Record<string, { label: string; url: string }> = {
+    'ext:madmuscles': { label: 'MadMuscles', url: 'https://madmuscles.com/' },
+    'ext:yogago': { label: 'Yoga Go', url: 'https://yoga-go.io/' },
+};
+
 // Helper: get section key from exercise name (for plan exercises)
 function guessSectionForPlanExercise(planEx: PlanExercise): string {
     const n = planEx.name.toLowerCase();
+    if (n.includes('madmuscles')) return 'ext:madmuscles';
+    if (n.includes('yoga go')) return 'ext:yogago';
     if (n.includes('stretch') || planEx.icon === '🧘') return 'stretch';
     if (n.includes('aiki') || planEx.icon === '🥋') return 'aikido';
     if (n.includes('shaolin') || n.includes('horse stance') || n.includes('palmi uniti') || n.includes('mani intrecciate') || planEx.icon === '🐉') return 'shaolin';
     if (n.includes('sedia') || n.includes('seated') || planEx.icon === '🪑') return 'chair';
     if (n.includes('respirazione') || n.includes('craving') || planEx.icon === '🌬️') return 'craving';
-    if (n.includes('cyclette') || planEx.icon === '🚴') return 'plan';
-    if (n.includes('bici') || planEx.icon === '🚲') return 'plan';
-    if (n.includes('corda') || planEx.icon === '🪢') return 'plan';
     return 'iso';
 }
 
 function getSectionForExercise(sectionKey: string): string {
+    if (EXTERNAL_APP_LINKS[sectionKey]) return EXTERNAL_APP_LINKS[sectionKey].label;
     const sec = SECTIONS.find(s => s.key === sectionKey);
     return sec?.label || sectionKey;
 }
@@ -536,17 +542,29 @@ function SessionBlock({ label, plan, sessionName, expandedId, onToggleExpand, id
                 const sectionKey = guessSectionForPlanExercise(ex);
                 const sectionLabel = getSectionForExercise(sectionKey);
                 const done = isExerciseDone(ex.name, sessionName, sectionLabel);
-                const canNavigate = sectionKey !== 'plan' && !!SECTION_CATALOG[sectionKey];
+                const externalLink = EXTERNAL_APP_LINKS[sectionKey];
+                const canNavigate = !!externalLink || !!SECTION_CATALOG[sectionKey];
 
                 return (
                     <div key={id} className={cn("border-t border-border/50 transition-colors", done && "bg-emerald-500/5")}>
                         <div
                             className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-foreground/[0.02] transition-colors"
-                            onClick={() => canNavigate ? onNavigateToSection(sectionKey) : onToggleExpand(isExpanded ? null : id)}
-                            title={canNavigate ? `→ ${sectionLabel}` : undefined}
+                            onClick={() => {
+                                if (externalLink) {
+                                    window.open(externalLink.url, '_blank', 'noopener,noreferrer');
+                                } else if (canNavigate) {
+                                    onNavigateToSection(sectionKey);
+                                } else {
+                                    onToggleExpand(isExpanded ? null : id);
+                                }
+                            }}
+                            title={externalLink ? `↗ ${externalLink.label}` : canNavigate ? `→ ${sectionLabel}` : undefined}
                         >
                             <span className="text-base w-6 text-center shrink-0">{ex.icon}</span>
-                            <span className={cn("flex-1 text-sm", done && "line-through text-muted-foreground")}>{tData(ex.name, 'name')}</span>
+                            <span className={cn("flex-1 text-sm flex items-center gap-1 min-w-0", done && "line-through text-muted-foreground")}>
+                                <span className="truncate">{tData(ex.name, 'name')}</span>
+                                {externalLink && <ExternalLink className="w-3 h-3 shrink-0 text-muted-foreground" />}
+                            </span>
                             <span className="text-[10px] font-mono text-muted-foreground whitespace-nowrap">{ex.duration}</span>
                             <button
                                 onClick={(e) => {

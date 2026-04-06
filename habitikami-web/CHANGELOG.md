@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.6.0 - 2026-04-06
+### 🏋️ Training Section
+- **Owner-Only Access**: The InForma!/Training tab is now visible and selectable only for the owner account; hidden for all other users.
+- **Daily Tai Chi**: Added a 10-15 min MadMuscles Tai Chi session every morning and a 10-15 min Yoga Go Tai Chi session every evening (including weekends).
+- **Click-to-Navigate**: In the daily Piano view, tapping an exercise now jumps to its matching section (e.g. Stretching → Stretch tab). A dedicated chevron keeps access to the detail panel.
+
 ## 🌐 Web 5.5.2 - 2026-04-06
 ### 🎨 Grid View Scrolling
 - **Week-Fit Columns**: The grid view now sizes day columns so exactly the current week fills the visible area on both desktop and mobile.

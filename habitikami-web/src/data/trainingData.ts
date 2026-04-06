@@ -86,6 +86,7 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Core & Isometria Shaolin',
     duration: '25 min',
     exercises: [
+      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Stretching risveglio (sez. \uD83E\uDDD8)', duration: '5 min', icon: '\uD83E\uDDD8' },
       { name: 'Plank frontale (tappetino)', duration: '3\u00D730s', icon: '\uD83E\uDDF1' },
       { name: 'Horse Stance (Ma Bu)', duration: '3\u00D720s', icon: '\uD83D\uDC0E' },
@@ -99,6 +100,7 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Cardio Corda & Gambe',
     duration: '25 min',
     exercises: [
+      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Stretching risveglio', duration: '5 min', icon: '\uD83E\uDDD8' },
       { name: 'Corda per saltare', duration: '3\u00D72min (30s pausa)', icon: '\uD83E\uDE22' },
       { name: 'Squat isometrico', duration: '3\u00D720s', icon: '\uD83E\uDDB5' },
@@ -111,6 +113,7 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Upper Body, Aikido & Shaolin',
     duration: '25 min',
     exercises: [
+      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Aiki Taiso solo warmup (sez. \uD83E\uDD4B)', duration: '5 min', icon: '\uD83E\uDD4B' },
       { name: 'Push-up Hold met\u00E0 (tappetino)', duration: '3\u00D715s', icon: '\uD83D\uDCAA' },
       { name: 'Dead Hang (barra)', duration: '3\u00D720s', icon: '\uD83D\uDD29' },
@@ -123,6 +126,7 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Cardio Cyclette & Core',
     duration: '25 min',
     exercises: [
+      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Stretching risveglio', duration: '5 min', icon: '\uD83E\uDDD8' },
       { name: 'Cyclette HIIT', duration: '10 min (30s forte/30s lento)', icon: '\uD83D\uDEB4' },
       { name: 'Plank tocco spalla (tappetino)', duration: '3\u00D730s', icon: '\uD83E\uDDF1' },
@@ -135,6 +139,7 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Full Body Isometrico',
     duration: '25 min',
     exercises: [
+      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Aiki Taiso solo warmup', duration: '5 min', icon: '\uD83E\uDD4B' },
       { name: 'Horse Stance profonda', duration: '3\u00D725s', icon: '\uD83D\uDC0E' },
       { name: 'Push-up Hold basso (tappetino)', duration: '3\u00D710s', icon: '\uD83D\uDCAA' },
@@ -148,6 +153,7 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Endurance, Forza & Tai Chi Attivo',
     duration: '55-70 min',
     exercises: [
+      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Stretching completo (tappetino)', duration: '8 min', icon: '\uD83E\uDDD8' },
       { name: 'Corda per saltare', duration: '5\u00D72min', icon: '\uD83E\uDE22' },
       { name: 'Circuito Shaolin (sez. \uD83D\uDC09)', duration: '3 giri', icon: '\uD83D\uDC09' },
@@ -164,6 +170,7 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Mobilit\u00E0, Aikido & Recovery',
     duration: '55-65 min',
     exercises: [
+      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: "Bici all'aperto", duration: '20-30 min moderato', icon: '\uD83D\uDEB2' },
       { name: 'Aiki Taiso completo (sez. \uD83E\uDD4B)', duration: '10 min', icon: '\uD83E\uDD4B' },
       { name: 'Stretching profondo (tappetino)', duration: '10 min', icon: '\uD83E\uDD38' },
@@ -187,6 +194,7 @@ export const AFTERNOON_PLANS: Partial<Record<DayKey, DailyPlan>> = {
       { name: 'Affondi alternati', duration: '3\u00D712', icon: '\uD83E\uDDBF' },
       { name: 'Horse Stance', duration: '2\u00D730s', icon: '\uD83D\uDC0E' },
       { name: 'Stretching gambe (tappetino)', duration: '5 min', icon: '\uD83E\uDDD8' },
+      { name: '\uD83D\uDCF1 Yoga Go \u2014 Tai Chi (sera)', duration: '10-15 min', icon: '\u262F\uFE0F' },
     ],
   },
   mar: {
@@ -198,6 +206,7 @@ export const AFTERNOON_PLANS: Partial<Record<DayKey, DailyPlan>> = {
       { name: 'Dead Hang', duration: '3\u00D7max', icon: '\uD83D\uDD29' },
       { name: 'Isometrici braccia Shaolin', duration: '3\u00D710s', icon: '\uD83D\uDE4F' },
       { name: 'Stretching spalle + polsi', duration: '5 min', icon: '\uD83E\uDDD8' },
+      { name: '\uD83D\uDCF1 Yoga Go \u2014 Tai Chi (sera)', duration: '10-15 min', icon: '\u262F\uFE0F' },
     ],
   },
   mer: {
@@ -209,6 +218,7 @@ export const AFTERNOON_PLANS: Partial<Record<DayKey, DailyPlan>> = {
       { name: 'Seated Torso Rotation', duration: '3\u00D716', icon: '\uD83E\uDE91' },
       { name: 'Plank (tappetino)', duration: '3\u00D740s', icon: '\uD83E\uDDF1' },
       { name: 'Stretching (tappetino)', duration: '5 min', icon: '\uD83E\uDDD8' },
+      { name: '\uD83D\uDCF1 Yoga Go \u2014 Tai Chi (sera)', duration: '10-15 min', icon: '\u262F\uFE0F' },
     ],
   },
   gio: {
@@ -220,6 +230,7 @@ export const AFTERNOON_PLANS: Partial<Record<DayKey, DailyPlan>> = {
       { name: 'Wall Sit una gamba', duration: '2\u00D715s/g', icon: '\uD83E\uDDF1' },
       { name: 'Pressione palmi Shaolin', duration: '3\u00D712s', icon: '\uD83D\uDE4F' },
       { name: 'Stretching completo (tappetino)', duration: '5 min', icon: '\uD83E\uDDD8' },
+      { name: '\uD83D\uDCF1 Yoga Go \u2014 Tai Chi (sera)', duration: '10-15 min', icon: '\u262F\uFE0F' },
     ],
   },
   ven: {
@@ -228,8 +239,22 @@ export const AFTERNOON_PLANS: Partial<Record<DayKey, DailyPlan>> = {
     exercises: [
       { name: 'Cyclette moderata', duration: '12 min', icon: '\uD83D\uDEB4' },
       { name: 'Corda leggera', duration: '2\u00D72min', icon: '\uD83E\uDE22' },
-      { name: '\uD83D\uDCF1 Yoga Go \u2014 Tai Chi (relax)', duration: '10 min', icon: '\u262F\uFE0F' },
+      { name: '\uD83D\uDCF1 Yoga Go \u2014 Tai Chi (sera)', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Stretching profondo (tappetino)', duration: '5 min', icon: '\uD83E\uDDD8' },
+    ],
+  },
+  sab: {
+    title: 'Tai Chi Serale',
+    duration: '10-15 min',
+    exercises: [
+      { name: '\uD83D\uDCF1 Yoga Go \u2014 Tai Chi (sera)', duration: '10-15 min', icon: '\u262F\uFE0F' },
+    ],
+  },
+  dom: {
+    title: 'Tai Chi Serale',
+    duration: '10-15 min',
+    exercises: [
+      { name: '\uD83D\uDCF1 Yoga Go \u2014 Tai Chi (sera)', duration: '10-15 min', icon: '\u262F\uFE0F' },
     ],
   },
 };

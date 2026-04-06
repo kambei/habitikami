@@ -249,6 +249,7 @@ export function TrainingView() {
                         todayStr={todayStr}
                         accentColor={accentColor}
                         isPending={isPending}
+                        onNavigateToSection={(key) => { setActiveSection(key); setExpandedId(null); }}
                     />
                 ) : (
                     <CatalogView
@@ -379,9 +380,10 @@ interface PlanViewProps {
     todayStr: string;
     accentColor: string;
     isPending: boolean;
+    onNavigateToSection: (sectionKey: string) => void;
 }
 
-function PlanView({ selectedDay, onDayChange, expandedId, onToggleExpand, isExerciseDone, onToggleExercise, accentColor, isPending }: PlanViewProps) {
+function PlanView({ selectedDay, onDayChange, expandedId, onToggleExpand, isExerciseDone, onToggleExercise, accentColor, isPending, onNavigateToSection }: PlanViewProps) {
     const { t, language } = useTranslation();
     const dayInfo = DAYS.find(d => d.key === selectedDay)!;
     const isWeekend = selectedDay === 'sab' || selectedDay === 'dom';
@@ -433,9 +435,9 @@ function PlanView({ selectedDay, onDayChange, expandedId, onToggleExpand, isExer
             {/* Morning / Single session */}
             <SessionBlock
                 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-                label={isWeekend ? `⚡ ${t('trainingSingle' as any)}` : `🌅 ${t('trainingMorning' as any)}`}
+                label={isWeekend && !afternoonPlan ? `⚡ ${t('trainingSingle' as any)}` : `🌅 ${t('trainingMorning' as any)}`}
                 plan={morningPlan}
-                sessionName={isWeekend ? 'Unica' : 'Mattina'}
+                sessionName={isWeekend && !afternoonPlan ? 'Unica' : 'Mattina'}
                 expandedId={expandedId}
                 onToggleExpand={onToggleExpand}
                 idPrefix="mo"
@@ -443,10 +445,11 @@ function PlanView({ selectedDay, onDayChange, expandedId, onToggleExpand, isExer
                 onToggleExercise={onToggleExercise}
                 accentColor={accentColor}
                 isPending={isPending}
+                onNavigateToSection={onNavigateToSection}
             />
 
-            {/* Afternoon (weekdays only) */}
-            {!isWeekend && afternoonPlan && (
+            {/* Afternoon / Evening */}
+            {afternoonPlan && (
                 <SessionBlock
                     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
                     label={`🌇 ${t('trainingAfternoon' as any)}`}
@@ -488,9 +491,10 @@ interface SessionBlockProps {
     onToggleExercise: (exercise: string, session: string, section: string, duration: string) => void;
     accentColor: string;
     isPending: boolean;
+    onNavigateToSection: (sectionKey: string) => void;
 }
 
-function SessionBlock({ label, plan, sessionName, expandedId, onToggleExpand, idPrefix, isExerciseDone, onToggleExercise, accentColor, isPending }: SessionBlockProps) {
+function SessionBlock({ label, plan, sessionName, expandedId, onToggleExpand, idPrefix, isExerciseDone, onToggleExercise, accentColor, isPending, onNavigateToSection }: SessionBlockProps) {
     const { language } = useTranslation();
     const completedCount = plan.exercises.filter(ex => {
         const sec = getSectionForExercise(guessSectionForPlanExercise(ex));
@@ -528,14 +532,17 @@ function SessionBlock({ label, plan, sessionName, expandedId, onToggleExpand, id
                 const id = `${idPrefix}_${i}`;
                 const isExpanded = expandedId === id;
                 const catalogEx = findCatalogExercise(ex);
-                const sectionLabel = getSectionForExercise(guessSectionForPlanExercise(ex));
+                const sectionKey = guessSectionForPlanExercise(ex);
+                const sectionLabel = getSectionForExercise(sectionKey);
                 const done = isExerciseDone(ex.name, sessionName, sectionLabel);
+                const canNavigate = sectionKey !== 'plan' && !!SECTION_CATALOG[sectionKey];
 
                 return (
                     <div key={id} className={cn("border-t border-border/50 transition-colors", done && "bg-emerald-500/5")}>
                         <div
                             className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-foreground/[0.02] transition-colors"
-                            onClick={() => onToggleExpand(isExpanded ? null : id)}
+                            onClick={() => canNavigate ? onNavigateToSection(sectionKey) : onToggleExpand(isExpanded ? null : id)}
+                            title={canNavigate ? `→ ${sectionLabel}` : undefined}
                         >
                             <span className="text-base w-6 text-center shrink-0">{ex.icon}</span>
                             <span className={cn("flex-1 text-sm", done && "line-through text-muted-foreground")}>{tData(ex.name, 'name')}</span>
@@ -556,7 +563,16 @@ function SessionBlock({ label, plan, sessionName, expandedId, onToggleExpand, id
                             >
                                 {done ? <Check className="w-4 h-4" /> : <Check className="w-3.5 h-3.5 opacity-30" />}
                             </button>
-                            <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform shrink-0", isExpanded && "rotate-180")} />
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleExpand(isExpanded ? null : id);
+                                }}
+                                className="p-1 -mr-1 shrink-0 rounded hover:bg-foreground/10 transition-colors"
+                                title="Details"
+                            >
+                                <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", isExpanded && "rotate-180")} />
+                            </button>
                         </div>
 
                         <AnimatePresence>

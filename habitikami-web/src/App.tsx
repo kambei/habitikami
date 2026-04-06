@@ -133,6 +133,7 @@ function VersionDropdown() {
 }
 
 const ALL_TABS: ViewType[] = ['Weekdays', 'Weekend', 'Focus', 'Graphs', 'MobNotes', 'SmokeTemptation', 'Counters', 'Training', 'Help'];
+const TRAINING_OWNER_EMAIL = 'and.bovi@gmail.com';
 
 const TAB_LABEL_KEYS: Record<ViewType, string> = {
   Weekdays: 'tabWeekdays',
@@ -433,7 +434,8 @@ function App() {
   }
 
   // Tabs to show — null means prefs not loaded yet (shouldn't reach here due to isLoadingPrefs guard)
-  const visibleTabs = enabledTabs ?? ALL_TABS;
+  const canSeeTraining = email === TRAINING_OWNER_EMAIL;
+  const visibleTabs = (enabledTabs ?? ALL_TABS).filter(tab => tab !== 'Training' || canSeeTraining);
 
   return (
     <AnimatePresence mode="wait">
@@ -477,6 +479,7 @@ function App() {
               currentDefaultTab={defaultTab}
               onComplete={handleTabSelectionComplete}
               onCancel={isEditingTabs ? () => setIsEditingTabs(false) : undefined}
+              userEmail={email}
             />
           </Suspense>
           <Toaster position="top-center" theme="dark" />
@@ -658,7 +661,7 @@ function App() {
                   <TemptationView />
                 ) : activeSheet === 'Counters' ? (
                   <CountersView />
-                ) : activeSheet === 'Training' ? (
+                ) : activeSheet === 'Training' && canSeeTraining ? (
                   <TrainingView />
                 ) : activeSheet === 'Help' ? (
                   <HelpView openSettings={openSettings} onSettingsClosed={() => {

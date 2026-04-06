@@ -25,6 +25,8 @@ const ALL_TABS: TabInfo[] = [
     { id: 'Training', labelKey: 'tabTraining', descKey: 'tabDescTraining', icon: Dumbbell },
 ];
 
+const TRAINING_OWNER_EMAIL = 'and.bovi@gmail.com';
+
 interface Props {
     onComplete: (enabledTabs: ViewType[], defaultTab?: ViewType) => void;
     /** Pre-selected tabs when editing existing preferences */
@@ -33,15 +35,21 @@ interface Props {
     currentDefaultTab?: ViewType | null;
     /** If provided, shows a Cancel button (used when editing, not initial setup) */
     onCancel?: () => void;
+    /** Current user email — used to gate owner-only tabs */
+    userEmail?: string | null;
 }
 
-export function TabSelectionPage({ onComplete, currentTabs, currentDefaultTab, onCancel }: Props) {
+export function TabSelectionPage({ onComplete, currentTabs, currentDefaultTab, onCancel, userEmail }: Props) {
     const { t } = useTranslation();
+
+    const canSeeTraining = userEmail === TRAINING_OWNER_EMAIL;
+    const availableTabs = ALL_TABS.filter(t => t.id !== 'Training' || canSeeTraining);
 
     // Initialize with current tabs (maintaining order), or fallback to default ALL_TABS order
     const [selected, setSelected] = useState<ViewType[]>(() => {
-        if (currentTabs && currentTabs.length > 0) return [...currentTabs].filter(id => id !== 'Help');
-        return ALL_TABS.map(t => t.id).filter(id => id !== 'Help');
+        const filterByAccess = (id: ViewType) => id !== 'Help' && (id !== 'Training' || canSeeTraining);
+        if (currentTabs && currentTabs.length > 0) return [...currentTabs].filter(filterByAccess);
+        return availableTabs.map(t => t.id).filter(id => id !== 'Help');
     });
     const [defaultTab, setDefaultTab] = useState<ViewType | null>(currentDefaultTab ?? null);
     const [saving, setSaving] = useState(false);
@@ -105,7 +113,7 @@ export function TabSelectionPage({ onComplete, currentTabs, currentDefaultTab, o
     };
 
     const selectedTabs = selected.map(id => ALL_TABS.find(t => t.id === id)!).filter(Boolean);
-    const unselectedTabs = ALL_TABS.filter(t => !selected.includes(t.id));
+    const unselectedTabs = availableTabs.filter(t => !selected.includes(t.id));
 
     return (
         <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">

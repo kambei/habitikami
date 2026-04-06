@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check, ExternalLink /*, Filter*/ } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -53,6 +53,20 @@ function findCatalogExercise(planEx: PlanExercise): Exercise | null {
         if (cn === n || cn.includes(n) || n.includes(cn)) return ex;
     }
     return null;
+}
+
+// Sub-exercises for the "Stretching risveglio" wake-up routine
+const WAKEUP_STRETCH_SUBS: { name: string; icon: string; duration: string }[] = [
+    { name: 'Collo — rotazioni lente', icon: '💆', duration: '30s' },
+    { name: 'Spalle — cerchi avanti/dietro', icon: '🙆', duration: '30s' },
+    { name: 'Schiena — gatto-mucca', icon: '🐈', duration: '45s' },
+    { name: 'Fianchi — torsione busto', icon: '🌀', duration: '30s' },
+    { name: 'Gambe — pinza in piedi', icon: '🦵', duration: '45s' },
+    { name: 'Caviglie — cerchi', icon: '👣', duration: '20s' },
+];
+
+function isWakeupStretch(name: string): boolean {
+    return name.toLowerCase().startsWith('stretching risveglio');
 }
 
 // External app links for specific plan entries
@@ -603,7 +617,20 @@ function SessionBlock({ label, plan, sessionName, expandedId, onToggleExpand, id
                                     transition={{ duration: 0.2 }}
                                     className="overflow-hidden"
                                 >
-                                    <ExerciseDetail exercise={catalogEx} planExercise={ex} accentColor={accentColor} />
+                                    {isWakeupStretch(ex.name) ? (
+                                        <WakeupStretchPanel
+                                            parentName={ex.name}
+                                            parentDuration={ex.duration}
+                                            sessionName={sessionName}
+                                            sectionLabel={sectionLabel}
+                                            isExerciseDone={isExerciseDone}
+                                            onToggleExercise={onToggleExercise}
+                                            accentColor={accentColor}
+                                            isPending={isPending}
+                                        />
+                                    ) : (
+                                        <ExerciseDetail exercise={catalogEx} planExercise={ex} accentColor={accentColor} />
+                                    )}
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -730,6 +757,73 @@ function CatalogView({ sectionKey, expandedId, onToggleExpand, isExerciseDone, o
                 );
             })}
         </>
+    );
+}
+
+// ─── Wake-up Stretch Sub-Exercises Panel ────────────────────────────────────
+
+interface WakeupStretchPanelProps {
+    parentName: string;
+    parentDuration: string;
+    sessionName: string;
+    sectionLabel: string;
+    isExerciseDone: (exercise: string, session: string, section: string) => boolean;
+    onToggleExercise: (exercise: string, session: string, section: string, duration: string) => void;
+    accentColor: string;
+    isPending: boolean;
+}
+
+function WakeupStretchPanel({
+    parentName, parentDuration, sessionName, sectionLabel,
+    isExerciseDone, onToggleExercise, accentColor, isPending,
+}: WakeupStretchPanelProps) {
+    const subKey = (sub: string) => `${parentName} › ${sub}`;
+    const allDone = WAKEUP_STRETCH_SUBS.every(s => isExerciseDone(subKey(s.name), sessionName, sectionLabel));
+    const parentDone = isExerciseDone(parentName, sessionName, sectionLabel);
+
+    useEffect(() => {
+        if (allDone && !parentDone && !isPending) {
+            onToggleExercise(parentName, sessionName, sectionLabel, parentDuration);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [allDone, parentDone]);
+
+    return (
+        <div className="px-3 pb-3 pt-2 border-t border-border/50 space-y-1">
+            {WAKEUP_STRETCH_SUBS.map((sub) => {
+                const key = subKey(sub.name);
+                const done = isExerciseDone(key, sessionName, sectionLabel);
+                return (
+                    <div
+                        key={sub.name}
+                        className={cn(
+                            "flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors",
+                            done && "bg-emerald-500/5"
+                        )}
+                    >
+                        <span className="text-sm w-5 text-center shrink-0">{sub.icon}</span>
+                        <span className={cn("flex-1 text-xs", done && "line-through text-muted-foreground")}>{sub.name}</span>
+                        <span className="text-[10px] font-mono text-muted-foreground whitespace-nowrap">{sub.duration}</span>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isPending) onToggleExercise(key, sessionName, sectionLabel, sub.duration);
+                            }}
+                            className={cn(
+                                "w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-all",
+                                done
+                                    ? "bg-emerald-500 text-white"
+                                    : "border border-border hover:border-current"
+                            )}
+                            style={!done ? { color: accentColor } : undefined}
+                            disabled={isPending}
+                        >
+                            {done ? <Check className="w-3.5 h-3.5" /> : <Check className="w-3 h-3 opacity-30" />}
+                        </button>
+                    </div>
+                );
+            })}
+        </div>
     );
 }
 

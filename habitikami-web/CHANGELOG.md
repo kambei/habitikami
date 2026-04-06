@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.6.2 - 2026-04-06
+### 🧘 Wake-up Stretch Sub-Exercises
+- **Breakdown Panel**: Expanding "Stretching risveglio" in the daily plan now reveals 6 individually completable movements (collo, spalle, schiena, fianchi, gambe, caviglie).
+- **Auto-Complete Parent**: When all sub-exercises are ticked, the parent "Stretching risveglio" entry is auto-completed.
+
 ## 🌐 Web 5.6.1 - 2026-04-06
 ### 🔗 Training Plan Links
 - **External App Launch**: Tapping a MadMuscles or Yoga Go entry in the daily plan now opens the app's website in a new tab, marked with an external-link icon.

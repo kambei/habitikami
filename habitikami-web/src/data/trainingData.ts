@@ -86,8 +86,8 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Core & Isometria Shaolin',
     duration: '25 min',
     exercises: [
-      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Stretching risveglio (sez. \uD83E\uDDD8)', duration: '5 min', icon: '\uD83E\uDDD8' },
+      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Plank frontale (tappetino)', duration: '3\u00D730s', icon: '\uD83E\uDDF1' },
       { name: 'Horse Stance (Ma Bu)', duration: '3\u00D720s', icon: '\uD83D\uDC0E' },
       { name: 'Hollow Body Hold (tappetino)', duration: '3\u00D715s', icon: '\uD83C\uDF19' },
@@ -100,8 +100,8 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Cardio Corda & Gambe',
     duration: '25 min',
     exercises: [
-      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Stretching risveglio', duration: '5 min', icon: '\uD83E\uDDD8' },
+      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Corda per saltare', duration: '3\u00D72min (30s pausa)', icon: '\uD83E\uDE22' },
       { name: 'Squat isometrico', duration: '3\u00D720s', icon: '\uD83E\uDDB5' },
       { name: 'Affondi statici', duration: '3\u00D715s/gamba', icon: '\uD83E\uDDBF' },
@@ -113,6 +113,7 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Upper Body, Aikido & Shaolin',
     duration: '25 min',
     exercises: [
+      { name: 'Stretching risveglio (sez. \uD83E\uDDD8)', duration: '5 min', icon: '\uD83E\uDDD8' },
       { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Aiki Taiso solo warmup (sez. \uD83E\uDD4B)', duration: '5 min', icon: '\uD83E\uDD4B' },
       { name: 'Push-up Hold met\u00E0 (tappetino)', duration: '3\u00D715s', icon: '\uD83D\uDCAA' },
@@ -126,8 +127,8 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Cardio Cyclette & Core',
     duration: '25 min',
     exercises: [
-      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Stretching risveglio', duration: '5 min', icon: '\uD83E\uDDD8' },
+      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Cyclette HIIT', duration: '10 min (30s forte/30s lento)', icon: '\uD83D\uDEB4' },
       { name: 'Plank tocco spalla (tappetino)', duration: '3\u00D730s', icon: '\uD83E\uDDF1' },
       { name: 'Boat Pose Hold (tappetino)', duration: '3\u00D715s', icon: '\u26F5' },
@@ -139,6 +140,7 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Full Body Isometrico',
     duration: '25 min',
     exercises: [
+      { name: 'Stretching risveglio', duration: '5 min', icon: '\uD83E\uDDD8' },
       { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Aiki Taiso solo warmup', duration: '5 min', icon: '\uD83E\uDD4B' },
       { name: 'Horse Stance profonda', duration: '3\u00D725s', icon: '\uD83D\uDC0E' },
@@ -153,8 +155,8 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Endurance, Forza & Tai Chi Attivo',
     duration: '55-70 min',
     exercises: [
-      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Stretching completo (tappetino)', duration: '8 min', icon: '\uD83E\uDDD8' },
+      { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Corda per saltare', duration: '5\u00D72min', icon: '\uD83E\uDE22' },
       { name: 'Circuito Shaolin (sez. \uD83D\uDC09)', duration: '3 giri', icon: '\uD83D\uDC09' },
       { name: 'Pull-ups (o negatives)', duration: '4\u00D7max', icon: '\uD83D\uDD29' },
@@ -170,10 +172,10 @@ export const MORNING_PLANS: Record<DayKey, DailyPlan> = {
     title: 'Mobilit\u00E0, Aikido & Recovery',
     duration: '55-65 min',
     exercises: [
+      { name: 'Stretching profondo (tappetino)', duration: '10 min', icon: '\uD83E\uDD38' },
       { name: '\uD83D\uDCF1 MadMuscles \u2014 Tai Chi', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: "Bici all'aperto", duration: '20-30 min moderato', icon: '\uD83D\uDEB2' },
       { name: 'Aiki Taiso completo (sez. \uD83E\uDD4B)', duration: '10 min', icon: '\uD83E\uDD4B' },
-      { name: 'Stretching profondo (tappetino)', duration: '10 min', icon: '\uD83E\uDD38' },
       { name: '\uD83D\uDCF1 Yoga Go \u2014 Tai Chi (relax)', duration: '10-15 min', icon: '\u262F\uFE0F' },
       { name: 'Meditazione Ki / Furitama', duration: '5 min', icon: '\uD83E\uDDD8' },
     ],

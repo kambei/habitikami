@@ -94,7 +94,16 @@ function openExternalApp(link: ExternalAppLink) {
     const ua = navigator.userAgent || '';
     const isAndroid = /Android/i.test(ua);
     if (isAndroid) {
-        const intentUrl = `intent://#Intent;scheme=https;package=${link.androidPackage};S.browser_fallback_url=${encodeURIComponent(link.webUrl)};end`;
+        // Launch installed app by package name using MAIN/LAUNCHER intent.
+        // Falls back to the Play Store listing if the app isn't installed.
+        const fallback = `https://play.google.com/store/apps/details?id=${link.androidPackage}`;
+        const intentUrl =
+            `intent:#Intent;` +
+            `action=android.intent.action.MAIN;` +
+            `category=android.intent.category.LAUNCHER;` +
+            `package=${link.androidPackage};` +
+            `S.browser_fallback_url=${encodeURIComponent(fallback)};` +
+            `end`;
         window.location.href = intentUrl;
         return;
     }

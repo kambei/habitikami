@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.6.3 - 2026-04-06
+### 📱 Deep Link to Installed Apps
+- **Android Intent Launch**: Tapping MadMuscles or Yoga Go plan entries on Android now opens the installed app directly via `intent://` (packages `com.amomedia.madmuscles` and `net.beginners.weight.loss.workout.women.yoga.go`), falling back to the website if the app isn't installed.
+- **iOS / Desktop Fallback**: iOS opens an App Store search; desktop opens the website in a new tab.
+
 ## 🌐 Web 5.6.2 - 2026-04-06
 ### 🧘 Wake-up Stretch Sub-Exercises
 - **Breakdown Panel**: Expanding "Stretching risveglio" in the daily plan now reveals 6 individually completable movements (collo, spalle, schiena, fianchi, gambe, caviglie).

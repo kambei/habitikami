@@ -70,10 +70,43 @@ function isWakeupStretch(name: string): boolean {
 }
 
 // External app links for specific plan entries
-const EXTERNAL_APP_LINKS: Record<string, { label: string; url: string }> = {
-    'ext:madmuscles': { label: 'MadMuscles', url: 'https://madmuscles.com/' },
-    'ext:yogago': { label: 'Yoga Go', url: 'https://yoga-go.io/' },
+interface ExternalAppLink {
+    label: string;
+    webUrl: string;
+    androidPackage: string;
+}
+
+const EXTERNAL_APP_LINKS: Record<string, ExternalAppLink> = {
+    'ext:madmuscles': {
+        label: 'MadMuscles',
+        webUrl: 'https://madmuscles.com/',
+        androidPackage: 'com.amomedia.madmuscles',
+    },
+    'ext:yogago': {
+        label: 'Yoga Go',
+        webUrl: 'https://yoga-go.io/',
+        androidPackage: 'net.beginners.weight.loss.workout.women.yoga.go',
+    },
 };
+
+// Try to launch installed Android app via intent://, falling back to the web URL.
+function openExternalApp(link: ExternalAppLink) {
+    const ua = navigator.userAgent || '';
+    const isAndroid = /Android/i.test(ua);
+    if (isAndroid) {
+        const intentUrl = `intent://#Intent;scheme=https;package=${link.androidPackage};S.browser_fallback_url=${encodeURIComponent(link.webUrl)};end`;
+        window.location.href = intentUrl;
+        return;
+    }
+    // iOS / desktop: no reliable deep link; open store or site in new tab.
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    if (isIOS) {
+        // App Store search fallback
+        window.open(`https://apps.apple.com/search?term=${encodeURIComponent(link.label)}`, '_blank', 'noopener,noreferrer');
+        return;
+    }
+    window.open(link.webUrl, '_blank', 'noopener,noreferrer');
+}
 
 // Helper: get section key from exercise name (for plan exercises)
 function guessSectionForPlanExercise(planEx: PlanExercise): string {
@@ -565,7 +598,7 @@ function SessionBlock({ label, plan, sessionName, expandedId, onToggleExpand, id
                             className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-foreground/[0.02] transition-colors"
                             onClick={() => {
                                 if (externalLink) {
-                                    window.open(externalLink.url, '_blank', 'noopener,noreferrer');
+                                    openExternalApp(externalLink);
                                 } else if (canNavigate) {
                                     onNavigateToSection(sectionKey);
                                 } else {

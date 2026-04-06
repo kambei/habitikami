@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.5.0 - 2026-04-06
+### 📈 Counter Trend Chart
+- **No Future Days**: The Trend view for counters now stops at today when viewing the current month, instead of rendering empty future days.
+
 ## 🌐 Web 5.4.0 - 2026-03-29
 ### 🌓 Half-Done Habits
 - **Partial Completion Support**: You can now mark a habit as "half-done" by placing `HALF` in your Google Sheet.

@@ -59,6 +59,9 @@ export const CounterGraph = ({ data }: Props) => {
     const selectedMonthData = useMemo(() => {
         const { year, month } = currentMonth;
         const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const now = new Date();
+        const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+        const lastDay = isCurrentMonth ? now.getDate() : daysInMonth;
 
         const dataMap: Record<string, any> = {};
         sortedData.forEach(d => {
@@ -75,7 +78,7 @@ export const CounterGraph = ({ data }: Props) => {
         });
 
         const fullMonthData = [];
-        for (let i = 1; i <= daysInMonth; i++) {
+        for (let i = 1; i <= lastDay; i++) {
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             if (dataMap[dateStr]) {
                 fullMonthData.push(dataMap[dateStr]);

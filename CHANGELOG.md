@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.5.2 - 2026-04-06
+### 🎨 Grid View Scrolling
+- **Week-Fit Columns**: The grid view now sizes day columns so exactly the current week fills the visible area on both desktop and mobile.
+- **Horizontal Scroll**: Swipe or scroll left/right to reveal previous or upcoming days; today is centered automatically on open.
+
 ## 🌐 Web 5.5.1 - 2026-04-06
 ### 🎨 Grid View Layout
 - **Full-Width Grid**: In Daily and Weekend tabs, the grid view now dynamically fills all available horizontal space on both desktop and mobile, instead of scrolling horizontally.

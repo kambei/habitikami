@@ -157,10 +157,10 @@ export function CheckboxGridView({
                 <div className="absolute top-0 right-[-12px] w-3 h-full bg-gradient-to-r from-background to-transparent pointer-events-none" />
             </div>
 
-            {/* Scrollable right column — day squares */}
-            <div className="flex-1 overflow-x-auto ml-1">
+            {/* Right column — day squares */}
+            <div className="flex-1 min-w-0 ml-3 md:ml-4">
                 {/* Day headers row */}
-                <div className="flex items-end gap-1 md:gap-2 mb-2">
+                <div className="flex items-end gap-0.5 md:gap-1 mb-2">
                     {data.map((row, colIndex) => {
                         const today = isToday(row.date);
                         const dayShort = translateDay(row.day, tArray('days')).slice(0, 3);
@@ -169,7 +169,7 @@ export function CheckboxGridView({
                             <div
                                 key={row.date + colIndex}
                                 ref={today ? todayColRef : null}
-                                className={`w-6 md:flex-1 md:min-w-[28px] md:max-w-[48px] shrink-0 md:shrink flex flex-col items-center ${today ? 'text-primary font-bold' : 'text-muted-foreground'}`}
+                                className={`flex-1 min-w-0 flex flex-col items-center ${today ? 'text-primary font-bold' : 'text-muted-foreground'}`}
                             >
                                 <span className="text-[9px] leading-tight hidden md:block">{dayShort}</span>
                                 <span className="text-[10px] leading-tight">{dateParts[0]}</span>
@@ -183,7 +183,7 @@ export function CheckboxGridView({
                     {headers.map((habit) => {
                         const color = colors[habit] || defaultColor;
                         return (
-                            <div key={habit} className="flex gap-1 md:gap-2 h-6 md:h-8">
+                            <div key={habit} className="flex gap-0.5 md:gap-1 h-6 md:h-8">
                                 {data.map((row, rIndex) => {
                                     const checked = row.habits[habit];
                                     const today = isToday(row.date);
@@ -194,7 +194,7 @@ export function CheckboxGridView({
                                             title={`${row.date}: ${checked === true ? '✓' : checked === 'skipped' ? '⏭' : '✗'}`}
                                             disabled={isPending}
                                             onClick={() => onToggle(rIndex, habit, checked)}
-                                            className={`w-6 h-6 md:h-8 md:flex-1 md:min-w-[28px] md:max-w-[48px] rounded-sm transition-all duration-150 cursor-pointer hover:scale-110 active:scale-95 disabled:cursor-not-allowed shrink-0 md:shrink md:aspect-square ${today ? 'ring-1 ring-primary ring-offset-1 ring-offset-background' : ''}`}
+                                            className={`flex-1 min-w-0 h-6 md:h-8 rounded-sm transition-all duration-150 cursor-pointer hover:scale-110 active:scale-95 disabled:cursor-not-allowed ${today ? 'ring-1 ring-primary ring-offset-1 ring-offset-background' : ''}`}
                                             style={checked === true
                                                 ? { backgroundColor: color, boxShadow: `0 0 6px ${color}40` }
                                                 : checked === 'skipped'

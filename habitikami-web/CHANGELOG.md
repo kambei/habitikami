@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.5.1 - 2026-04-06
+### 🎨 Grid View Layout
+- **Full-Width Grid**: In Daily and Weekend tabs, the grid view now dynamically fills all available horizontal space on both desktop and mobile, instead of scrolling horizontally.
+- **Better Spacing**: Added breathing room between the habit titles column and the day squares grid.
+
 ## 🌐 Web 5.5.0 - 2026-04-06
 ### 📈 Counter Trend Chart
 - **No Future Days**: The Trend view for counters now stops at today when viewing the current month, instead of rendering empty future days.

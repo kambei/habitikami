@@ -462,6 +462,7 @@ function PlanView({ selectedDay, onDayChange, expandedId, onToggleExpand, isExer
                     onToggleExercise={onToggleExercise}
                     accentColor={accentColor}
                     isPending={isPending}
+                    onNavigateToSection={onNavigateToSection}
                 />
             )}
 

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.7.0 - 2026-05-19
+### 🛡️ Anti-Panic Protocol (AI-Guided)
+- **Three-Phase Worksheets**: Added 3 new AI-guided worksheets based on the CBT/ACT Anti-Panic Protocol, each covering a distinct phase of a panic episode:
+  - **BEFORE** — Identify triggers, early warning signs, and build a fear hierarchy with an anticipatory response strategy.
+  - **DURING** — Cognitive defusion, 5-4-3-2-1 sensory grounding, and radical acceptance with body sensation mapping. The AI uses a particularly calm, reassuring tone.
+  - **AFTER** — Reality analysis (predicted catastrophe vs. actual outcome), symptom restructuring with medical explanations, resources & successes log, letter to future self, and ACT values compass.
+- **Same Save-to-Drive Flow**: All three worksheets produce a compiled Markdown document and save to Google Drive, just like the existing Emotion Diary and Cognitive Restructuring sheets.
+
 ## 🌐 Web 5.6.3 - 2026-04-06
 ### 📱 Deep Link to Installed Apps
 - **Android Intent Launch**: Tapping MadMuscles or Yoga Go plan entries on Android now opens the installed app directly via `intent://` (packages `com.amomedia.madmuscles` and `net.beginners.weight.loss.workout.women.yoga.go`), falling back to the website if the app isn't installed.

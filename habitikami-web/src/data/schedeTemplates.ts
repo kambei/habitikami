@@ -69,4 +69,142 @@ export const schedeTemplates: SchedaTemplate[] = [
 ### Note
 {{note}}`,
     },
+    {
+        id: 'antipanico-prima',
+        titleKey: 'schedaAntipanicoPrimaTitle',
+        descriptionKey: 'schedaAntipanicoPrimaDesc',
+        systemPromptKey: 'schedaAntipanicoPrimaPrompt',
+        template: `# Protocollo Anti-Panico — PRIMA
+
+## Diario dei Segnali Precoci
+
+**Data:** {{data}}
+
+### Identificazione dei Trigger
+
+| Situazione Esterna | Sensazione Fisica (Iniziale) | Primo Pensiero di Allerta |
+|---|---|---|
+| {{situazione_esterna}} | {{sensazione_fisica}} | {{pensiero_allerta}} |
+
+### Strategia di Risposta Anticipata
+{{strategia_anticipata}}
+
+---
+
+## Gerarchia della Paura
+
+*Situazioni temute in ordine di intensità (0-100)*
+
+- **Lieve (20-40):** {{paura_lieve}}
+- **Moderato (50-70):** {{paura_moderato}}
+- **Intenso (80-100):** {{paura_intenso}}
+
+### Obiettivo Finale
+*Cosa vorrei fare se non avessi paura?*
+{{obiettivo_finale}}
+
+---
+
+### Note
+{{note}}`,
+    },
+    {
+        id: 'antipanico-durante',
+        titleKey: 'schedaAntipanicoDuranteTitle',
+        descriptionKey: 'schedaAntipanicoDuranteDesc',
+        systemPromptKey: 'schedaAntipanicoDurantePrompt',
+        template: `# Protocollo Anti-Panico — DURANTE
+
+**Data:** {{data}}
+
+## Defusione Cognitiva
+
+- **Pensiero "Fuso":** {{pensiero_fuso}}
+- **Pensiero "Defuso":** {{pensiero_defuso}}
+
+### Spazio di Osservazione Libera
+*Scrivi i pensieri come se fossero nuvole che passano.*
+{{osservazione_libera}}
+
+---
+
+## Tecnica 5-4-3-2-1
+
+| Senso | Elementi percepiti |
+|---|---|
+| 5 Vista | {{vista}} |
+| 4 Tatto | {{tatto}} |
+| 3 Udito | {{udito}} |
+| 2 Olfatto | {{olfatto}} |
+| 1 Gusto | {{gusto}} |
+
+---
+
+## Accettazione Radicale
+
+### Mapping delle Sensazioni Fisiche
+- **Dove sento l'ansia nel corpo:** {{localizzazione_ansia}}
+- **Forma/Colore della sensazione:** {{forma_colore}}
+- **Temperatura:** {{temperatura}}
+
+### Affermazione di Impegno
+{{affermazione_impegno}}
+
+---
+
+### Note
+{{note}}`,
+    },
+    {
+        id: 'antipanico-dopo',
+        titleKey: 'schedaAntipanicoDopoTitle',
+        descriptionKey: 'schedaAntipanicoDopoDesc',
+        systemPromptKey: 'schedaAntipanicoDopoPrompt',
+        template: `# Protocollo Anti-Panico — DOPO
+
+**Data:** {{data}}
+
+## Analisi di Realtà
+
+| Catastrofe prevista | Esito reale | Grado di discrepanza |
+|---|---|---|
+| {{catastrofe_prevista}} | {{esito_reale}} | {{discrepanza}} |
+
+**Cosa ho imparato sulla mia capacità di resistere?**
+{{lezione_resistenza}}
+
+---
+
+## Ristrutturazione Sintomi
+
+| Sintomo | Pensiero Catastrofico | Spiegazione Medica | Nuovo Pensiero |
+|---|---|---|---|
+| {{sintomo_1}} | {{catastrofico_1}} | {{medica_1}} | {{nuovo_1}} |
+| {{sintomo_2}} | {{catastrofico_2}} | {{medica_2}} | {{nuovo_2}} |
+| {{sintomo_3}} | {{catastrofico_3}} | {{medica_3}} | {{nuovo_3}} |
+
+---
+
+## Risorse e Successi
+
+- **Cosa ha funzionato:** {{cosa_funzionato}}
+- **Vittorie di oggi:** {{vittorie}}
+
+### Lettera al "Me Futuro" in preda al panico
+{{lettera_me_futuro}}
+
+---
+
+## La Bussola ACT
+
+- **La vita che voglio (3 valori guida):** {{valori_guida}}
+- **Azioni Impegnate:** {{azioni_impegnate}}
+
+> "Non scelgo l'ansia, scelgo la direzione verso cui camminare."
+
+---
+
+### Note
+{{note}}`,
+    },
 ];

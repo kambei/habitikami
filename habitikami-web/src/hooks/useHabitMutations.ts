@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { habitService } from '../services/HabitService';
 import { toast } from 'sonner';
 
@@ -126,6 +126,65 @@ export function useDeleteColumn() {
         },
         onError: (error) => {
             toast.error(`Failed to delete habit: ${error.message}`);
+        }
+    });
+}
+
+export function useRenameHabit() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ sheetName, oldName, newName }: { sheetName: string, oldName: string, newName: string }) => {
+            const result = await habitService.renameHabit(sheetName, oldName, newName);
+            if (result && 'error' in result) throw new Error(result.error as string);
+            return result;
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['sheetData', variables.sheetName] });
+            queryClient.invalidateQueries({ queryKey: ['habitColors', variables.sheetName] });
+            queryClient.invalidateQueries({ queryKey: ['habitMeta'] });
+            toast.success('Habit renamed');
+        },
+        onError: (error) => {
+            toast.error(`Failed to rename habit: ${error.message}`);
+        }
+    });
+}
+
+export function useHabitMeta() {
+    return useQuery({
+        queryKey: ['habitMeta'],
+        queryFn: async () => {
+            const result = await habitService.getHabitMeta();
+            if (result && 'error' in result) throw new Error((result as any).error);
+            return result as Record<string, string>;
+        },
+        staleTime: 1000 * 60 * 5,
+    });
+}
+
+export function useSetHabitMeta() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ habitName, description }: { habitName: string, description: string }) => {
+            const result = await habitService.setHabitMeta(habitName, description);
+            if (result && 'error' in result) throw new Error((result as any).error);
+            return result;
+        },
+        onMutate: async ({ habitName, description }) => {
+            await queryClient.cancelQueries({ queryKey: ['habitMeta'] });
+            const previous = queryClient.getQueryData(['habitMeta']);
+            queryClient.setQueryData(['habitMeta'], (old: any) => ({
+                ...(old || {}),
+                [habitName]: description,
+            }));
+            return { previous };
+        },
+        onError: (err, _variables, context) => {
+            queryClient.setQueryData(['habitMeta'], context?.previous);
+            toast.error(`Failed to save info: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['habitMeta'] });
         }
     });
 }

@@ -165,6 +165,20 @@ export const en = {
   colorPickerTitle: 'Select Color',
   colorPickerDelete: 'Delete Habit',
 
+  // Habit edit / info
+  habitTableEditName: 'Rename habit',
+  habitTableInfo: 'Habit info',
+  habitInfoTitle: 'About this habit',
+  habitInfoDescriptionLabel: 'Description',
+  habitInfoDescriptionPlaceholder: 'Why does this habit matter to you? Add notes, triggers, reminders…',
+  habitInfoEmpty: 'No description yet. Click edit to add one.',
+  habitInfoEdit: 'Edit',
+  habitInfoSave: 'Save',
+  habitInfoCancel: 'Cancel',
+  habitRenameTitle: 'Rename habit',
+  habitRenameLabel: 'New name',
+  habitRenameSave: 'Save',
+
   // Compact/Focus View
   focusLoading: 'Loading Focus Mode...',
   focusAllDone: 'All Done!',
@@ -197,6 +211,7 @@ export const en = {
   countersCoffee: 'Coffee',
   countersLoadingData: 'Loading data...',
   countersNoRecords: 'No records found. Start resisting temptations!',
+  countersTodayTotal: 'Today',
 
   // Smoke Temptation View
   smokeFeeling: 'Feeling Tempted?',

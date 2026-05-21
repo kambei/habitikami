@@ -15,9 +15,25 @@ export const TemptationView = () => {
     const [temptations, setTemptations] = useState<any[] | null>(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [successPhrase, setSuccessPhrase] = useState('');
+    const [todayCounts, setTodayCounts] = useState<Record<string, number>>({});
+
+    const refreshTodayCounts = async () => {
+        const counters = await habitService.getCounters();
+        if (!Array.isArray(counters)) return;
+        const todayStr = new Date().toISOString().split('T')[0];
+        const todayRow = counters.find((r: any) => r.date === todayStr);
+        const counts: Record<string, number> = {};
+        if (todayRow) {
+            Object.keys(todayRow).forEach((k) => {
+                if (k !== 'date') counts[k.toLowerCase()] = parseInt(todayRow[k]) || 0;
+            });
+        }
+        setTodayCounts(counts);
+    };
 
     useEffect(() => {
         habitService.getTemptations().then(setTemptations);
+        refreshTodayCounts();
     }, []);
 
     const activeTemptation = temptations?.[selectedIndex];
@@ -31,9 +47,15 @@ export const TemptationView = () => {
         const phrases = isPositive ? tArray('smokePositivePhrases' as any) : tArray('smokeNegativePhrases' as any);
         setSuccessPhrase(getRandomPhrase(phrases));
 
+        // Optimistic bump so the small today-counter reflects the action immediately
+        const key = action.id.toLowerCase();
+        setTodayCounts(prev => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
+
         try {
             const result = await habitService.incrementCounter(action.id);
             if (result && result.error) {
+                // Revert optimistic bump
+                setTodayCounts(prev => ({ ...prev, [key]: Math.max(0, (prev[key] || 1) - 1) }));
                 setStatus('error');
                 setErrorMessage(result.error);
             } else {
@@ -41,6 +63,7 @@ export const TemptationView = () => {
                 setTimeout(() => window.location.reload(), 3000);
             }
         } catch (e: any) {
+            setTodayCounts(prev => ({ ...prev, [key]: Math.max(0, (prev[key] || 1) - 1) }));
             setStatus('error');
             setErrorMessage(e.message || t('helpGenericError'));
         }
@@ -163,6 +186,7 @@ export const TemptationView = () => {
                         <div className="flex flex-col gap-6 items-center w-full max-w-lg">
                             {sortedActions.map((action: any) => {
                                 const isPrimary = action.type === 'positive' || action.type === 'resist';
+                                const todayCount = todayCounts[action.id.toLowerCase()] || 0;
                                 return (
                                     <motion.button
                                         key={action.id}
@@ -184,6 +208,16 @@ export const TemptationView = () => {
                                             color: 'white'
                                         }}
                                     >
+                                        <span
+                                            className={cn(
+                                                "absolute -top-1.5 -right-1.5 z-10 rounded-full bg-background text-foreground border-2 font-mono font-bold flex items-center justify-center shadow-md tabular-nums",
+                                                isPrimary ? "min-w-[36px] h-9 px-2 text-base" : "min-w-[30px] h-8 px-1.5 text-sm"
+                                            )}
+                                            style={{ borderColor: action.color, color: action.color }}
+                                            title={`${t('countersTodayTotal')}: ${todayCount}`}
+                                        >
+                                            {todayCount}
+                                        </span>
                                         {status === 'loading' && actionId === action.id ? (
                                             <Loader2 className={cn(isPrimary ? "w-16 h-16" : "w-12 h-12", "animate-spin")} />
                                         ) : (

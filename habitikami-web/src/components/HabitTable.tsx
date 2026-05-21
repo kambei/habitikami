@@ -4,13 +4,13 @@ import { ColorPickerPopover } from "./ColorPickerPopover";
 import { CheckboxGridView } from "./CheckboxGridView";
 import type { HabitData } from "../types";
 import { Checkbox } from "./ui/Checkbox";
-import { motion } from "framer-motion";
-import { Grid3X3, Table } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Grid3X3, Table, Pencil, Info, Check, X } from "lucide-react";
 import { toast } from 'sonner';
 
 import { useSheetData } from "../hooks/useSheetData";
 import { useHabitColors } from "../hooks/useHabitColors";
-import { useUpdateCell, useAddHabit, useAddDay, useMoveColumn, useDeleteColumn, useSetHabitColor } from "../hooks/useHabitMutations";
+import { useUpdateCell, useAddHabit, useAddDay, useMoveColumn, useDeleteColumn, useSetHabitColor, useRenameHabit, useHabitMeta, useSetHabitMeta } from "../hooks/useHabitMutations";
 import { Skeleton } from "./ui/Skeleton";
 import { useTranslation } from '../i18n';
 import { translateDay } from '../utils/dayTranslation';
@@ -77,6 +77,46 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
         moveColumn: useMoveColumn(),
         deleteColumn: useDeleteColumn(),
         setHabitColor: useSetHabitColor(),
+        renameHabit: useRenameHabit(),
+        setHabitMeta: useSetHabitMeta(),
+    };
+
+    const { data: habitMeta } = useHabitMeta();
+    const metaMap: Record<string, string> = habitMeta ?? {};
+
+    const [editingHabit, setEditingHabit] = useState<string | null>(null);
+    const [editingValue, setEditingValue] = useState('');
+    const [infoHabit, setInfoHabit] = useState<string | null>(null);
+    const [infoEditing, setInfoEditing] = useState(false);
+    const [infoDraft, setInfoDraft] = useState('');
+
+    const startRename = (habit: string) => {
+        setEditingHabit(habit);
+        setEditingValue(habit);
+    };
+
+    const commitRename = (habit: string) => {
+        const next = editingValue.trim();
+        setEditingHabit(null);
+        if (!next || next === habit) return;
+        mutations.renameHabit.mutate({ sheetName, oldName: habit, newName: next });
+    };
+
+    const cancelRename = () => {
+        setEditingHabit(null);
+        setEditingValue('');
+    };
+
+    const openInfo = (habit: string) => {
+        setInfoHabit(habit);
+        setInfoDraft(metaMap[habit] || '');
+        setInfoEditing(false);
+    };
+
+    const saveInfo = () => {
+        if (!infoHabit) return;
+        mutations.setHabitMeta.mutate({ habitName: infoHabit, description: infoDraft });
+        setInfoEditing(false);
     };
 
     const loading = isSheetLoading || isColorsLoading;
@@ -346,32 +386,92 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                         <tr>
                             <th className="p-4 font-medium whitespace-nowrap min-w-[100px] sticky left-0 z-20 bg-card hidden md:table-cell">{t('habitTableDay')}</th>
                             <th className="p-4 font-medium whitespace-nowrap min-w-[80px] md:min-w-[120px] sticky left-0 md:left-[100px] z-20 bg-card border-r border-border/50 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.5)]">{t('habitTableDate')}</th>
-                            {headers.map((h, index) => (
+                            {headers.map((h, index) => {
+                                const isEditing = editingHabit === h;
+                                const hasInfo = !!(metaMap[h] && metaMap[h].trim());
+                                return (
                                 <th
                                     key={h}
-                                    className={`p-4 font-medium whitespace-nowrap text-center min-w-[150px] group relative cursor-move select-none ${draggedColumnIndex === index ? 'opacity-50 bg-accent' : ''}`}
-                                    draggable
+                                    className={`p-4 font-medium whitespace-nowrap text-center min-w-[150px] group relative select-none ${isEditing ? '' : 'cursor-move'} ${draggedColumnIndex === index ? 'opacity-50 bg-accent' : ''}`}
+                                    draggable={!isEditing}
                                     onDragStart={(e) => handleDragStart(e, index)}
                                     onDragOver={(e) => handleDragOver(e, index)}
                                     onDrop={(e) => handleDrop(e, index)}
                                     onContextMenu={(e) => handleContextMenu(e, index, h)}
                                 >
                                     <div className="flex flex-col items-center gap-1">
-                                        <div
-                                            onClick={(e) => handleColorClick(e, h)}
-                                            className="flex items-center gap-2 cursor-pointer hover:bg-white/10 px-2 py-1 rounded transition-colors border border-transparent hover:border-border/50"
-                                            title={t('colorPickerTitle')}
-                                            aria-label={`Change color for habit ${h}`}
-                                        >
-                                            {colors[h] && <div className="w-3 h-3 rounded-full shadow-sm ring-1 ring-white/20" style={{ backgroundColor: colors[h] }} />}
-                                            <span>{h}</span>
-                                        </div>
+                                        {isEditing ? (
+                                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                                {colors[h] && <div className="w-3 h-3 rounded-full shadow-sm ring-1 ring-white/20 shrink-0" style={{ backgroundColor: colors[h] }} />}
+                                                <input
+                                                    autoFocus
+                                                    value={editingValue}
+                                                    onChange={(e) => setEditingValue(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') commitRename(h);
+                                                        else if (e.key === 'Escape') cancelRename();
+                                                    }}
+                                                    onBlur={() => commitRename(h)}
+                                                    className="bg-background border border-border rounded px-2 py-0.5 text-sm w-32 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                                />
+                                                <button
+                                                    onMouseDown={(e) => { e.preventDefault(); commitRename(h); }}
+                                                    className="p-1 rounded hover:bg-green-500/20 text-green-500"
+                                                    aria-label={t('habitRenameSave')}
+                                                >
+                                                    <Check className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    onMouseDown={(e) => { e.preventDefault(); cancelRename(); }}
+                                                    className="p-1 rounded hover:bg-red-500/20 text-red-500"
+                                                    aria-label={t('habitInfoCancel')}
+                                                >
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1">
+                                                <div
+                                                    onClick={(e) => handleColorClick(e, h)}
+                                                    className="flex items-center gap-2 cursor-pointer hover:bg-white/10 px-2 py-1 rounded transition-colors border border-transparent hover:border-border/50"
+                                                    title={t('colorPickerTitle')}
+                                                    aria-label={`Change color for habit ${h}`}
+                                                >
+                                                    {colors[h] && <div className="w-3 h-3 rounded-full shadow-sm ring-1 ring-white/20" style={{ backgroundColor: colors[h] }} />}
+                                                    <span>{h}</span>
+                                                </div>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); startRename(h); }}
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    draggable={false}
+                                                    onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                                    className="p-1 rounded opacity-0 group-hover:opacity-60 hover:opacity-100 hover:bg-white/10 transition-opacity"
+                                                    title={t('habitTableEditName')}
+                                                    aria-label={t('habitTableEditName')}
+                                                >
+                                                    <Pencil className="w-3 h-3" />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); openInfo(h); }}
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    draggable={false}
+                                                    onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                                    className={`p-1 rounded hover:bg-white/10 transition-opacity ${hasInfo ? 'opacity-80 hover:opacity-100' : 'opacity-0 group-hover:opacity-60 hover:opacity-100'}`}
+                                                    style={hasInfo ? { color: colors[h] || undefined } : undefined}
+                                                    title={t('habitTableInfo')}
+                                                    aria-label={t('habitTableInfo')}
+                                                >
+                                                    <Info className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        )}
                                         <div className="opacity-0 group-hover:opacity-50 text-[10px] tracking-widest text-muted-foreground mt-1">
                                             ••••
                                         </div>
                                     </div>
                                 </th>
-                            ))}
+                                );
+                            })}
                             <th className="p-4 text-center">
                                 <button
                                     onClick={() => setIsModalOpen(true)}
@@ -404,8 +504,10 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                     {headers.map((h) => {
                                          const checked = row.habits[h];
                                          const isPending = mutations.updateCell.isPending;
+                                         const description = metaMap[h] && metaMap[h].trim();
+                                         const tooltip = description ? `${h} — ${description}` : h;
                                          return (
-                                             <td key={h} className="p-4 text-center">
+                                             <td key={h} className="p-4 text-center" title={tooltip}>
                                                  <div className="flex justify-center">
                                                      <Checkbox
                                                          checked={checked === 'half' ? 'half' : (checked === true)}
@@ -464,7 +566,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                         if (!meta) return;
                         const colIndex = headers.indexOf(habitName);
                         if (colIndex === -1) return;
-                        
+
                         if (!confirm(`${t('habitTableDeleteConfirm')} "${habitName}"${t('habitTableDeleteSuffix')}`)) return;
 
                         const absoluteColIndex = meta.startCol + colIndex;
@@ -474,6 +576,91 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                     }}
                     position={{ x: pickerState.x, y: pickerState.y }}
                 />
+
+                <AnimatePresence>
+                    {infoHabit && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                            onClick={() => { setInfoHabit(null); setInfoEditing(false); }}
+                        >
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                transition={{ type: 'spring', duration: 0.3 }}
+                                className="bg-card border border-border rounded-xl p-5 w-full max-w-sm shadow-xl"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="flex items-center gap-3 mb-3">
+                                    {colors[infoHabit] && (
+                                        <div
+                                            className="w-4 h-4 rounded-full shrink-0"
+                                            style={{ backgroundColor: colors[infoHabit] }}
+                                        />
+                                    )}
+                                    <h3 className="text-base font-semibold break-words flex-1">{infoHabit}</h3>
+                                </div>
+
+                                <p className="text-xs text-muted-foreground mb-2">{t('habitInfoDescriptionLabel')}</p>
+
+                                {infoEditing ? (
+                                    <textarea
+                                        autoFocus
+                                        value={infoDraft}
+                                        onChange={(e) => setInfoDraft(e.target.value)}
+                                        placeholder={t('habitInfoDescriptionPlaceholder')}
+                                        rows={5}
+                                        className="w-full bg-background border border-border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+                                    />
+                                ) : (
+                                    <div className="min-h-[80px] text-sm whitespace-pre-wrap break-words text-foreground/90 bg-secondary/30 rounded-md p-3 border border-border/50">
+                                        {metaMap[infoHabit]?.trim() || (
+                                            <span className="text-muted-foreground italic">{t('habitInfoEmpty')}</span>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="flex justify-end gap-2 mt-4">
+                                    {infoEditing ? (
+                                        <>
+                                            <button
+                                                onClick={() => { setInfoEditing(false); setInfoDraft(metaMap[infoHabit] || ''); }}
+                                                className="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-sm font-medium transition-colors"
+                                            >
+                                                {t('habitInfoCancel')}
+                                            </button>
+                                            <button
+                                                onClick={saveInfo}
+                                                disabled={mutations.setHabitMeta.isPending}
+                                                className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors disabled:opacity-60"
+                                            >
+                                                {t('habitInfoSave')}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={() => { setInfoHabit(null); setInfoEditing(false); }}
+                                                className="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-sm font-medium transition-colors"
+                                            >
+                                                {t('close')}
+                                            </button>
+                                            <button
+                                                onClick={() => { setInfoDraft(metaMap[infoHabit] || ''); setInfoEditing(true); }}
+                                                className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors inline-flex items-center gap-1"
+                                            >
+                                                <Pencil className="w-3.5 h-3.5" /> {t('habitInfoEdit')}
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );

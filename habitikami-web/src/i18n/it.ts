@@ -166,6 +166,20 @@ export const it: Record<TranslationKey, string | string[]> = {
   colorPickerTitle: 'Seleziona Colore',
   colorPickerDelete: 'Elimina Abitudine',
 
+  // Habit edit / info
+  habitTableEditName: 'Rinomina abitudine',
+  habitTableInfo: 'Info abitudine',
+  habitInfoTitle: 'Info su questa abitudine',
+  habitInfoDescriptionLabel: 'Descrizione',
+  habitInfoDescriptionPlaceholder: 'Perché questa abitudine è importante? Aggiungi note, trigger, promemoria…',
+  habitInfoEmpty: 'Nessuna descrizione. Clicca modifica per aggiungerne una.',
+  habitInfoEdit: 'Modifica',
+  habitInfoSave: 'Salva',
+  habitInfoCancel: 'Annulla',
+  habitRenameTitle: 'Rinomina abitudine',
+  habitRenameLabel: 'Nuovo nome',
+  habitRenameSave: 'Salva',
+
   // Compact/Focus View
   focusLoading: 'Caricamento Modalità Focus...',
   focusAllDone: 'Tutto Fatto!',
@@ -198,6 +212,7 @@ export const it: Record<TranslationKey, string | string[]> = {
   countersCoffee: 'Caffè',
   countersLoadingData: 'Caricamento dati...',
   countersNoRecords: 'Nessun record. Inizia a resistere alle tentazioni!',
+  countersTodayTotal: 'Oggi',
 
   // Smoke Temptation View
   smokeFeeling: 'Senti la Tentazione?',

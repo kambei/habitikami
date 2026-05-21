@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.8.0 - 2026-05-21
+### 🚬 Today Badges on Temptation Buttons
+- **At-a-Glance Today's Counts**: Each action button on the Temptation view now shows a small numeric badge in its top-right corner with today's total for that counter — no need to switch to the Counters view to see how the day is going.
+- **Optimistic Updates**: The badge bumps the instant you tap, and reverts automatically if the save fails.
+
+### ✏️ Editable Habit Names & Info Popup
+- **Inline Rename**: A pencil icon next to each habit column header in the table view enables inline renaming. Press Enter (or click away) to save, Escape to cancel.
+- **Habit Info Popup**: A new info icon opens a popup showing the habit's description in a read/edit toggle. Descriptions are persisted to a new `HabitMeta` sheet, created automatically on first save.
+- **Description Tooltips**: Every checkbox cell now exposes the habit's description as a hover tooltip, so context is always one mouse-over away.
+- **Rename-Safe Metadata**: Renaming a habit migrates its description in `HabitMeta` so notes stay linked to the new name.
+
 ## 🌐 Web 5.7.0 - 2026-05-19
 ### 🛡️ Anti-Panic Protocol (AI-Guided)
 - **Three-Phase Worksheets**: Added 3 new AI-guided worksheets based on the CBT/ACT Anti-Panic Protocol, each covering a distinct phase of a panic episode:

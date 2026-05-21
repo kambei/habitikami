@@ -911,6 +911,167 @@ class HabitServiceImpl {
         }
     }
 
+    async renameHabit(sheetName: string, oldName: string, newName: string) {
+        try {
+            await this.ensureClient();
+            const trimmed = newName.trim();
+            if (!trimmed) throw new Error("Habit name cannot be empty");
+            if (trimmed === oldName) return { success: true };
+
+            const values = await this.getData(sheetName);
+            if (!Array.isArray(values)) throw new Error("Could not fetch sheet data");
+
+            const headerRowIndex = findHeaderRowIndex(values);
+            const headerRow = values[headerRowIndex];
+            const colIndex = headerRow.indexOf(oldName);
+            if (colIndex === -1) throw new Error(`Habit "${oldName}" not found in header`);
+
+            // Reject duplicate header name
+            if (headerRow.some((h: any, i: number) => i !== colIndex && typeof h === 'string' && h === trimmed)) {
+                throw new Error(`A habit named "${trimmed}" already exists`);
+            }
+
+            const colLetter = this.getColumnLetter(colIndex);
+            const range = `${sheetName}!${colLetter}${headerRowIndex + 1}`;
+            await gapi.client.sheets.spreadsheets.values.update({
+                spreadsheetId: this.getSpreadsheetId(),
+                range,
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: [[trimmed]] }
+            });
+
+            // Migrate the meta description row, if any
+            try {
+                const meta = await this.getHabitMeta();
+                if (!('error' in meta) && meta[oldName] !== undefined) {
+                    await this.setHabitMeta(trimmed, meta[oldName]);
+                    await this.deleteHabitMeta(oldName);
+                }
+            } catch { /* meta migration is best-effort */ }
+
+            return { success: true };
+        } catch (e: any) {
+            return { error: e.result?.error?.message || e.message };
+        }
+    }
+
+    private async ensureHabitMetaSheet(): Promise<void> {
+        const spreadsheetId = this.getSpreadsheetId();
+        const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId, fields: 'sheets(properties(title))' });
+        const exists = meta.result.sheets?.some((s: any) => s.properties?.title === 'HabitMeta');
+        if (exists) return;
+
+        await gapi.client.sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: {
+                requests: [{ addSheet: { properties: { title: 'HabitMeta', gridProperties: { frozenRowCount: 1 } } } }]
+            }
+        });
+        await gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: 'HabitMeta!A1:B1',
+            valueInputOption: 'USER_ENTERED',
+            resource: { values: [['Habit', 'Description']] }
+        });
+    }
+
+    async getHabitMeta(): Promise<Record<string, string> | { error: string }> {
+        try {
+            await this.ensureClient();
+            const response = await gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: this.getSpreadsheetId(),
+                range: 'HabitMeta!A:B',
+            });
+            const rows = response.result.values || [];
+            const out: Record<string, string> = {};
+            const start = rows[0] && typeof rows[0][0] === 'string' && /habit/i.test(rows[0][0]) ? 1 : 0;
+            for (let i = start; i < rows.length; i++) {
+                const name = rows[i]?.[0];
+                if (name) out[name] = rows[i]?.[1] ?? '';
+            }
+            return out;
+        } catch (e: any) {
+            // Sheet missing → empty meta (lazy: don't create yet)
+            const msg: string = e.result?.error?.message || e.message || '';
+            if (e.status === 400 || /Unable to parse range/i.test(msg)) return {};
+            return { error: msg };
+        }
+    }
+
+    async setHabitMeta(habitName: string, description: string): Promise<{ success: boolean } | { error: string }> {
+        try {
+            await this.ensureClient();
+            await this.ensureHabitMetaSheet();
+            const spreadsheetId = this.getSpreadsheetId();
+
+            const res = await gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId,
+                range: 'HabitMeta!A:B',
+            });
+            const rows = res.result.values || [];
+            const start = rows[0] && typeof rows[0][0] === 'string' && /habit/i.test(rows[0][0]) ? 1 : 0;
+
+            let rowIndex = -1;
+            for (let i = start; i < rows.length; i++) {
+                if (rows[i]?.[0] === habitName) { rowIndex = i; break; }
+            }
+
+            if (rowIndex !== -1) {
+                const range = `HabitMeta!A${rowIndex + 1}:B${rowIndex + 1}`;
+                await gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId,
+                    range,
+                    valueInputOption: 'USER_ENTERED',
+                    resource: { values: [[habitName, description]] }
+                });
+            } else {
+                await gapi.client.sheets.spreadsheets.values.append({
+                    spreadsheetId,
+                    range: 'HabitMeta!A:B',
+                    valueInputOption: 'USER_ENTERED',
+                    resource: { values: [[habitName, description]] }
+                });
+            }
+            return { success: true };
+        } catch (e: any) {
+            return { error: e.result?.error?.message || e.message };
+        }
+    }
+
+    async deleteHabitMeta(habitName: string): Promise<{ success: boolean } | { error: string }> {
+        try {
+            await this.ensureClient();
+            const spreadsheetId = this.getSpreadsheetId();
+            const res = await gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId,
+                range: 'HabitMeta!A:B',
+            });
+            const rows = res.result.values || [];
+            const start = rows[0] && typeof rows[0][0] === 'string' && /habit/i.test(rows[0][0]) ? 1 : 0;
+            let rowIndex = -1;
+            for (let i = start; i < rows.length; i++) {
+                if (rows[i]?.[0] === habitName) { rowIndex = i; break; }
+            }
+            if (rowIndex === -1) return { success: true };
+
+            const sheetId = await this.getSheetId('HabitMeta');
+            if (sheetId === null) return { success: true };
+            await gapi.client.sheets.spreadsheets.batchUpdate({
+                spreadsheetId,
+                resource: {
+                    requests: [{
+                        deleteDimension: {
+                            range: { sheetId, dimension: 'ROWS', startIndex: rowIndex, endIndex: rowIndex + 1 }
+                        }
+                    }]
+                }
+            });
+            return { success: true };
+        } catch (e: any) {
+            return { error: e.result?.error?.message || e.message };
+        }
+    }
+
     async setHabitColor(sheetName: string, habitName: string, colorHex: string) {
         try {
             await this.ensureClient();

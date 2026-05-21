@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.8.1 - 2026-05-21
+### 📱 Habit Editing in the Grid View
+- **Rename in the Stats Popup**: Clicking a habit in the grid view now shows a pencil next to its name — tap to rename inline, Enter or check-icon to save, Escape or X to cancel.
+- **Description in the Same Window**: The streaks popup now includes the habit's description with a read/edit toggle, persisted to the `HabitMeta` sheet. No need to open a separate dialog.
+- **Description Tooltips Everywhere**: Both the habit-name label and each day-square in the grid view surface the description as a native hover tooltip.
+
+### 🖱️ Mobile-Friendly Table Header
+- **Always-Visible Affordances**: The pencil + info icons on each habit column in the table view are now visible by default on mobile (still hover-revealed on desktop) so touch users can actually reach them.
+
 ## 🌐 Web 5.8.0 - 2026-05-21
 ### 🚬 Today Badges on Temptation Buttons
 - **At-a-Glance Today's Counts**: Each action button on the Temptation view now shows a small numeric badge in its top-right corner with today's total for that counter — no need to switch to the Counters view to see how the day is going.

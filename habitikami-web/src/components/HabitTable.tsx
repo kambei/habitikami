@@ -445,7 +445,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                                     onMouseDown={(e) => e.stopPropagation()}
                                                     draggable={false}
                                                     onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                                                    className="p-1 rounded opacity-0 group-hover:opacity-60 hover:opacity-100 hover:bg-white/10 transition-opacity"
+                                                    className="p-1 rounded opacity-60 md:opacity-0 md:group-hover:opacity-60 hover:opacity-100 hover:bg-white/10 transition-opacity"
                                                     title={t('habitTableEditName')}
                                                     aria-label={t('habitTableEditName')}
                                                 >
@@ -456,7 +456,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                                     onMouseDown={(e) => e.stopPropagation()}
                                                     draggable={false}
                                                     onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                                                    className={`p-1 rounded hover:bg-white/10 transition-opacity ${hasInfo ? 'opacity-80 hover:opacity-100' : 'opacity-0 group-hover:opacity-60 hover:opacity-100'}`}
+                                                    className={`p-1 rounded hover:bg-white/10 transition-opacity ${hasInfo ? 'opacity-80 hover:opacity-100' : 'opacity-60 md:opacity-0 md:group-hover:opacity-60 hover:opacity-100'}`}
                                                     style={hasInfo ? { color: colors[h] || undefined } : undefined}
                                                     title={t('habitTableInfo')}
                                                     aria-label={t('habitTableInfo')}

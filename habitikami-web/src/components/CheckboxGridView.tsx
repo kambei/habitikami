@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Pencil, Check, X } from 'lucide-react';
 import type { HabitData } from '../types';
 import { useTranslation } from '../i18n';
 import { translateDay } from '../utils/dayTranslation';
 import { useSheetData } from '../hooks/useSheetData';
+import { useHabitMeta, useSetHabitMeta, useRenameHabit } from '../hooks/useHabitMutations';
 
 interface CheckboxGridViewProps {
     headers: string[];
@@ -31,6 +33,53 @@ export function CheckboxGridView({
     const { t, tArray } = useTranslation();
     const todayColRef = useRef<HTMLDivElement>(null);
     const [selectedHabit, setSelectedHabit] = useState<string | null>(null);
+
+    const { data: habitMeta } = useHabitMeta();
+    const metaMap: Record<string, string> = habitMeta ?? {};
+    const setMeta = useSetHabitMeta();
+    const renameHabit = useRenameHabit();
+
+    const [editingName, setEditingName] = useState(false);
+    const [nameDraft, setNameDraft] = useState('');
+    const [editingDesc, setEditingDesc] = useState(false);
+    const [descDraft, setDescDraft] = useState('');
+
+    const openHabit = (habit: string) => {
+        setSelectedHabit(habit);
+        setEditingName(false);
+        setNameDraft(habit);
+        setEditingDesc(false);
+        setDescDraft(metaMap[habit] || '');
+    };
+
+    const closePopup = () => {
+        setSelectedHabit(null);
+        setEditingName(false);
+        setEditingDesc(false);
+    };
+
+    const commitRename = () => {
+        if (!selectedHabit) return;
+        const next = nameDraft.trim();
+        setEditingName(false);
+        if (!next || next === selectedHabit) return;
+        const oldName = selectedHabit;
+        renameHabit.mutate(
+            { sheetName, oldName, newName: next },
+            { onSuccess: () => setSelectedHabit(next) }
+        );
+    };
+
+    const cancelRename = () => {
+        setEditingName(false);
+        setNameDraft(selectedHabit || '');
+    };
+
+    const saveDesc = () => {
+        if (!selectedHabit) return;
+        setMeta.mutate({ habitName: selectedHabit, description: descDraft });
+        setEditingDesc(false);
+    };
 
     // Fetch the other sheet (Weekdays↔Weekend) for merged stats
     const otherSheet = sheetName === 'Weekdays' ? 'Weekend' : sheetName === 'Weekend' ? 'Weekdays' : null;
@@ -139,9 +188,9 @@ export function CheckboxGridView({
                                 className="flex items-center gap-2 h-6 md:h-8"
                             >
                                 <button
-                                    onClick={() => setSelectedHabit(habit)}
+                                    onClick={() => openHabit(habit)}
                                     className="w-[112px] md:w-[152px] shrink-0 flex items-center gap-2 pr-2 truncate cursor-pointer hover:opacity-80 active:scale-95 transition-all text-left"
-                                    title={habit}
+                                    title={metaMap[habit]?.trim() ? `${habit} — ${metaMap[habit]}` : habit}
                                 >
                                     <div
                                         className="w-3 h-3 rounded-full shrink-0"
@@ -188,10 +237,12 @@ export function CheckboxGridView({
                                     const checked = row.habits[habit];
                                     const today = isToday(row.date);
 
+                                    const desc = metaMap[habit]?.trim();
+                                    const checkTooltip = `${row.date}: ${checked === true ? '✓' : checked === 'skipped' ? '⏭' : '✗'}${desc ? ` — ${desc}` : ''}`;
                                     return (
                                         <button
                                             key={row.date + rIndex}
-                                            title={`${row.date}: ${checked === true ? '✓' : checked === 'skipped' ? '⏭' : '✗'}`}
+                                            title={checkTooltip}
                                             disabled={isPending}
                                             onClick={() => onToggle(rIndex, habit, checked)}
                                             className={`shrink-0 w-[calc((100%-24px)/7)] md:w-[calc((100%-48px)/7)] h-6 md:h-8 rounded-sm transition-all duration-150 cursor-pointer hover:scale-110 active:scale-95 disabled:cursor-not-allowed ${today ? 'ring-1 ring-primary ring-offset-1 ring-offset-background' : ''}`}
@@ -220,24 +271,63 @@ export function CheckboxGridView({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-                        onClick={() => setSelectedHabit(null)}
+                        onClick={closePopup}
                     >
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.9, opacity: 0 }}
                             transition={{ type: 'spring', duration: 0.3 }}
-                            className="bg-card border border-border rounded-xl p-5 w-full max-w-xs shadow-xl"
+                            className="bg-card border border-border rounded-xl p-5 w-full max-w-xs shadow-xl max-h-[90vh] overflow-y-auto"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {/* Header */}
-                            <div className="flex items-center gap-3 mb-4">
+                            <div className="flex items-center gap-2 mb-4">
                                 <div
                                     className="w-4 h-4 rounded-full shrink-0"
                                     style={{ backgroundColor: colors[selectedHabit] || defaultColor }}
                                 />
-                                <div>
-                                    <h3 className="text-base font-semibold break-words">{selectedHabit}</h3>
+                                <div className="flex-1 min-w-0">
+                                    {editingName ? (
+                                        <div className="flex items-center gap-1">
+                                            <input
+                                                autoFocus
+                                                value={nameDraft}
+                                                onChange={(e) => setNameDraft(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') commitRename();
+                                                    else if (e.key === 'Escape') cancelRename();
+                                                }}
+                                                className="bg-background border border-border rounded px-2 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                            />
+                                            <button
+                                                onClick={commitRename}
+                                                className="p-1 rounded hover:bg-green-500/20 text-green-500 shrink-0"
+                                                aria-label={t('habitRenameSave')}
+                                            >
+                                                <Check className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={cancelRename}
+                                                className="p-1 rounded hover:bg-red-500/20 text-red-500 shrink-0"
+                                                aria-label={t('habitInfoCancel')}
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1">
+                                            <h3 className="text-base font-semibold break-words flex-1 min-w-0">{selectedHabit}</h3>
+                                            <button
+                                                onClick={() => { setNameDraft(selectedHabit); setEditingName(true); }}
+                                                className="p-1 rounded hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                                                title={t('habitTableEditName')}
+                                                aria-label={t('habitTableEditName')}
+                                            >
+                                                <Pencil className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    )}
                                     {habitStats.merged && (
                                         <span className="text-[10px] text-muted-foreground">{t('statsMerged')}</span>
                                     )}
@@ -283,9 +373,57 @@ export function CheckboxGridView({
                                 </div>
                             </div>
 
+                            {/* Description */}
+                            <div className="mt-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <p className="text-xs text-muted-foreground">{t('habitInfoDescriptionLabel')}</p>
+                                    {!editingDesc && (
+                                        <button
+                                            onClick={() => { setDescDraft(metaMap[selectedHabit] || ''); setEditingDesc(true); }}
+                                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                        >
+                                            <Pencil className="w-3 h-3" /> {t('habitInfoEdit')}
+                                        </button>
+                                    )}
+                                </div>
+                                {editingDesc ? (
+                                    <>
+                                        <textarea
+                                            autoFocus
+                                            value={descDraft}
+                                            onChange={(e) => setDescDraft(e.target.value)}
+                                            placeholder={t('habitInfoDescriptionPlaceholder')}
+                                            rows={4}
+                                            className="w-full bg-background border border-border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+                                        />
+                                        <div className="flex justify-end gap-2 mt-2">
+                                            <button
+                                                onClick={() => { setEditingDesc(false); setDescDraft(metaMap[selectedHabit] || ''); }}
+                                                className="px-3 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-xs font-medium transition-colors"
+                                            >
+                                                {t('habitInfoCancel')}
+                                            </button>
+                                            <button
+                                                onClick={saveDesc}
+                                                disabled={setMeta.isPending}
+                                                className="px-3 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium transition-colors disabled:opacity-60"
+                                            >
+                                                {t('habitInfoSave')}
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="text-sm whitespace-pre-wrap break-words text-foreground/90 bg-secondary/30 rounded-md p-3 border border-border/50 min-h-[60px]">
+                                        {metaMap[selectedHabit]?.trim() || (
+                                            <span className="text-muted-foreground italic text-xs">{t('habitInfoEmpty')}</span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Close button */}
                             <button
-                                onClick={() => setSelectedHabit(null)}
+                                onClick={closePopup}
                                 className="mt-4 w-full py-2 rounded-lg bg-secondary hover:bg-secondary/80 text-sm font-medium transition-colors"
                             >
                                 {t('close')}

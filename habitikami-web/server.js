@@ -1045,22 +1045,36 @@ const parseCounterRows = (rows, oldest, newest) => {
 
     headers.forEach((h, i) => {
         if (i === dateIdx || !h || h.startsWith('_config')) return;
-        
+
         const parts = h.split('|');
         const id = parts[0].toLowerCase();
-        colMap[id] = i;
 
         if (parts.length > 1) {
             const [actionId, icon, color, label, categoryId, categoryLabel, type] = parts;
-            metadata[id] = {
+            const resolvedType = type || 'other';
+            const resolvedLabel = label || actionId;
+            const resolvedCategoryLabel = categoryLabel || 'Temptations';
+
+            // Temptation columns are exported under their real name
+            // (category + action), e.g. "Smoking - Resisted". Other counters
+            // keep their internal id as the key.
+            const isTemptation = resolvedType === 'resist' || resolvedType === 'succumb';
+            const exportKey = isTemptation
+                ? `${resolvedCategoryLabel} - ${resolvedLabel}`
+                : id;
+
+            colMap[exportKey] = i;
+            metadata[exportKey] = {
                 id,
                 icon,
                 color,
-                label: label || actionId,
+                label: resolvedLabel,
                 categoryId: categoryId || 'shared',
-                categoryLabel: categoryLabel || 'Temptations',
-                type: type || 'other'
+                categoryLabel: resolvedCategoryLabel,
+                type: resolvedType
             };
+        } else {
+            colMap[id] = i;
         }
     });
 

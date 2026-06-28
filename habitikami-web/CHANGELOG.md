@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.8.2 - 2026-06-28
+### 🚬 Readable Temptation Names in Export
+- **Real Names in `/api/export`**: Temptation columns in the export endpoint are now keyed by their real name (`Category - action`, e.g. `Smoking - Resisted`) instead of their internal id. Other counter columns keep their existing id keys, so non-temptation data is unaffected.
+
 ## 🌐 Web 5.8.1 - 2026-05-21
 ### 📱 Habit Editing in the Grid View
 - **Rename in the Stats Popup**: Clicking a habit in the grid view now shows a pencil next to its name — tap to rename inline, Enter or check-icon to save, Escape or X to cancel.

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { HeartHandshake, Key, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2, FilePlus2, Loader2 } from 'lucide-react';
+import { HeartHandshake, Key, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2, FilePlus2, Loader2, ScanLine } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import type { GuidedStep } from '../types';
@@ -7,6 +7,7 @@ import { useTranslation } from '../i18n';
 import { habitService } from '../services/HabitService';
 import { schedeTemplates } from '../data/schedeTemplates';
 import { SchedeCompiler } from './SchedeCompiler';
+import { SchedaImporter } from './SchedaImporter';
 import { TemptationSettings } from './TemptationSettings';
 import type { SchedaTemplate } from '../data/schedeTemplates';
 import {
@@ -28,7 +29,7 @@ interface Message {
     content: string;
 }
 
-type HelpMode = 'menu' | 'chat' | 'scheda' | 'settings' | 'mood' | 'updates';
+type HelpMode = 'menu' | 'chat' | 'scheda' | 'settings' | 'mood' | 'updates' | 'import';
 
 interface HelpViewProps {
     openSettings?: boolean;
@@ -310,6 +311,14 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
         setMode('chat');
     };
 
+    const handleStartImport = () => {
+        if (!isKeySetup) {
+            handleOpenSettings();
+            return;
+        }
+        setMode('import');
+    };
+
     // Computed values
     const hasGemini = !!tempGeminiKey.trim();
     const hasAnthropic = !!tempAnthropicKey.trim();
@@ -485,6 +494,16 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
         return (
             <SchedeCompiler
                 template={selectedScheda}
+                providerConfig={providerConfig}
+                onBack={handleBackToMenu}
+            />
+        );
+    }
+
+    // ── Scheda import mode ──
+    if (mode === 'import' && providerConfig) {
+        return (
+            <SchedaImporter
                 providerConfig={providerConfig}
                 onBack={handleBackToMenu}
             />
@@ -780,6 +799,51 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                                 </motion.button>
                             ))}
                         </div>
+
+                        {/* Import handwritten worksheets (Remarkable 2 / tablet) — informational */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="bg-card/40 backdrop-blur-md rounded-2xl border border-dashed border-border/60 p-5"
+                        >
+                            <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center shrink-0">
+                                    <ScanLine className="w-6 h-6 text-amber-400" />
+                                </div>
+                                <div className="flex-1 space-y-3">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <h3 className="font-semibold text-foreground">{t('helpImportTitle')}</h3>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                                            {t('helpImportBadge')}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">{t('helpImportDesc')}</p>
+                                    <div className="space-y-2 pt-1">
+                                        <p className="text-xs font-medium text-muted-foreground/90">{t('helpImportHowTitle')}</p>
+                                        <ol className="space-y-1.5">
+                                            {[t('helpImportStep1'), t('helpImportStep2'), t('helpImportStep3')].map((step, i) => (
+                                                <li key={i} className="flex gap-2 text-xs text-muted-foreground leading-relaxed">
+                                                    <span className="shrink-0 w-4 h-4 rounded-full bg-amber-500/15 text-amber-400 text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                                                    <span>{step}</span>
+                                                </li>
+                                            ))}
+                                        </ol>
+                                    </div>
+                                    <div className="flex items-start gap-2 pt-1 text-[11px] text-muted-foreground/70 leading-relaxed">
+                                        <Shield className="w-3.5 h-3.5 text-emerald-400/70 shrink-0 mt-0.5" />
+                                        <span>{t('helpImportNote')}</span>
+                                    </div>
+                                    <button
+                                        onClick={handleStartImport}
+                                        className="w-full flex items-center justify-center gap-2 mt-1 bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 font-medium text-sm px-4 py-2.5 rounded-xl transition-all"
+                                    >
+                                        <ScanLine className="w-4 h-4" />
+                                        {t('helpImportCta')}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
                     </div>
                 </div>
             </div>

@@ -52,9 +52,19 @@ export function getProviderLabel(provider: AIProvider): string {
     return provider === 'anthropic' ? 'Claude (Anthropic)' : 'Gemini (Google)';
 }
 
+/**
+ * A binary attachment (image or PDF) to send alongside a user message.
+ * `dataBase64` is the raw base64 payload, WITHOUT the `data:...;base64,` prefix.
+ */
+export interface AIAttachment {
+    mediaType: string; // e.g. 'application/pdf', 'image/png', 'image/jpeg'
+    dataBase64: string;
+}
+
 interface AIMessage {
     role: 'user' | 'model';
     content: string;
+    attachments?: AIAttachment[];
 }
 
 /**
@@ -103,10 +113,23 @@ export async function callAI(
     }
 
     if (config.provider === 'anthropic') {
-        const anthropicMessages = messages.map(msg => ({
-            role: msg.role === 'model' ? 'assistant' as const : 'user' as const,
-            content: msg.content,
-        }));
+        const anthropicMessages = messages.map(msg => {
+            const role = msg.role === 'model' ? 'assistant' as const : 'user' as const;
+            if (!msg.attachments || msg.attachments.length === 0) {
+                return { role, content: msg.content };
+            }
+            // Multimodal: text block + one block per attachment (image or PDF document).
+            const blocks: any[] = [{ type: 'text', text: msg.content }];
+            for (const att of msg.attachments) {
+                const source = { type: 'base64', media_type: att.mediaType, data: att.dataBase64 };
+                blocks.push(
+                    att.mediaType === 'application/pdf'
+                        ? { type: 'document', source }
+                        : { type: 'image', source },
+                );
+            }
+            return { role, content: blocks };
+        });
 
         if (anthropicMessages.length === 0) {
             console.error('[AI] Attempted to call Anthropic with zero messages. System Prompt:', systemPrompt);
@@ -138,7 +161,12 @@ export async function callAI(
             { role: 'model', parts: [{ text: systemAck }] },
             ...messages.map(msg => ({
                 role: msg.role,
-                parts: [{ text: msg.content }],
+                parts: [
+                    { text: msg.content },
+                    ...(msg.attachments || []).map(att => ({
+                        inline_data: { mime_type: att.mediaType, data: att.dataBase64 },
+                    })),
+                ],
             })),
         ];
 

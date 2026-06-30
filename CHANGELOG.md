@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.9.0 - 2026-06-30
+### ✍️ Import Handwritten Worksheets (AI Handwriting Recognition)
+- **Read Worksheets Filled on Paper/Tablet**: New "Import handwritten worksheet" flow in the Help area. Upload an emotion worksheet you filled by hand (PDF, PNG, JPG or WEBP, up to 15 MB) and the AI reads your handwriting and transcribes it into the standard worksheet format.
+- **Multimodal AI Calls**: `callAI` now supports image/PDF attachments for both providers — Claude (`document`/`image` content blocks) and Gemini (`inline_data` parts). No server changes were needed: the existing chat proxies forward the multimodal payloads as-is.
+- **Review Before Saving**: The transcription opens in an editable screen with the detected date and title, a list of parts the AI read with low confidence, and a formatted preview — so you can correct any recognition errors before committing.
+- **Saved & Consolidated**: The reviewed worksheet is saved to the `habitikami-worksheets` folder on Google Drive (with its date in the body) so it is consolidated alongside the worksheets compiled in the app for the same date.
+- **Privacy**: The file stays on your device until you import it and is sent to your own AI provider only for transcription. Output is written via the existing `drive.file` permission — no other Drive files are read.
+
 ## 🌐 Web 5.8.2 - 2026-06-28
 ### 🚬 Readable Temptation Names in Export
 - **Real Names in `/api/export`**: Temptation columns in the export endpoint are now keyed by their real name (`Category - action`, e.g. `Smoking - Resisted`) instead of their internal id. Other counter columns keep their existing id keys, so non-temptation data is unaffected.

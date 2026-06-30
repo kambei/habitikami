@@ -261,7 +261,15 @@ app.use(cors({
     },
     credentials: true,
 }));
-app.use(express.json());
+// AI chat endpoints carry multimodal payloads (base64 image/PDF attachments),
+// so they need a much larger JSON body limit than the rest of the API.
+const AI_CHAT_PATHS = new Set(['/api/anthropic/chat', '/api/gemini/chat']);
+const standardJson = express.json();
+const largeJson = express.json({ limit: '25mb' });
+app.use((req, res, next) => {
+    if (AI_CHAT_PATHS.has(req.path)) return largeJson(req, res, next);
+    return standardJson(req, res, next);
+});
 
 // ─── Rate limiting ───────────────────────────────────────────────────────────
 

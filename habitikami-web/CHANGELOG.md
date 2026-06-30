@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.9.1 - 2026-06-30
+### 🐛 Fix Worksheet Import Failing on Large Files
+- **Larger Body Limit for AI Endpoints**: `/api/anthropic/chat` and `/api/gemini/chat` now accept up to 25 MB so multimodal (base64 image/PDF) payloads from the handwriting import get through. The default 100 kb limit caused the server to return an HTML 413 page, which surfaced as `Unexpected token '<' ... is not valid JSON`. Other endpoints keep the standard limit.
+- **Graceful AI Error Handling**: `callAI` no longer crashes when an error response isn't JSON — it falls back to reporting the HTTP status (e.g. `... (HTTP 413)`) instead of throwing a cryptic JSON parse error.
+
 ## 🌐 Web 5.9.0 - 2026-06-30
 ### ✍️ Import Handwritten Worksheets (AI Handwriting Recognition)
 - **Read Worksheets Filled on Paper/Tablet**: New "Import handwritten worksheet" flow in the Help area. Upload an emotion worksheet you filled by hand (PDF, PNG, JPG or WEBP, up to 15 MB) and the AI reads your handwriting and transcribes it into the standard worksheet format.

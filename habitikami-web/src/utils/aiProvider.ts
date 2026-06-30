@@ -147,8 +147,8 @@ export async function callAI(
         });
 
         if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error?.message || 'Communication error with Anthropic');
+            const errData = await response.json().catch(() => null);
+            throw new Error(errData?.error?.message || `Communication error with Anthropic (HTTP ${response.status})`);
         }
 
         const data = await response.json();
@@ -188,8 +188,8 @@ export async function callAI(
         });
 
         if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error?.message || 'Communication error with Gemini');
+            const errData = await response.json().catch(() => null);
+            throw new Error(errData?.error?.message || `Communication error with Gemini (HTTP ${response.status})`);
         }
 
         const data = await response.json();

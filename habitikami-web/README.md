@@ -22,6 +22,8 @@ A React + Vite + TypeScript web application for habit tracking, using Google She
    VITE_GOOGLE_API_KEY=your_optional_api_key
    VITE_SPREADSHEET_ID=your_spreadsheet_id
    ```
+
+   **Private mode (optional):** set `ALLOWED_EMAILS=you@gmail.com,friend@gmail.com` to restrict sign-in, session refresh and widget API keys to those Google accounts only. Everyone else gets a 403 with a maintenance message. Leave it empty (or unset) for open access. Restart the server after changing it.
    
    *To get these credentials:*
    - Go to [Google Cloud Console](https://console.cloud.google.com).

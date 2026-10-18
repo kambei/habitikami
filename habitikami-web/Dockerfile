@@ -36,5 +36,6 @@ ENV PORT=80
 # Runtime secrets are injected via docker-compose env_file or -e flags — never baked in here
 # Required at runtime: VITE_GOOGLE_CLIENT_ID, VITE_GOOGLE_CLIENT_SECRET, VITE_SPREADSHEET_ID,
 #                      EXPORT_API_TOKEN, GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY
+# Optional: ALLOWED_EMAILS (comma-separated allowlist; empty = open access)
 
 CMD ["npm", "run", "start"]

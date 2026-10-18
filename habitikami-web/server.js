@@ -374,6 +374,41 @@ function extractBearer(req) {
     return null;
 }
 
+// ─── Access allowlist (private / maintenance mode) ───────────────────────────
+// ALLOWED_EMAILS: comma-separated list of Google accounts. When set, only these
+// accounts can sign in, refresh a session or use a widget API key.
+// Unset or empty = open access (default).
+
+const allowedEmails = (process.env.ALLOWED_EMAILS || '')
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
+
+if (allowedEmails.length > 0) {
+    console.log(`Access restricted: only ${allowedEmails.length} allowed account(s) can sign in.`);
+}
+
+function isAllowedEmail(email) {
+    if (allowedEmails.length === 0) return true;
+    return !!email && allowedEmails.includes(email.toLowerCase());
+}
+
+const ACCESS_RESTRICTED = {
+    error: 'Access is temporarily restricted to authorized accounts.',
+    code: 'access_restricted',
+};
+
+// Resolve the email behind a Bearer access token and enforce the allowlist.
+// Sends 403 and returns null when the account is not allowed.
+async function requireAllowedEmail(accessToken, res) {
+    const email = await getEmailFromToken(accessToken);
+    if (!isAllowedEmail(email)) {
+        res.status(403).json(ACCESS_RESTRICTED);
+        return null;
+    }
+    return email;
+}
+
 // ─── Config endpoint ──────────────────────────────────────────────────────────
 
 app.get('/config.js', (req, res) => {
@@ -454,6 +489,12 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
         if (isUserRevoked(email)) {
             console.log(`Auth exchange blocked: ${email} is revoked by RISC`);
             return res.status(403).json({ error: 'Account access revoked due to a security event. Please contact support.' });
+        }
+
+        // Private mode: reject accounts outside ALLOWED_EMAILS before anything is stored
+        if (!isAllowedEmail(email)) {
+            console.log('Auth exchange blocked: account not in ALLOWED_EMAILS');
+            return res.status(403).json(ACCESS_RESTRICTED);
         }
 
         // Look up spreadsheetId for this user; fall back to env for owner
@@ -538,6 +579,12 @@ app.post('/api/auth/refresh', authLimiter, validateOrigin, async (req, res) => {
             return res.status(403).json({ error: 'Account access revoked due to a security event. Please contact support.' });
         }
 
+        // Private mode: existing sessions of non-allowed accounts cannot be renewed
+        if (!isAllowedEmail(email)) {
+            console.log('Auth refresh blocked: account not in ALLOWED_EMAILS');
+            return res.status(403).json(ACCESS_RESTRICTED);
+        }
+
         const users = loadUsers();
         const spreadsheetId = (email && getUserSpreadsheetId(users, email)) || (email === process.env.OWNER_EMAIL ? process.env.VITE_SPREADSHEET_ID : null) || null;
         console.log(`Auth refresh: email=${email}, spreadsheet_id=${spreadsheetId ? 'found' : 'MISSING'}, has_refresh_token=${!!data.refresh_token}`);
@@ -573,7 +620,8 @@ app.post('/api/user/spreadsheet', apiLimiter, validateOrigin, async (req, res) =
             return res.status(400).json({ error: 'Invalid spreadsheet_id format' });
         }
 
-        const email = await getEmailFromToken(accessToken);
+        const email = await requireAllowedEmail(accessToken, res);
+        if (!email) return;
         await saveUsersAtomic(users => {
             const existing = users[email] || {};
             users[email] = { ...(typeof existing === 'object' ? existing : {}), spreadsheetId: trimmedId };
@@ -614,11 +662,13 @@ app.get('/api/user/preferences', apiLimiter, async (req, res) => {
             if (apiKeys[apiToken]) {
                 req.apiKeyUser = apiKeys[apiToken];
                 email = req.apiKeyUser.email;
+                if (!isAllowedEmail(email)) return res.status(403).json(ACCESS_RESTRICTED);
             } else {
                 return res.status(401).json({ error: 'Invalid API key' });
             }
         } else if (bearer) {
-            email = await getEmailFromToken(bearer);
+            email = await requireAllowedEmail(bearer, res);
+            if (!email) return;
             req.oauthUser = { email, accessToken: bearer };
         } else {
             return res.status(401).json({ error: 'Missing access token' });
@@ -706,7 +756,8 @@ app.post('/api/user/preferences', apiLimiter, validateOrigin, async (req, res) =
         if (!accessToken) return res.status(401).json({ error: 'Missing access token' });
 
         const { enabled_tabs, default_tab, temptations } = req.body;
-        const email = await getEmailFromToken(accessToken);
+        const email = await requireAllowedEmail(accessToken, res);
+        if (!email) return;
 
         // 1. Update Sheet Headers (Privacy First)
         try {
@@ -788,7 +839,8 @@ app.get('/api/user/apikey', apiLimiter, async (req, res) => {
         const accessToken = extractBearer(req);
         if (!accessToken) return res.status(401).json({ error: 'Missing access token' });
 
-        const email = await getEmailFromToken(accessToken);
+        const email = await requireAllowedEmail(accessToken, res);
+        if (!email) return;
         const apiKeys = loadApiKeys();
 
         // Find existing key for this user
@@ -813,7 +865,8 @@ app.post('/api/user/apikey', apiLimiter, validateOrigin, async (req, res) => {
         const accessToken = extractBearer(req);
         if (!accessToken) return res.status(401).json({ error: 'Missing access token' });
 
-        const email = await getEmailFromToken(accessToken);
+        const email = await requireAllowedEmail(accessToken, res);
+        if (!email) return;
         const users = loadUsers();
 
         // Accept spreadsheet_id from client (the client always has it in session)
@@ -884,7 +937,8 @@ app.delete('/api/user/apikey', apiLimiter, validateOrigin, async (req, res) => {
         const accessToken = extractBearer(req);
         if (!accessToken) return res.status(401).json({ error: 'Missing access token' });
 
-        const email = await getEmailFromToken(accessToken);
+        const email = await requireAllowedEmail(accessToken, res);
+        if (!email) return;
 
         let found = false;
         await saveApiKeysAtomic(apiKeys => {
@@ -926,6 +980,10 @@ const authenticate = async (req, res, next) => {
     if (apiToken) {
         const apiKeys = loadApiKeys();
         if (apiKeys[apiToken]) {
+            // Private mode: widget keys of non-allowed accounts stop working too
+            if (!isAllowedEmail(apiKeys[apiToken].email)) {
+                return res.status(403).json(ACCESS_RESTRICTED);
+            }
             req.apiKeyUser = apiKeys[apiToken]; // { email, spreadsheetId, createdAt }
             return next();
         }
@@ -935,13 +993,15 @@ const authenticate = async (req, res, next) => {
 
     // 2. OAuth Bearer token — use user's own Google credentials
     if (bearer) {
+        let email;
         try {
-            const email = await getEmailFromToken(bearer);
-            req.oauthUser = { email, accessToken: bearer };
-            return next();
+            email = await getEmailFromToken(bearer);
         } catch (err) {
             return res.status(401).json({ error: 'Unauthorized: Invalid Bearer token.' });
         }
+        if (!isAllowedEmail(email)) return res.status(403).json(ACCESS_RESTRICTED);
+        req.oauthUser = { email, accessToken: bearer };
+        return next();
     }
 
     return res.status(401).json({ error: 'Unauthorized: Missing API key or Bearer token.' });
@@ -1424,7 +1484,7 @@ app.post('/api/gemini/chat', geminiLimiter, validateOrigin, async (req, res) => 
         if (!accessToken) return res.status(401).json({ error: 'Missing access token' });
 
         // Verify the user is authenticated with Google
-        await getEmailFromToken(accessToken);
+        if (!(await requireAllowedEmail(accessToken, res))) return;
 
         const { apiKey, contents, generationConfig } = req.body;
         if (!apiKey || !contents) {
@@ -1460,7 +1520,7 @@ app.post('/api/anthropic/chat', geminiLimiter, validateOrigin, async (req, res) 
         if (!accessToken) return res.status(401).json({ error: 'Missing access token' });
 
         // Verify the user is authenticated with Google
-        await getEmailFromToken(accessToken);
+        if (!(await requireAllowedEmail(accessToken, res))) return;
 
         const { apiKey, system, messages, max_tokens } = req.body;
         if (!apiKey || !messages) {

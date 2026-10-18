@@ -43,6 +43,8 @@ export const it: Record<TranslationKey, string | string[]> = {
   landingSubtitle: 'Costruisci abitudini migliori, monitora i tuoi progressi e migliora la tua routine quotidiana.',
   landingSignInPrompt: 'Accedi per iniziare',
   landingSignInButton: 'Continua con Google',
+  authSignInFailed: 'Accesso non riuscito',
+  authAccessRestricted: 'L\'accesso a Habitikami è temporaneamente limitato agli account autorizzati per manutenzione. Riprova più avanti.',
   landingSigningIn: 'Accesso in corso…',
   landingDataNote: 'I tuoi dati sono salvati nel tuo Google Sheet',
   landingFeatureTrackTitle: 'Traccia',

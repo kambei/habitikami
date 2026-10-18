@@ -363,6 +363,14 @@ function App() {
         setIsLoggedIn(true);
         handleRefresh();
         await loadPreferences();
+      } else {
+        // Surface errors from the OAuth redirect (e.g. account not allowed)
+        const authError = habitService.getAuthError();
+        if (authError === 'access_restricted') {
+          toast.error(t('authAccessRestricted'), { duration: 12000 });
+        } else if (authError) {
+          toast.error(`${t('authSignInFailed')}: ${authError}`, { duration: 8000 });
+        }
       }
       setIsCheckingSession(false);
     });
@@ -371,7 +379,7 @@ function App() {
   const handleAuth = async () => {
     const result = await habitService.auth();
     if (result?.error) {
-      toast.error("Sign-in failed: " + result.error);
+      toast.error(`${t('authSignInFailed')}: ${result.error}`);
     } else {
       setEmail(habitService.getEmail());
       setSpreadsheetId(habitService.getStoredSpreadsheetId());

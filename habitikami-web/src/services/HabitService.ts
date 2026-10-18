@@ -181,6 +181,11 @@ class HabitServiceImpl {
             });
 
             const data = await response.json();
+            if (data.code === 'access_restricted') {
+                // Private mode: the account is not in the server allowlist
+                this.authError = 'access_restricted';
+                return;
+            }
             if (!response.ok || data.error) throw new Error(data.error || 'Token exchange failed');
 
             this.saveSession(data);
@@ -203,8 +208,11 @@ class HabitServiceImpl {
             const data = await response.json();
             if (!response.ok || data.error) {
                 console.error("Refresh error:", data);
-                if (data.code === 'invalid_grant') {
+                if (data.code === 'invalid_grant' || data.code === 'access_restricted') {
                     this.clearSession();
+                }
+                if (data.code === 'access_restricted') {
+                    this.authError = 'access_restricted';
                 }
                 return false;
             }

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.9.2 - 2026-10-18
+### 🔒 Private Mode (Account Allowlist)
+- **`ALLOWED_EMAILS` Environment Variable**: When set to a comma-separated list of Google accounts, only those accounts can sign in, renew a session or use a widget API key. Everyone else receives a 403 `access_restricted` response. Leave it empty for open access (default).
+- **Enforced Everywhere**: The check runs on `/api/auth/exchange`, `/api/auth/refresh`, the shared `authenticate` middleware (export, counters, colors), the preferences and API key routes, and the Gemini/Anthropic proxies, so existing sessions and widgets of non-allowed accounts stop working too.
+- **Clear Message for Blocked Users**: The landing page now shows a translated toast ("access temporarily restricted for maintenance") after the OAuth redirect instead of silently returning to the sign-in screen. Sign-in error toasts are now localized.
+
 ## 🌐 Web 5.9.1 - 2026-06-30
 ### 🐛 Fix Worksheet Import Failing on Large Files
 - **Larger Body Limit for AI Endpoints**: `/api/anthropic/chat` and `/api/gemini/chat` now accept up to 25 MB so multimodal (base64 image/PDF) payloads from the handwriting import get through. The default 100 kb limit caused the server to return an HTML 413 page, which surfaced as `Unexpected token '<' ... is not valid JSON`. Other endpoints keep the standard limit.

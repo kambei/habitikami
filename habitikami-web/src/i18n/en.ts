@@ -42,6 +42,8 @@ export const en = {
   landingSubtitle: 'Build better habits, track your progress, and level up your daily routine.',
   landingSignInPrompt: 'Sign in to get started',
   landingSignInButton: 'Continue with Google',
+  authSignInFailed: 'Sign-in failed',
+  authAccessRestricted: 'Access to Habitikami is temporarily restricted to authorized accounts for maintenance. Please try again later.',
   landingSigningIn: 'Signing in…',
   landingDataNote: 'Your data is stored in your own Google Sheet',
   landingFeatureTrackTitle: 'Track',

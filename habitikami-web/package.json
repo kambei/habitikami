@@ -20,7 +20,7 @@
     "express-rate-limit": "^8.3.1",
     "framer-motion": "^12.26.2",
     "gapi-script": "^1.2.0",
-    "googleapis": "^128.0.0",
+    "googleapis": "^186.0.0",
     "helmet": "^8.1.0",
     "lucide-react": "^0.562.0",
     "proper-lockfile": "^4.1.2",
@@ -31,10 +31,10 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
-    "@types/gapi": "^0.0.47",
-    "@types/gapi.client.sheets-v4": "^0.0.4",
     "@eslint/js": "^9.39.1",
     "@tailwindcss/postcss": "^4.1.18",
+    "@types/gapi": "^0.0.47",
+    "@types/gapi.client.sheets-v4": "^0.0.4",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",

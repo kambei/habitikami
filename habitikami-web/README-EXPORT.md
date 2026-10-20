@@ -1,96 +1,114 @@
-# Habitikami Export Server - Setup Guide
+# Habitikami Export API
 
-This project now includes a simple Node.js backend to serve the frontend application and provide a JSON export API for automation tools like n8n.
+`server.js` serves the web app and exposes a small JSON API used by the Android
+widgets and by automation tools (n8n, scripts, dashboards).
 
-## 1. Create a Google Service Account
+## 1. Authentication
 
-To allow the server to read your Google Sheet without user interaction (server-side), you need a Service Account.
+Every API request is authenticated **per user**. There is no shared server
+token: `EXPORT_API_TOKEN` and the `?token=` query parameter no longer exist.
+Two methods are accepted, checked in this order:
 
-1.  Go to the [Google Cloud Console](https://console.cloud.google.com/).
-2.  Select your project.
-3.  Go to **IAM & Admin** > **Service Accounts**.
-4.  Click **Create Service Account**.
-5.  Name it (e.g., `habitikami-export`).
-6.  Grant it the **Viewer** role (optional, but good practice).
-7.  Click **Done**.
-8.  Click on the newly created service account email.
-9.  Go to the **Keys** tab.
-10. Click **Add Key** > **Create new key** > **JSON**.
-11. A JSON file will download. **Keep this safe!**
+| Method | Header | Where it comes from |
+| --- | --- | --- |
+| **API key** (widgets, automation) | `X-API-Token: hk_...` | Generated in the app: *Help → API key*. Shown **once**; regenerating revokes the previous key. |
+| **Google access token** (the web app itself) | `Authorization: Bearer <access_token>` | The user's own Google OAuth token. The server verifies that it was issued to this app (audience check) and that it has not expired. |
 
-## 2. Share Your Sheet
+API keys are stored **hashed** (SHA-256) on the server; only a short prefix is
+kept for display. If you lose a key, generate a new one from the app.
 
-1.  Open your Habitikami Google Sheet.
-2.  Click **Share**.
-3.  Copy the **client_email** from the JSON key file you just downloaded.
-4.  Paste it into the Share dialog and give it **Viewer** or **Editor** access.
-    *   *Viewer* is enough for export.
-5.  Uncheck "Notify people" to avoid emails.
-6.  Click **Share**.
+The API key records the spreadsheet of the user who generated it and, when
+available, an encrypted copy of the user's refresh token, so requests run with
+the user's own Google credentials. Only if no refresh token is stored does the
+server fall back to the optional service account (see section 3).
 
-## 3. Configure Environment Variables
+When `ALLOWED_EMAILS` is set (private mode), API keys of accounts outside the
+allowlist receive `403 access_restricted`.
 
-You need to update your `.env` file (or deployment environment variables) with the following:
+## 2. Endpoints
 
-```env
-# Existing
-VITE_GOOGLE_CLIENT_ID=...
-VITE_SPREADSHEET_ID=...
+All endpoints accept either authentication method above.
 
-# NEW: Service Account Credentials (from the JSON key file)
-GOOGLE_SERVICE_ACCOUNT_EMAIL=your-service-account@project.iam.gserviceaccount.com
-GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+### `GET /api/export`
 
-# NEW: API Security
-EXPORT_API_TOKEN=your-secret-token-for-n8n
-```
+Returns the whole dataset as JSON. Optional date filters (`YYYY-MM-DD`):
+`?oldest=2024-01-01&newest=2024-01-31`.
 
-> **Note on Private Key:** If putting this in a `.env` file, ensure the newlines are correctly formatted. You might need to wrap it in quotes. If pasting into a cloud provider (like Portainer/Render/Railway), they usually handle the newlines automatically.
-
-## 4. Run the Server
-
-### Local Development
-To run the server locally:
 ```bash
-npm install
-npm run build
-npm start
+curl -H "X-API-Token: hk_..." "https://your-host/api/export?oldest=2024-01-01"
 ```
 
-### Docker
-The `Dockerfile` has been updated to run the Node.js server.
-```bash
-docker build -t habitikami .
-docker run -p 80:80 --env-file .env habitikami
-```
-
-## 5. Using the Export API
-
-**Endpoint:** `GET /api/export`
-
-**Authentication:** You must provide the `EXPORT_API_TOKEN` either as a header or a query parameter.
-
-**Curl Example:**
-```bash
-curl -H "x-api-token: your-secret-token-for-n8n" http://localhost/api/export
-```
-
-**Query Param Example:**
-```bash
-# Basic Auth
-http://localhost/api/export?token=your-secret-token-for-n8n
-
-# Date Filtering (YYYY-MM-DD)
-http://localhost/api/export?token=...&oldest=2024-01-01&newest=2024-01-31
-```
-
-**Response Format:**
 ```json
 {
   "timestamp": "2023-10-27T10:00:00.000Z",
   "weekdays": [...],
   "weekend": [...],
   "counters": [...],
-  "notes": [...]
+  "notes": [...],
+  "colors": { "weekdays": {...}, "weekend": {...}, "counters": {...} }
 }
 ```
+
+Temptation counters are keyed by their readable name (`Category - action`);
+other counters keep their internal id.
+
+### `GET /api/colors`
+
+Header background colours of the `Weekdays` / `Weekend` sheets, keyed by habit
+name.
+
+### `GET /api/counter`
+
+Today's counters (`{ success, date, counters, metadata }`). With
+`?oldest=...&newest=...` it returns `{ success, entries, metadata }` for the
+range instead.
+
+### `POST /api/counter/increment`
+
+Body: `{ "counter": "<name>" }`. Increments today's value of that counter,
+creating the column if needed. Names must match `^[A-Za-z0-9 _\-]{1,40}$`; the
+reserved `_config` prefix is rejected with `400`.
+
+```bash
+curl -X POST -H "X-API-Token: hk_..." -H "Content-Type: application/json" \
+     -d '{"counter":"water"}' https://your-host/api/counter/increment
+```
+
+### `GET /api/user/preferences`
+
+Enabled tabs, default tab and temptation configuration for the authenticated
+user (read from the `Counters` sheet header, with the local copy as fallback).
+
+## 3. Optional: service account fallback
+
+Only needed for API keys generated **without** a refresh token (older keys).
+Create a service account in the Google Cloud Console, download its JSON key,
+share the spreadsheet with its `client_email`, and set:
+
+```env
+GOOGLE_SERVICE_ACCOUNT_EMAIL=your-service-account@project.iam.gserviceaccount.com
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+```
+
+Keys generated from the app after signing in store a refresh token, so new
+installations usually do not need this.
+
+## 4. Running the server
+
+```bash
+npm install
+npm run build
+npm start
+```
+
+Or with Docker (`compose.yml` runs it behind Traefik with automatic TLS):
+
+```bash
+docker build -t habitikami .
+docker run -p 80:80 --env-file .env -v ./data:/app/data habitikami
+```
+
+Required runtime variables: `VITE_GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+(legacy name `VITE_GOOGLE_CLIENT_SECRET` still accepted), `OWNER_EMAIL`,
+`ALLOWED_ORIGINS`. Optional: `VITE_SPREADSHEET_ID`, `ALLOWED_EMAILS`, and the
+service-account pair above.

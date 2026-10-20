@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Auto Backup rules for API < 31 (android:fullBackupContent).
+    Backups are disabled via android:allowBackup="false"; these rules keep the
+    widget API key out of any backup should allowBackup ever be re-enabled.
+    The encrypted file also carries its Tink keysets, which are wrapped by a
+    Keystore master key that does not survive a restore on another device.
+-->
+<full-backup-content>
+    <!-- EncryptedSharedPreferences holding base_url + api_token -->
+    <exclude domain="sharedpref" path="habitikami_widget_secure.xml" />
+    <!-- Legacy plaintext location of the same values (app <= 5.3.2) -->
+    <exclude domain="sharedpref" path="habitikami_widget.xml" />
+</full-backup-content>

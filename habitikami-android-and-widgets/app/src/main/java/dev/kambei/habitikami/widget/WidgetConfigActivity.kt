@@ -51,12 +51,13 @@ class WidgetConfigActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            if (!WidgetConfigStore.isAllowedBaseUrl(baseUrl)) {
+                Toast.makeText(this, R.string.error_url_https_required, Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
             // Save config
-            getSharedPreferences("habitikami_widget", MODE_PRIVATE)
-                .edit()
-                .putString("base_url", baseUrl)
-                .putString("api_token", apiToken)
-                .apply()
+            WidgetConfigStore.saveConfig(this, baseUrl, apiToken)
 
             // Trigger update for all widget types that use this config
             CounterWidgetProvider.refreshAll(this)

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widget Config -->
+    <string name="config_subtitle">Inserisci l\'URL del server e la API key per collegare il widget</string>
+    <string name="hint_server_url">URL del server</string>
+    <string name="hint_api_token">API Key</string>
+    <string name="api_key_info">ℹ️ Genera la tua API key nella web app Habitikami → Impostazioni → sezione API Key</string>
+    <string name="btn_save">Salva e collega</string>
+    <string name="error_url_https_required">L\'URL del server deve iniziare con https:// (http in chiaro non è consentito)</string>
+</resources>

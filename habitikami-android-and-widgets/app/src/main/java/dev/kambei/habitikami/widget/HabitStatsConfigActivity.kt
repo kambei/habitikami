@@ -69,11 +69,12 @@ class HabitStatsConfigActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            getSharedPreferences("habitikami_widget", MODE_PRIVATE)
-                .edit()
-                .putString("base_url", baseUrl)
-                .putString("api_token", apiToken)
-                .apply()
+            if (!WidgetConfigStore.isAllowedBaseUrl(baseUrl)) {
+                Toast.makeText(this, R.string.error_url_https_required, Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
+            WidgetConfigStore.saveConfig(this, baseUrl, apiToken)
 
             progressBar.visibility = View.VISIBLE
             btnLoad.isEnabled = false

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Debug-only manifest overlay: attaches a network security config that
+    permits plain http towards the emulator host and localhost only, so the
+    http exception accepted by WidgetConfigStore.isAllowedBaseUrl in debug
+    builds actually works despite android:usesCleartextTraffic="false".
+    Release builds have no network security config and stay https-only.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application android:networkSecurityConfig="@xml/network_security_config" />
+
+</manifest>

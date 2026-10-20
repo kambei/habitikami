@@ -17,8 +17,8 @@ android {
         applicationId = "dev.kambei.habitikami"
         minSdk = 26
         targetSdk = 35
-        versionCode = 19
-        versionName = "5.3.2"
+        versionCode = 20
+        versionName = "5.3.3"
 
         // Default PWA URL — override in local.properties if needed
         buildConfigField("String", "PWA_URL", "\"https://habitikami.kambei.dev\"")
@@ -72,6 +72,9 @@ dependencies {
 
     // Coroutines for async widget updates
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+    // Encrypted storage for the widget API key (EncryptedSharedPreferences)
+    implementation("androidx.security:security-crypto:1.1.0")
 }
 
 abstract class GenerateIconTask : DefaultTask() {

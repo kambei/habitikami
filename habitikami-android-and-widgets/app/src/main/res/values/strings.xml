@@ -16,6 +16,7 @@
     <string name="hint_api_token">API Key</string>
     <string name="api_key_info">ℹ️ Generate your API key in Habitikami web app → Settings → API Key section</string>
     <string name="btn_save">Save &amp; Connect</string>
+    <string name="error_url_https_required">The server URL must start with https:// (plain http is not allowed)</string>
 
     <!-- Stats Widget -->
     <string name="widget_stats_description">Habit completion heatmap with legend</string>

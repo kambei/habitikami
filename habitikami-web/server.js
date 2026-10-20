@@ -1915,7 +1915,7 @@ app.get('/api/changelog', async (req, res) => {
 
 // ─── SPA fallback ─────────────────────────────────────────────────────────────
 
-app.get('*', (req, res) => {
+app.get('/{*splat}', (req, res) => {
     // Prevent SPA fallback for static assets (folders or file-like paths)
     // This ensures that missing assets return 404 instead of index.html,
     // which is required for PWA Widgets / Manifest / Icons to work correctly.
@@ -1925,7 +1925,7 @@ app.get('*', (req, res) => {
         req.path.startsWith('/widgets/')) {
         return res.status(404).send('Not Found');
     }
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    res.sendFile('index.html', { root: path.join(__dirname, 'dist') });
 });
 
 app.listen(PORT, () => {

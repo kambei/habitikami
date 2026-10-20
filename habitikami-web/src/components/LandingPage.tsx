@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Sparkles, TrendingUp, Target, Zap, Github } from 'lucide-react';
+import { Sparkles, TrendingUp, Target, Zap } from 'lucide-react';
+import { GithubIcon } from './ui/GithubIcon';
 import { useTranslation } from '../i18n';
 
 interface LandingPageProps {
@@ -303,7 +304,7 @@ export function LandingPage({ onSignIn, isLoading }: LandingPageProps) {
                     className="mt-6 flex items-center justify-center gap-6 text-[13px] text-muted-foreground"
                 >
                     <a href="https://github.com/kambei/habitikami" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary transition-colors duration-200">
-                        <Github className="w-3.5 h-3.5" />
+                        <GithubIcon className="w-3.5 h-3.5" />
                         GitHub
                     </a>
                     <span className="w-1 h-1 rounded-full bg-white/20"></span>

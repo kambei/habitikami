@@ -30,6 +30,12 @@ const APIKEYS_FILE = path.join(__dirname, 'data', 'apikeys.json');
 // Ensure data directory exists
 fs.mkdirSync(path.dirname(USERS_FILE), { recursive: true });
 
+// Non-reversible identifier for log lines: never write account emails to logs.
+function logId(email) {
+    if (!email || typeof email !== 'string') return 'none';
+    return crypto.createHash('sha256').update(email.toLowerCase()).digest('hex').slice(0, 8);
+}
+
 // Atomic read-modify-write with file locking to prevent race conditions
 async function withJsonFile(filePath, modifier) {
     // Ensure file exists for locking
@@ -275,11 +281,11 @@ function decryptToken(ciphertext) {
             // Only seed if no spreadsheet registered yet
             users[ownerEmail] = { ...(typeof existing === 'object' ? existing : {}), spreadsheetId: ownerSpreadsheetId };
             saveUsers(users);
-            console.log(`Owner account seeded: ${ownerEmail} (spreadsheet from env)`);
+            console.log(`Owner account seeded: user=${logId(ownerEmail)} (spreadsheet from env)`);
         } else if (existingId) {
-            console.log(`Owner account already registered: ${ownerEmail} (spreadsheet: ${existingId})`);
+            console.log(`Owner account already registered: user=${logId(ownerEmail)} (spreadsheet: ${existingId})`);
         } else {
-            console.log(`Owner account ${ownerEmail} has no spreadsheet (VITE_SPREADSHEET_ID not set, will use app-generated sheet)`);
+            console.log(`Owner account user=${logId(ownerEmail)} has no spreadsheet (VITE_SPREADSHEET_ID not set, will use app-generated sheet)`);
         }
     } else {
         console.warn('OWNER_EMAIL not set — owner account not seeded.');
@@ -638,7 +644,7 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
 
         // Check if user is revoked by RISC (Cross-Account Protection)
         if (isUserRevoked(email)) {
-            console.log(`Auth exchange blocked: ${email} is revoked by RISC`);
+            console.log(`Auth exchange blocked: user=${logId(email)} is revoked by RISC`);
             return res.status(403).json({ error: 'Account access revoked due to a security event. Please contact support.' });
         }
 
@@ -652,7 +658,7 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
         const users = loadUsers();
         const spreadsheetId = getUserSpreadsheetId(users, email) || (email === process.env.OWNER_EMAIL ? process.env.VITE_SPREADSHEET_ID : null) || null;
 
-        console.log(`Auth exchange: email=${email}, spreadsheet_id=${spreadsheetId ? 'found' : 'not found'}`);
+        console.log(`Auth exchange: user=${logId(email)}, spreadsheet_id=${spreadsheetId ? 'found' : 'not found'}`);
 
         // Update refresh token in existing API key so /api/export keeps working
         if (tokenData.refresh_token) {
@@ -726,7 +732,7 @@ app.post('/api/auth/refresh', authLimiter, validateOrigin, async (req, res) => {
 
         // Check if user is revoked by RISC (Cross-Account Protection)
         if (isUserRevoked(email)) {
-            console.log(`Auth refresh blocked: ${email} is revoked by RISC`);
+            console.log(`Auth refresh blocked: user=${logId(email)} is revoked by RISC`);
             return res.status(403).json({ error: 'Account access revoked due to a security event. Please contact support.' });
         }
 
@@ -738,7 +744,7 @@ app.post('/api/auth/refresh', authLimiter, validateOrigin, async (req, res) => {
 
         const users = loadUsers();
         const spreadsheetId = (email && getUserSpreadsheetId(users, email)) || (email === process.env.OWNER_EMAIL ? process.env.VITE_SPREADSHEET_ID : null) || null;
-        console.log(`Auth refresh: email=${email}, spreadsheet_id=${spreadsheetId ? 'found' : 'MISSING'}, has_refresh_token=${!!data.refresh_token}`);
+        console.log(`Auth refresh: user=${logId(email)}, spreadsheet_id=${spreadsheetId ? 'found' : 'MISSING'}, has_refresh_token=${!!data.refresh_token}`);
 
         res.json({
             access_token: data.access_token,
@@ -789,7 +795,7 @@ app.post('/api/user/spreadsheet', apiLimiter, validateOrigin, async (req, res) =
             return apiKeys;
         });
 
-        console.log(`Registered spreadsheet for ${email}`);
+        console.log(`Registered spreadsheet for user=${logId(email)}`);
         res.json({ success: true, email, spreadsheet_id: trimmedId });
     } catch (error) {
         console.error('Register spreadsheet error:', error);
@@ -1072,9 +1078,9 @@ app.post('/api/user/apikey', apiLimiter, validateOrigin, async (req, res) => {
             };
             if (encryptedRefreshToken) {
                 entry.refreshToken = encryptedRefreshToken;
-                console.log(`API key generated for ${email} WITH refresh token`);
+                console.log(`API key generated for user=${logId(email)} WITH refresh token`);
             } else {
-                console.log(`API key generated for ${email} WITHOUT refresh token!`);
+                console.log(`API key generated for user=${logId(email)} WITHOUT refresh token!`);
             }
             apiKeys[hashApiKey(newKey)] = entry;
             return apiKeys;
@@ -1111,7 +1117,7 @@ app.delete('/api/user/apikey', apiLimiter, validateOrigin, async (req, res) => {
             return res.status(404).json({ error: 'No API key found' });
         }
 
-        console.log(`API key revoked for ${email}`);
+        console.log(`API key revoked for user=${logId(email)}`);
         res.json({ success: true });
     } catch (error) {
         console.error('Revoke API key error:', error);
@@ -1798,13 +1804,13 @@ app.post('/api/risc/events', express.text({ type: 'application/secevent+jwt' }),
         const events = payload.events || {};
         const subject = payload.sub || null;
 
-        console.log(`[RISC] Received security event for subject=${subject}`, Object.keys(events));
+        console.log(`[RISC] Received security event for subject=${logId(subject)}`, Object.keys(events));
 
         const revoked = loadRevokedUsers();
 
         for (const [eventType, eventData] of Object.entries(events)) {
             const subjectEmail = eventData?.subject?.email || subject;
-            console.log(`[RISC] Event: ${eventType}, email=${subjectEmail}`);
+            console.log(`[RISC] Event: ${eventType}, user=${logId(subjectEmail)}`);
 
             switch (eventType) {
                 case 'https://schemas.openid.net/secevent/risc/event-type/sessions-revoked':
@@ -1818,14 +1824,14 @@ app.post('/api/risc/events', express.text({ type: 'application/secevent+jwt' }),
                             timestamp: new Date().toISOString(),
                             reason: eventData?.reason || 'security_event',
                         };
-                        console.log(`[RISC] Revoked access for ${subjectEmail} due to ${eventType}`);
+                        console.log(`[RISC] Revoked access for user=${logId(subjectEmail)} due to ${eventType}`);
                     }
                     break;
                 case 'https://schemas.openid.net/secevent/risc/event-type/account-enabled':
                     // Account re-enabled — remove from revoked list
                     if (subjectEmail && revoked[subjectEmail]) {
                         delete revoked[subjectEmail];
-                        console.log(`[RISC] Restored access for ${subjectEmail}`);
+                        console.log(`[RISC] Restored access for user=${logId(subjectEmail)}`);
                     }
                     break;
                 default:

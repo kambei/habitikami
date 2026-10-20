@@ -356,7 +356,10 @@ async function getEmailFromIdToken(idToken) {
     return payload.email;
 }
 
-// Fetch the Google email for an access token (fallback if no id_token)
+// Fetch the Google email for an access token. Only used as a fallback right
+// after a code exchange / refresh when Google returned no id_token: the token
+// was just issued to us, so its audience is known. Never use this for tokens
+// presented by clients — use verifyAccessToken() instead.
 async function getEmailFromToken(accessToken) {
     const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -366,6 +369,76 @@ async function getEmailFromToken(accessToken) {
     if (!data.email) throw new Error('Google userinfo did not return an email');
     return data.email;
 }
+
+// ─── Access token verification (audience check) ─────────────────────────────
+// Any Google access token with the email scope can call userinfo, even one
+// issued to a different application (token substitution). Incoming Bearer
+// tokens are therefore validated against Google's tokeninfo endpoint and the
+// audience must be our own OAuth client. Results are cached in memory until
+// the token expires so Google is not called on every request.
+
+const TOKEN_CACHE_MAX = 5000;
+const tokenCache = new Map(); // token → { email, expiresAt }
+
+function pruneTokenCache(now) {
+    for (const [token, entry] of tokenCache) {
+        if (entry.expiresAt <= now) tokenCache.delete(token);
+    }
+    // Still too big (many live tokens): drop the oldest entries (insertion order)
+    while (tokenCache.size >= TOKEN_CACHE_MAX) {
+        const oldest = tokenCache.keys().next().value;
+        if (oldest === undefined) break;
+        tokenCache.delete(oldest);
+    }
+}
+
+class TokenVerificationError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'TokenVerificationError';
+    }
+}
+
+async function verifyAccessToken(token) {
+    if (!token || typeof token !== 'string') throw new TokenVerificationError('Missing access token');
+
+    const now = Date.now();
+    const cached = tokenCache.get(token);
+    if (cached) {
+        if (cached.expiresAt > now) return cached.email;
+        tokenCache.delete(token);
+    }
+
+    const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) throw new Error('VITE_GOOGLE_CLIENT_ID not set');
+
+    const res = await fetch('https://oauth2.googleapis.com/tokeninfo?access_token=' + encodeURIComponent(token));
+    let info = null;
+    try { info = await res.json(); } catch { /* non-JSON body */ }
+    if (!res.ok || !info || info.error) {
+        throw new TokenVerificationError('Invalid access token');
+    }
+
+    const audience = info.aud || info.azp;
+    if (audience !== clientId) {
+        throw new TokenVerificationError('Access token audience mismatch');
+    }
+    const expiresIn = parseInt(info.expires_in, 10);
+    if (!Number.isFinite(expiresIn) || expiresIn <= 0) {
+        throw new TokenVerificationError('Access token has expired');
+    }
+    if (info.email_verified !== true && info.email_verified !== 'true') {
+        throw new TokenVerificationError('Access token email not verified');
+    }
+    if (!info.email) throw new TokenVerificationError('Access token has no email');
+
+    if (tokenCache.size >= TOKEN_CACHE_MAX) pruneTokenCache(now);
+    tokenCache.set(token, { email: info.email, expiresAt: now + expiresIn * 1000 });
+    return info.email;
+}
+
+// Periodic cleanup of expired cache entries
+setInterval(() => pruneTokenCache(Date.now()), 5 * 60 * 1000).unref();
 
 // Extract Bearer token from Authorization header
 function extractBearer(req) {
@@ -398,10 +471,20 @@ const ACCESS_RESTRICTED = {
     code: 'access_restricted',
 };
 
-// Resolve the email behind a Bearer access token and enforce the allowlist.
-// Sends 403 and returns null when the account is not allowed.
+// Resolve the email behind a Bearer access token (verifying its audience) and
+// enforce the allowlist. Sends 401 on an invalid/foreign token, 403 when the
+// account is not allowed, and returns null in both cases.
 async function requireAllowedEmail(accessToken, res) {
-    const email = await getEmailFromToken(accessToken);
+    let email;
+    try {
+        email = await verifyAccessToken(accessToken);
+    } catch (err) {
+        if (err instanceof TokenVerificationError) {
+            res.status(401).json({ error: 'Unauthorized: Invalid Bearer token.' });
+            return null;
+        }
+        throw err;
+    }
     if (!isAllowedEmail(email)) {
         res.status(403).json(ACCESS_RESTRICTED);
         return null;
@@ -995,8 +1078,11 @@ const authenticate = async (req, res, next) => {
     if (bearer) {
         let email;
         try {
-            email = await getEmailFromToken(bearer);
+            email = await verifyAccessToken(bearer);
         } catch (err) {
+            if (!(err instanceof TokenVerificationError)) {
+                console.error('Bearer verification failed:', err.message);
+            }
             return res.status(401).json({ error: 'Unauthorized: Invalid Bearer token.' });
         }
         if (!isAllowedEmail(email)) return res.status(403).json(ACCESS_RESTRICTED);

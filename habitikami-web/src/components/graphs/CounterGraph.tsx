@@ -245,7 +245,7 @@ export const CounterGraph = ({ data }: Props) => {
                                                 contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
                                                 itemStyle={{ color: '#f3f4f6' }}
                                                 labelFormatter={(label) => {
-                                                    const parts = label.split('-');
+                                                    const parts = String(label ?? '').split('-');
                                                     const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
                                                     return date.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' });
                                                 }}
@@ -281,7 +281,7 @@ export const CounterGraph = ({ data }: Props) => {
                                                 contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6' }}
                                                 itemStyle={{ color: '#f3f4f6' }}
                                                 labelFormatter={(label) => {
-                                                    const parts = label.split('-');
+                                                    const parts = String(label ?? '').split('-');
                                                     const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
                                                     return date.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
                                                 }}

@@ -1,6 +1,7 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
 ## 🌐 Web 5.9.4 + 🤖 Android 5.3.4 - 2026-10-20
 ### 📦 Dependency Updates (Dependabot)
 - **Express 5** (Web): The SPA fallback route is now `/{*splat}` and serves `index.html` via `res.sendFile('index.html', { root })`, as required by the stricter Express 5 router. API routes are unchanged.

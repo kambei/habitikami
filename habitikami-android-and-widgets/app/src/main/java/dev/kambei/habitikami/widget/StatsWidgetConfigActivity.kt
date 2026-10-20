@@ -146,11 +146,7 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
             }
 
             // Also save config for counter widget to reuse
-            getSharedPreferences("habitikami_widget", MODE_PRIVATE)
-                .edit()
-                .putString("base_url", baseUrl)
-                .putString("api_token", apiToken)
-                .apply()
+            WidgetConfigStore.saveConfig(this, baseUrl, apiToken)
 
             progressBar.visibility = View.VISIBLE
             btnLoad.isEnabled = false

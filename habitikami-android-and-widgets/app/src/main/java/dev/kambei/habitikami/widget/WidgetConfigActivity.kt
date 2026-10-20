@@ -52,11 +52,7 @@ class WidgetConfigActivity : AppCompatActivity() {
             }
 
             // Save config
-            getSharedPreferences("habitikami_widget", MODE_PRIVATE)
-                .edit()
-                .putString("base_url", baseUrl)
-                .putString("api_token", apiToken)
-                .apply()
+            WidgetConfigStore.saveConfig(this, baseUrl, apiToken)
 
             // Trigger update for all widget types that use this config
             CounterWidgetProvider.refreshAll(this)

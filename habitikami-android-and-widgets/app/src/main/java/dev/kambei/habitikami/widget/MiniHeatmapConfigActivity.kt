@@ -67,11 +67,7 @@ class MiniHeatmapConfigActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            getSharedPreferences("habitikami_widget", MODE_PRIVATE)
-                .edit()
-                .putString("base_url", baseUrl)
-                .putString("api_token", apiToken)
-                .apply()
+            WidgetConfigStore.saveConfig(this, baseUrl, apiToken)
 
             progressBar.visibility = View.VISIBLE
             btnLoad.isEnabled = false

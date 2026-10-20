@@ -20,9 +20,6 @@ class CounterWidgetProvider : AppWidgetProvider() {
     companion object {
         private const val ACTION_INCREMENT = "dev.kambei.habitikami.INCREMENT"
         private const val EXTRA_COUNTER = "counter"
-        private const val PREFS_NAME = "habitikami_widget"
-        private const val KEY_BASE_URL = "base_url"
-        private const val KEY_API_TOKEN = "api_token"
         private const val MAX_SLOTS = 5
 
         // Layout resource IDs for each slot (indexed 0..4)
@@ -50,17 +47,13 @@ class CounterWidgetProvider : AppWidgetProvider() {
             CounterDefinition("coffee", "Coffee", "#F59E0B", "neutral", "Temptations", "Smoking"),
         )
 
-        fun getConfig(context: Context): Pair<String, String>? {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            val url = prefs.getString(KEY_BASE_URL, null) ?: return null
-            val token = prefs.getString(KEY_API_TOKEN, null) ?: return null
-            return url to token
-        }
+        /** Server URL + API key shared by all widgets (see [WidgetConfigStore]). */
+        fun getConfig(context: Context): Pair<String, String>? = WidgetConfigStore.getConfig(context)
 
         /** Cache counter definitions in SharedPreferences so the widget
          *  can show labels/colors even before the network call completes. */
         fun cacheDefinitions(context: Context, defs: List<CounterDefinition>) {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val prefs = WidgetConfigStore.plainPrefs(context)
             // Format: id|label|color|type|categoryId|categoryLabel per entry, joined by ;
             val json = defs.joinToString(";") {
                 "${it.id}|${it.label}|${it.color}|${it.type}|${it.categoryId}|${it.categoryLabel}"
@@ -69,7 +62,7 @@ class CounterWidgetProvider : AppWidgetProvider() {
         }
 
         fun getCachedDefinitions(context: Context): List<CounterDefinition> {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val prefs = WidgetConfigStore.plainPrefs(context)
             val raw = prefs.getString("counter_definitions", null) ?: return emptyList()
             return raw.split(";").mapNotNull { entry ->
                 val parts = entry.split("|")

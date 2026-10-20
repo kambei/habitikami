@@ -18,7 +18,6 @@ class CounterChartWidgetProvider : AppWidgetProvider() {
     companion object {
         private const val ACTION_REFRESH = "dev.kambei.habitikami.REFRESH_COUNTER_CHART"
         private const val ACTION_CYCLE_FILTER = "dev.kambei.habitikami.CYCLE_CHART_FILTER"
-        private const val PREFS_NAME = "habitikami_widget"
         private const val FILTER_ALL = "__all__"
 
         fun refreshAll(context: Context) {
@@ -33,13 +32,13 @@ class CounterChartWidgetProvider : AppWidgetProvider() {
 
         /** Get the current filter categoryId for a widget (or FILTER_ALL). */
         private fun getFilter(context: Context, widgetId: Int): String {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val prefs = WidgetConfigStore.plainPrefs(context)
             return prefs.getString("chart_filter_$widgetId", FILTER_ALL) ?: FILTER_ALL
         }
 
         /** Save filter categoryId for a widget. */
         private fun setFilter(context: Context, widgetId: Int, categoryId: String) {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val prefs = WidgetConfigStore.plainPrefs(context)
             prefs.edit().putString("chart_filter_$widgetId", categoryId).apply()
         }
     }

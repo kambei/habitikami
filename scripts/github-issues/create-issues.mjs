@@ -2,7 +2,8 @@
 /**
  * Crea su GitHub le issue atomiche di issues.json (label, milestone, issue con dipendenze).
  *
- * Idempotente: label, milestone e issue già esistenti (stesso nome/titolo) vengono riusate.
+ * Idempotente: milestone e issue già esistenti (stesso titolo) vengono riusate; le label esistenti
+ * vengono aggiornate a colore e descrizione di issues.json (le issue create via API ricevono label grigie).
  * Le dipendenze ("depends_on") diventano "Dipende da: #n" nel corpo dell'issue.
  *
  * Uso:
@@ -69,11 +70,14 @@ async function main() {
     console.log(`${DRY ? '[dry-run] ' : ''}Repository: ${REPO}`);
 
     // Label
-    const have = new Set(DRY ? [] : (await ghAll('/labels')).map((l) => l.name));
+    const have = new Map(DRY ? [] : (await ghAll('/labels')).map((l) => [l.name, l]));
     for (const [name, { color, description }] of Object.entries(plan.labels)) {
-        if (have.has(name)) continue;
-        console.log(`label     + ${name}`);
-        if (!DRY) await gh('POST', '/labels', { name, color, description });
+        const cur = have.get(name);
+        if (cur && cur.color === color && (cur.description || '') === description) continue;
+        console.log(`label     ${cur ? '~' : '+'} ${name}`);
+        if (DRY) continue;
+        if (cur) await gh('PATCH', `/labels/${encodeURIComponent(name)}`, { color, description });
+        else await gh('POST', '/labels', { name, color, description });
     }
 
     // Milestone

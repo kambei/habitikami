@@ -1814,7 +1814,17 @@ async function verifySecurityEventToken(token) {
     return payload;
 }
 
-app.post('/api/risc/events', express.text({ type: 'application/secevent+jwt' }), async (req, res) => {
+// Unauthenticated endpoint (Google pushes SETs here): rate limit it so bogus
+// tokens cannot be used to hammer JWT verification / cert fetching.
+const riscLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 60,
+    message: { error: 'Too many requests, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+app.post('/api/risc/events', riscLimiter, express.text({ type: 'application/secevent+jwt' }), async (req, res) => {
     try {
         const token = req.body;
         if (!token || typeof token !== 'string') {

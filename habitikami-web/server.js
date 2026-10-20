@@ -151,7 +151,16 @@ function getUserSpreadsheetId(users, email) {
 }
 
 // ─── API key store helpers ────────────────────────────────────────────────────
-// apikeys.json maps: { [apiKey]: { email, spreadsheetId, createdAt } }
+// apikeys.json maps: { [sha256(apiKey) hex]: { email, spreadsheetId, createdAt, prefix, refreshToken? } }
+// Keys are stored hashed so a leaked data file cannot be replayed against the
+// API. `prefix` keeps the first characters of the plaintext key for masking.
+// Legacy records keyed by the plaintext key ("hk_...") are migrated on startup.
+
+const API_KEY_PREFIX_LEN = 7;
+
+function hashApiKey(apiKey) {
+    return crypto.createHash('sha256').update(apiKey).digest('hex');
+}
 
 function loadApiKeys() {
     try {
@@ -168,8 +177,39 @@ async function saveApiKeysAtomic(modifier) {
     return withJsonFile(APIKEYS_FILE, modifier);
 }
 
+// Look up the record for a plaintext API key presented by a client
+function findApiKeyRecord(apiKeys, apiKey) {
+    if (!apiKey || typeof apiKey !== 'string') return null;
+    return apiKeys[hashApiKey(apiKey)] || null;
+}
+
 function generateApiKey() {
     return 'hk_' + crypto.randomBytes(32).toString('hex');
+}
+
+// One-time migration: rehash any record still keyed by its plaintext key.
+// Keys already handed out to widgets keep working because lookups hash the
+// received value.
+async function migrateApiKeysToHashed() {
+    if (!fs.existsSync(APIKEYS_FILE)) return;
+    const needsMigration = Object.keys(loadApiKeys()).some(k => k.startsWith('hk_'));
+    if (!needsMigration) return;
+    let migrated = 0;
+    try {
+        await saveApiKeysAtomic(apiKeys => {
+            for (const [key, meta] of Object.entries(apiKeys)) {
+                if (!key.startsWith('hk_')) continue;
+                delete apiKeys[key];
+                apiKeys[hashApiKey(key)] = { ...meta, prefix: key.slice(0, API_KEY_PREFIX_LEN) };
+                migrated++;
+            }
+            return apiKeys;
+        });
+    } catch (e) {
+        console.error('Failed to migrate apikeys.json to hashed keys:', e);
+        return;
+    }
+    if (migrated > 0) console.log(`Migrated ${migrated} API key(s) to hashed storage`);
 }
 
 // ─── Refresh token encryption ────────────────────────────────────────────────
@@ -225,6 +265,9 @@ function decryptToken(ciphertext) {
         console.warn('OWNER_EMAIL not set — owner account not seeded.');
     }
 }
+
+// Rehash legacy plaintext API keys before serving any request
+await migrateApiKeysToHashed();
 
 // ─── Security headers ────────────────────────────────────────────────────────
 
@@ -741,9 +784,9 @@ app.get('/api/user/preferences', apiLimiter, async (req, res) => {
         const bearer = extractBearer(req);
 
         if (apiToken) {
-            const apiKeys = loadApiKeys();
-            if (apiKeys[apiToken]) {
-                req.apiKeyUser = apiKeys[apiToken];
+            const record = findApiKeyRecord(loadApiKeys(), apiToken);
+            if (record) {
+                req.apiKeyUser = record;
                 email = req.apiKeyUser.email;
                 if (!isAllowedEmail(email)) return res.status(403).json(ACCESS_RESTRICTED);
             } else {
@@ -929,9 +972,9 @@ app.get('/api/user/apikey', apiLimiter, async (req, res) => {
         // Find existing key for this user
         const existingKey = Object.entries(apiKeys).find(([, v]) => v.email === email);
         if (existingKey) {
-            // Show masked key + metadata
-            const [key, meta] = existingKey;
-            const masked = key.slice(0, 7) + '...' + key.slice(-4);
+            // Show masked key + metadata (only the plaintext prefix is stored)
+            const [, meta] = existingKey;
+            const masked = (meta.prefix || 'hk_') + '...';
             return res.json({ has_key: true, masked_key: masked, created_at: meta.createdAt });
         }
 
@@ -995,15 +1038,20 @@ app.post('/api/user/apikey', apiLimiter, validateOrigin, async (req, res) => {
                     delete apiKeys[existingKey];
                 }
             }
-            // Add new key
-            const entry = { email, spreadsheetId, createdAt: new Date().toISOString() };
+            // Add new key (stored hashed; plaintext is returned to the client once)
+            const entry = {
+                email,
+                spreadsheetId,
+                createdAt: new Date().toISOString(),
+                prefix: newKey.slice(0, API_KEY_PREFIX_LEN),
+            };
             if (encryptedRefreshToken) {
                 entry.refreshToken = encryptedRefreshToken;
                 console.log(`API key generated for ${email} WITH refresh token`);
             } else {
                 console.log(`API key generated for ${email} WITHOUT refresh token!`);
             }
-            apiKeys[newKey] = entry;
+            apiKeys[hashApiKey(newKey)] = entry;
             return apiKeys;
         });
 
@@ -1061,13 +1109,13 @@ const authenticate = async (req, res, next) => {
 
     // 1. Per-user API key
     if (apiToken) {
-        const apiKeys = loadApiKeys();
-        if (apiKeys[apiToken]) {
+        const record = findApiKeyRecord(loadApiKeys(), apiToken);
+        if (record) {
             // Private mode: widget keys of non-allowed accounts stop working too
-            if (!isAllowedEmail(apiKeys[apiToken].email)) {
+            if (!isAllowedEmail(record.email)) {
                 return res.status(403).json(ACCESS_RESTRICTED);
             }
-            req.apiKeyUser = apiKeys[apiToken]; // { email, spreadsheetId, createdAt }
+            req.apiKeyUser = record; // { email, spreadsheetId, createdAt, prefix, refreshToken? }
             return next();
         }
 

@@ -33,16 +33,19 @@ export default defineConfig({
     port: 3000,
   },
   build: {
-    rollupOptions: {
+    // Vite 8 bundles with rolldown: manualChunks is replaced by advancedChunks groups.
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          charts: ['recharts'],
-          motion: ['framer-motion'],
-          lucide: ['lucide-react'],
-          query: ['@tanstack/react-query'],
-        }
-      }
-    }
-  }
+        advancedChunks: {
+          groups: [
+            { name: 'vendor', test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
+            { name: 'charts', test: /[\\/]node_modules[\\/]recharts[\\/]/ },
+            { name: 'motion', test: /[\\/]node_modules[\\/]framer-motion[\\/]/ },
+            { name: 'lucide', test: /[\\/]node_modules[\\/]lucide-react[\\/]/ },
+            { name: 'query', test: /[\\/]node_modules[\\/]@tanstack[\\/]react-query[\\/]/ },
+          ],
+        },
+      },
+    },
+  },
 })

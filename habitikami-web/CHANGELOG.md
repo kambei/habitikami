@@ -1,6 +1,16 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## 🌐 Web 5.9.4 + 🤖 Android 5.3.4 - 2026-10-20
+### 📦 Dependency Updates (Dependabot)
+- **Express 5** (Web): The SPA fallback route is now `/{*splat}` and serves `index.html` via `res.sendFile('index.html', { root })`, as required by the stricter Express 5 router. API routes are unchanged.
+- **Vite 8 + @vitejs/plugin-react 6** (Web): Builds now run on rolldown. The manual chunk map became `advancedChunks` groups with the same five chunks (vendor, charts, motion, lucide, query).
+- **lucide-react 1.x** (Web): Brand icons were removed upstream; the GitHub mark is now an inline `GithubIcon` component.
+- **recharts 3.10, React 19.3, dotenv 18 and the minor/patch group** (Web): Tooltip formatter typings in `MoodGraph` and `CounterGraph` adjusted for the stricter recharts types.
+- **Kotlin 2.4.21** (Android): `kotlinOptions.jvmTarget` migrated to the `compilerOptions` DSL.
+- **androidx.core 1.19.1, coroutines 1.11, recyclerview 1.4, foojay 1.0** (Android): `compileSdk` raised to 37 (required by androidx.core); `targetSdk` stays 35.
+- **CI**: Pull requests without signing secrets (Dependabot, forks) now build an unsigned release APK instead of failing, so dependency PRs get a meaningful Android build.
+
 
 ## 🤖 Android 5.3.3 - 2026-10-20
 ### 🔒 Widget Key Security

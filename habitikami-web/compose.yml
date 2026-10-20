@@ -4,7 +4,6 @@ services:
     container_name: traefik
     restart: always
     command:
-      - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
@@ -15,7 +14,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      # - "8080:8080" # Traefik Dashboard
+      # Traefik dashboard/API intentionally not exposed (no --api.insecure)
     volumes:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
@@ -28,6 +27,11 @@ services:
       - .env
     volumes:
       - ./data:/app/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.habitikami.rule=Host(`habitikami.kambei.dev`)"

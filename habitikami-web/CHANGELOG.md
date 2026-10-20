@@ -10,6 +10,18 @@ All notable changes to this project will be documented in this file.
 - **HTTPS Only**: All four widget config screens reject a server URL that does not start with `https://` (translated error, Italian strings added for the config screen) and the app declares `usesCleartextTraffic="false"`. Debug builds keep an exception for `http://10.0.2.2` and `localhost` to test against a local server from the emulator.
 - **Release Build Fix**: ProGuard `-dontwarn` rules for the JSR-305 annotations referenced by Tink, so the minified release build keeps passing.
 
+## 🌐 Web 5.9.3 - 2026-10-20
+### 🔒 Security Hardening
+- **Access Token Audience Check (S1)**: Incoming `Bearer` tokens are now verified against Google's `tokeninfo` endpoint: the audience must be this app's OAuth client, the token must not be expired and the email must be verified. Tokens issued to other apps get a `401`. Results are cached in memory until the token expires.
+- **Hashed Widget API Keys (S3)**: `apikeys.json` now stores `sha256(apiKey)` plus a short `prefix` for masking instead of the plaintext key. Existing plaintext keys are migrated automatically at startup and keep working — widgets need no change. The key is still shown once when generated.
+- **Counter Name Validation (S4)**: `POST /api/counter/increment` only accepts names matching `^[A-Za-z0-9 _\-]{1,40}$` and rejects the reserved `_config` prefix. Column letters are computed with a proper A..Z, AA..AZ mapping.
+- **`GOOGLE_CLIENT_SECRET` (S5)**: The OAuth client secret is read from `GOOGLE_CLIENT_SECRET` (server-only, no `VITE_` prefix). `VITE_GOOGLE_CLIENT_SECRET` still works as a deprecated fallback with a startup warning, so existing deployments and encrypted refresh tokens are unaffected.
+- **Docker Build Context (S6, S16)**: New `.dockerignore` keeps `node_modules`, `data`, `.env*`, docs and local tooling out of the image. Removed the unused `nginx.conf`, `docker-entrypoint.sh`, `test_export.js` and `diagnose_weekend.js`. `README-EXPORT.md` now documents per-user auth (`X-API-Token` or Bearer); `EXPORT_API_TOKEN` and `?token=` are gone.
+- **Node 22, Dependabot, CI Audit (S7)**: Docker image on `node:22-alpine`, `googleapis` updated to v186, Dependabot for npm/gradle/github-actions, and `npm audit --omit=dev --audit-level=high` runs in CI before the Docker build.
+- **No Emails in Logs (S9)**: Server logs print `logId(email)` (first 8 hex chars of `sha256(email)`) instead of the account email. `compose.yml` caps container logs (json-file, 10m × 5).
+- **Token Revocation on Logout (S10)**: New `POST /api/auth/logout` revokes the refresh token at Google (best effort, always `204`); the web app calls it with `keepalive` before clearing the local session.
+- **Traefik, RISC, Pinned Actions (S11, S12, S14)**: Traefik no longer runs with `--api.insecure=true`; `POST /api/risc/events` is rate limited (60/min); all GitHub Actions are pinned to release commit SHAs.
+
 ## 🌐 Web 5.9.2 - 2026-10-18
 ### 🔒 Private Mode (Account Allowlist)
 - **`ALLOWED_EMAILS` Environment Variable**: When set to a comma-separated list of Google accounts, only those accounts can sign in, renew a session or use a widget API key. Everyone else receives a 403 `access_restricted` response. Leave it empty for open access (default).

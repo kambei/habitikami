@@ -30,6 +30,12 @@ const APIKEYS_FILE = path.join(__dirname, 'data', 'apikeys.json');
 // Ensure data directory exists
 fs.mkdirSync(path.dirname(USERS_FILE), { recursive: true });
 
+// Non-reversible identifier for log lines: never write account emails to logs.
+function logId(email) {
+    if (!email || typeof email !== 'string') return 'none';
+    return crypto.createHash('sha256').update(email.toLowerCase()).digest('hex').slice(0, 8);
+}
+
 // Atomic read-modify-write with file locking to prevent race conditions
 async function withJsonFile(filePath, modifier) {
     // Ensure file exists for locking
@@ -151,7 +157,16 @@ function getUserSpreadsheetId(users, email) {
 }
 
 // ─── API key store helpers ────────────────────────────────────────────────────
-// apikeys.json maps: { [apiKey]: { email, spreadsheetId, createdAt } }
+// apikeys.json maps: { [sha256(apiKey) hex]: { email, spreadsheetId, createdAt, prefix, refreshToken? } }
+// Keys are stored hashed so a leaked data file cannot be replayed against the
+// API. `prefix` keeps the first characters of the plaintext key for masking.
+// Legacy records keyed by the plaintext key ("hk_...") are migrated on startup.
+
+const API_KEY_PREFIX_LEN = 7;
+
+function hashApiKey(apiKey) {
+    return crypto.createHash('sha256').update(apiKey).digest('hex');
+}
 
 function loadApiKeys() {
     try {
@@ -168,17 +183,68 @@ async function saveApiKeysAtomic(modifier) {
     return withJsonFile(APIKEYS_FILE, modifier);
 }
 
+// Look up the record for a plaintext API key presented by a client
+function findApiKeyRecord(apiKeys, apiKey) {
+    if (!apiKey || typeof apiKey !== 'string') return null;
+    return apiKeys[hashApiKey(apiKey)] || null;
+}
+
 function generateApiKey() {
     return 'hk_' + crypto.randomBytes(32).toString('hex');
 }
 
+// One-time migration: rehash any record still keyed by its plaintext key.
+// Keys already handed out to widgets keep working because lookups hash the
+// received value.
+async function migrateApiKeysToHashed() {
+    if (!fs.existsSync(APIKEYS_FILE)) return;
+    const needsMigration = Object.keys(loadApiKeys()).some(k => k.startsWith('hk_'));
+    if (!needsMigration) return;
+    let migrated = 0;
+    try {
+        await saveApiKeysAtomic(apiKeys => {
+            for (const [key, meta] of Object.entries(apiKeys)) {
+                if (!key.startsWith('hk_')) continue;
+                delete apiKeys[key];
+                apiKeys[hashApiKey(key)] = { ...meta, prefix: key.slice(0, API_KEY_PREFIX_LEN) };
+                migrated++;
+            }
+            return apiKeys;
+        });
+    } catch (e) {
+        console.error('Failed to migrate apikeys.json to hashed keys:', e);
+        return;
+    }
+    if (migrated > 0) console.log(`Migrated ${migrated} API key(s) to hashed storage`);
+}
+
+// ─── OAuth client secret ─────────────────────────────────────────────────────
+// The secret is server-only, so it must not carry the VITE_ prefix (Vite
+// exposes VITE_* variables to the client bundle). The legacy name is still
+// honoured so existing deployments keep working — and keep the same value,
+// which matters because the refresh-token encryption key is derived from it.
+
+let clientSecretDeprecationWarned = false;
+function getClientSecret() {
+    if (process.env.GOOGLE_CLIENT_SECRET) return process.env.GOOGLE_CLIENT_SECRET;
+    const legacy = process.env.VITE_GOOGLE_CLIENT_SECRET;
+    if (legacy) {
+        if (!clientSecretDeprecationWarned) {
+            clientSecretDeprecationWarned = true;
+            console.warn('DEPRECATED: VITE_GOOGLE_CLIENT_SECRET is set but GOOGLE_CLIENT_SECRET is not. Rename the variable to GOOGLE_CLIENT_SECRET (same value); the VITE_ name will stop being read in a future release.');
+        }
+        return legacy;
+    }
+    return undefined;
+}
+
 // ─── Refresh token encryption ────────────────────────────────────────────────
 // Encrypt user refresh tokens at rest using a server-side key derived from
-// VITE_GOOGLE_CLIENT_SECRET (always available). AES-256-GCM.
+// GOOGLE_CLIENT_SECRET (always available). AES-256-GCM.
 
 function getEncryptionKey() {
-    const secret = process.env.VITE_GOOGLE_CLIENT_SECRET;
-    if (!secret) throw new Error('Cannot encrypt: VITE_GOOGLE_CLIENT_SECRET not set');
+    const secret = getClientSecret();
+    if (!secret) throw new Error('Cannot encrypt: GOOGLE_CLIENT_SECRET not set');
     return crypto.createHash('sha256').update(secret).digest();
 }
 
@@ -215,16 +281,24 @@ function decryptToken(ciphertext) {
             // Only seed if no spreadsheet registered yet
             users[ownerEmail] = { ...(typeof existing === 'object' ? existing : {}), spreadsheetId: ownerSpreadsheetId };
             saveUsers(users);
-            console.log(`Owner account seeded: ${ownerEmail} (spreadsheet from env)`);
+            console.log(`Owner account seeded: user=${logId(ownerEmail)} (spreadsheet from env)`);
         } else if (existingId) {
-            console.log(`Owner account already registered: ${ownerEmail} (spreadsheet: ${existingId})`);
+            console.log(`Owner account already registered: user=${logId(ownerEmail)} (spreadsheet: ${existingId})`);
         } else {
-            console.log(`Owner account ${ownerEmail} has no spreadsheet (VITE_SPREADSHEET_ID not set, will use app-generated sheet)`);
+            console.log(`Owner account user=${logId(ownerEmail)} has no spreadsheet (VITE_SPREADSHEET_ID not set, will use app-generated sheet)`);
         }
     } else {
         console.warn('OWNER_EMAIL not set — owner account not seeded.');
     }
 }
+
+// Surface secret misconfiguration (and the VITE_ deprecation warning) at startup
+if (!getClientSecret()) {
+    console.warn('GOOGLE_CLIENT_SECRET not set — OAuth code exchange, token refresh and API key encryption will fail.');
+}
+
+// Rehash legacy plaintext API keys before serving any request
+await migrateApiKeysToHashed();
 
 // ─── Security headers ────────────────────────────────────────────────────────
 
@@ -356,7 +430,10 @@ async function getEmailFromIdToken(idToken) {
     return payload.email;
 }
 
-// Fetch the Google email for an access token (fallback if no id_token)
+// Fetch the Google email for an access token. Only used as a fallback right
+// after a code exchange / refresh when Google returned no id_token: the token
+// was just issued to us, so its audience is known. Never use this for tokens
+// presented by clients — use verifyAccessToken() instead.
 async function getEmailFromToken(accessToken) {
     const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -366,6 +443,76 @@ async function getEmailFromToken(accessToken) {
     if (!data.email) throw new Error('Google userinfo did not return an email');
     return data.email;
 }
+
+// ─── Access token verification (audience check) ─────────────────────────────
+// Any Google access token with the email scope can call userinfo, even one
+// issued to a different application (token substitution). Incoming Bearer
+// tokens are therefore validated against Google's tokeninfo endpoint and the
+// audience must be our own OAuth client. Results are cached in memory until
+// the token expires so Google is not called on every request.
+
+const TOKEN_CACHE_MAX = 5000;
+const tokenCache = new Map(); // token → { email, expiresAt }
+
+function pruneTokenCache(now) {
+    for (const [token, entry] of tokenCache) {
+        if (entry.expiresAt <= now) tokenCache.delete(token);
+    }
+    // Still too big (many live tokens): drop the oldest entries (insertion order)
+    while (tokenCache.size >= TOKEN_CACHE_MAX) {
+        const oldest = tokenCache.keys().next().value;
+        if (oldest === undefined) break;
+        tokenCache.delete(oldest);
+    }
+}
+
+class TokenVerificationError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'TokenVerificationError';
+    }
+}
+
+async function verifyAccessToken(token) {
+    if (!token || typeof token !== 'string') throw new TokenVerificationError('Missing access token');
+
+    const now = Date.now();
+    const cached = tokenCache.get(token);
+    if (cached) {
+        if (cached.expiresAt > now) return cached.email;
+        tokenCache.delete(token);
+    }
+
+    const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) throw new Error('VITE_GOOGLE_CLIENT_ID not set');
+
+    const res = await fetch('https://oauth2.googleapis.com/tokeninfo?access_token=' + encodeURIComponent(token));
+    let info = null;
+    try { info = await res.json(); } catch { /* non-JSON body */ }
+    if (!res.ok || !info || info.error) {
+        throw new TokenVerificationError('Invalid access token');
+    }
+
+    const audience = info.aud || info.azp;
+    if (audience !== clientId) {
+        throw new TokenVerificationError('Access token audience mismatch');
+    }
+    const expiresIn = parseInt(info.expires_in, 10);
+    if (!Number.isFinite(expiresIn) || expiresIn <= 0) {
+        throw new TokenVerificationError('Access token has expired');
+    }
+    if (info.email_verified !== true && info.email_verified !== 'true') {
+        throw new TokenVerificationError('Access token email not verified');
+    }
+    if (!info.email) throw new TokenVerificationError('Access token has no email');
+
+    if (tokenCache.size >= TOKEN_CACHE_MAX) pruneTokenCache(now);
+    tokenCache.set(token, { email: info.email, expiresAt: now + expiresIn * 1000 });
+    return info.email;
+}
+
+// Periodic cleanup of expired cache entries
+setInterval(() => pruneTokenCache(Date.now()), 5 * 60 * 1000).unref();
 
 // Extract Bearer token from Authorization header
 function extractBearer(req) {
@@ -398,10 +545,20 @@ const ACCESS_RESTRICTED = {
     code: 'access_restricted',
 };
 
-// Resolve the email behind a Bearer access token and enforce the allowlist.
-// Sends 403 and returns null when the account is not allowed.
+// Resolve the email behind a Bearer access token (verifying its audience) and
+// enforce the allowlist. Sends 401 on an invalid/foreign token, 403 when the
+// account is not allowed, and returns null in both cases.
 async function requireAllowedEmail(accessToken, res) {
-    const email = await getEmailFromToken(accessToken);
+    let email;
+    try {
+        email = await verifyAccessToken(accessToken);
+    } catch (err) {
+        if (err instanceof TokenVerificationError) {
+            res.status(401).json({ error: 'Unauthorized: Invalid Bearer token.' });
+            return null;
+        }
+        throw err;
+    }
     if (!isAllowedEmail(email)) {
         res.status(403).json(ACCESS_RESTRICTED);
         return null;
@@ -443,7 +600,7 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
         if (!code) return res.status(400).json({ error: 'Missing authorization code' });
 
         const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
-        const clientSecret = process.env.VITE_GOOGLE_CLIENT_SECRET;
+        const clientSecret = getClientSecret();
         if (!clientId || !clientSecret) {
             return res.status(500).json({ error: 'Server misconfiguration' });
         }
@@ -487,7 +644,7 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
 
         // Check if user is revoked by RISC (Cross-Account Protection)
         if (isUserRevoked(email)) {
-            console.log(`Auth exchange blocked: ${email} is revoked by RISC`);
+            console.log(`Auth exchange blocked: user=${logId(email)} is revoked by RISC`);
             return res.status(403).json({ error: 'Account access revoked due to a security event. Please contact support.' });
         }
 
@@ -501,7 +658,7 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
         const users = loadUsers();
         const spreadsheetId = getUserSpreadsheetId(users, email) || (email === process.env.OWNER_EMAIL ? process.env.VITE_SPREADSHEET_ID : null) || null;
 
-        console.log(`Auth exchange: email=${email}, spreadsheet_id=${spreadsheetId ? 'found' : 'not found'}`);
+        console.log(`Auth exchange: user=${logId(email)}, spreadsheet_id=${spreadsheetId ? 'found' : 'not found'}`);
 
         // Update refresh token in existing API key so /api/export keeps working
         if (tokenData.refresh_token) {
@@ -541,7 +698,7 @@ app.post('/api/auth/refresh', authLimiter, validateOrigin, async (req, res) => {
         if (!refresh_token) return res.status(400).json({ error: 'Missing refresh token' });
 
         const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
-        const clientSecret = process.env.VITE_GOOGLE_CLIENT_SECRET;
+        const clientSecret = getClientSecret();
         if (!clientId || !clientSecret) {
             return res.status(500).json({ error: 'Server misconfiguration' });
         }
@@ -575,7 +732,7 @@ app.post('/api/auth/refresh', authLimiter, validateOrigin, async (req, res) => {
 
         // Check if user is revoked by RISC (Cross-Account Protection)
         if (isUserRevoked(email)) {
-            console.log(`Auth refresh blocked: ${email} is revoked by RISC`);
+            console.log(`Auth refresh blocked: user=${logId(email)} is revoked by RISC`);
             return res.status(403).json({ error: 'Account access revoked due to a security event. Please contact support.' });
         }
 
@@ -587,7 +744,7 @@ app.post('/api/auth/refresh', authLimiter, validateOrigin, async (req, res) => {
 
         const users = loadUsers();
         const spreadsheetId = (email && getUserSpreadsheetId(users, email)) || (email === process.env.OWNER_EMAIL ? process.env.VITE_SPREADSHEET_ID : null) || null;
-        console.log(`Auth refresh: email=${email}, spreadsheet_id=${spreadsheetId ? 'found' : 'MISSING'}, has_refresh_token=${!!data.refresh_token}`);
+        console.log(`Auth refresh: user=${logId(email)}, spreadsheet_id=${spreadsheetId ? 'found' : 'MISSING'}, has_refresh_token=${!!data.refresh_token}`);
 
         res.json({
             access_token: data.access_token,
@@ -600,6 +757,27 @@ app.post('/api/auth/refresh', authLimiter, validateOrigin, async (req, res) => {
         console.error('Auth refresh error:', error);
         res.status(500).json({ error: 'Failed to refresh token' });
     }
+});
+
+// ─── Auth: logout (best-effort Google token revocation) ──────────────────────
+// Revokes the refresh token at Google so a copy left in a browser's storage
+// cannot mint new access tokens. Always 204: the client clears its session
+// regardless of whether Google accepted the revocation.
+
+app.post('/api/auth/logout', apiLimiter, validateOrigin, async (req, res) => {
+    const token = req.body?.refresh_token;
+    if (token && typeof token === 'string' && token.length <= 2048) {
+        try {
+            const r = await fetch('https://oauth2.googleapis.com/revoke?token=' + encodeURIComponent(token), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            });
+            if (!r.ok) console.warn(`Logout: Google token revocation returned ${r.status}`);
+        } catch (err) {
+            console.warn('Logout: Google token revocation failed:', err.message);
+        }
+    }
+    res.status(204).end();
 });
 
 // ─── User: register / update spreadsheet ID ───────────────────────────────────
@@ -638,7 +816,7 @@ app.post('/api/user/spreadsheet', apiLimiter, validateOrigin, async (req, res) =
             return apiKeys;
         });
 
-        console.log(`Registered spreadsheet for ${email}`);
+        console.log(`Registered spreadsheet for user=${logId(email)}`);
         res.json({ success: true, email, spreadsheet_id: trimmedId });
     } catch (error) {
         console.error('Register spreadsheet error:', error);
@@ -658,9 +836,9 @@ app.get('/api/user/preferences', apiLimiter, async (req, res) => {
         const bearer = extractBearer(req);
 
         if (apiToken) {
-            const apiKeys = loadApiKeys();
-            if (apiKeys[apiToken]) {
-                req.apiKeyUser = apiKeys[apiToken];
+            const record = findApiKeyRecord(loadApiKeys(), apiToken);
+            if (record) {
+                req.apiKeyUser = record;
                 email = req.apiKeyUser.email;
                 if (!isAllowedEmail(email)) return res.status(403).json(ACCESS_RESTRICTED);
             } else {
@@ -846,9 +1024,9 @@ app.get('/api/user/apikey', apiLimiter, async (req, res) => {
         // Find existing key for this user
         const existingKey = Object.entries(apiKeys).find(([, v]) => v.email === email);
         if (existingKey) {
-            // Show masked key + metadata
-            const [key, meta] = existingKey;
-            const masked = key.slice(0, 7) + '...' + key.slice(-4);
+            // Show masked key + metadata (only the plaintext prefix is stored)
+            const [, meta] = existingKey;
+            const masked = (meta.prefix || 'hk_') + '...';
             return res.json({ has_key: true, masked_key: masked, created_at: meta.createdAt });
         }
 
@@ -912,15 +1090,20 @@ app.post('/api/user/apikey', apiLimiter, validateOrigin, async (req, res) => {
                     delete apiKeys[existingKey];
                 }
             }
-            // Add new key
-            const entry = { email, spreadsheetId, createdAt: new Date().toISOString() };
+            // Add new key (stored hashed; plaintext is returned to the client once)
+            const entry = {
+                email,
+                spreadsheetId,
+                createdAt: new Date().toISOString(),
+                prefix: newKey.slice(0, API_KEY_PREFIX_LEN),
+            };
             if (encryptedRefreshToken) {
                 entry.refreshToken = encryptedRefreshToken;
-                console.log(`API key generated for ${email} WITH refresh token`);
+                console.log(`API key generated for user=${logId(email)} WITH refresh token`);
             } else {
-                console.log(`API key generated for ${email} WITHOUT refresh token!`);
+                console.log(`API key generated for user=${logId(email)} WITHOUT refresh token!`);
             }
-            apiKeys[newKey] = entry;
+            apiKeys[hashApiKey(newKey)] = entry;
             return apiKeys;
         });
 
@@ -955,7 +1138,7 @@ app.delete('/api/user/apikey', apiLimiter, validateOrigin, async (req, res) => {
             return res.status(404).json({ error: 'No API key found' });
         }
 
-        console.log(`API key revoked for ${email}`);
+        console.log(`API key revoked for user=${logId(email)}`);
         res.json({ success: true });
     } catch (error) {
         console.error('Revoke API key error:', error);
@@ -978,13 +1161,13 @@ const authenticate = async (req, res, next) => {
 
     // 1. Per-user API key
     if (apiToken) {
-        const apiKeys = loadApiKeys();
-        if (apiKeys[apiToken]) {
+        const record = findApiKeyRecord(loadApiKeys(), apiToken);
+        if (record) {
             // Private mode: widget keys of non-allowed accounts stop working too
-            if (!isAllowedEmail(apiKeys[apiToken].email)) {
+            if (!isAllowedEmail(record.email)) {
                 return res.status(403).json(ACCESS_RESTRICTED);
             }
-            req.apiKeyUser = apiKeys[apiToken]; // { email, spreadsheetId, createdAt }
+            req.apiKeyUser = record; // { email, spreadsheetId, createdAt, prefix, refreshToken? }
             return next();
         }
 
@@ -995,8 +1178,11 @@ const authenticate = async (req, res, next) => {
     if (bearer) {
         let email;
         try {
-            email = await getEmailFromToken(bearer);
+            email = await verifyAccessToken(bearer);
         } catch (err) {
+            if (!(err instanceof TokenVerificationError)) {
+                console.error('Bearer verification failed:', err.message);
+            }
             return res.status(401).json({ error: 'Unauthorized: Invalid Bearer token.' });
         }
         if (!isAllowedEmail(email)) return res.status(403).json(ACCESS_RESTRICTED);
@@ -1038,7 +1224,7 @@ const getUserSheetsClient = (accessToken) => {
 // Refresh an access token using a refresh_token
 async function refreshAccessToken(refreshToken) {
     const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.VITE_GOOGLE_CLIENT_SECRET;
+    const clientSecret = getClientSecret();
     if (!clientId || !clientSecret) throw new Error('Missing OAuth client credentials for token refresh');
 
     const params = new URLSearchParams({
@@ -1384,11 +1570,30 @@ app.get('/api/counter', authenticate, async (req, res) => {
 
 // ─── Counter increment endpoint ───────────────────────────────────────────────
 
+// Counter names end up as sheet column headers: keep them to a safe charset
+// and never let a client create/overwrite the reserved `_config` column.
+const COUNTER_NAME_PATTERN = /^[A-Za-z0-9 _\-]{1,40}$/;
+
+// 0-based column index → A1 column letters (A..Z, AA..AZ, BA.., ...)
+function columnLetter(idx) {
+    let n = idx + 1;
+    let letters = '';
+    while (n > 0) {
+        const rem = (n - 1) % 26;
+        letters = String.fromCharCode(65 + rem) + letters;
+        n = Math.floor((n - 1) / 26);
+    }
+    return letters;
+}
+
 app.post('/api/counter/increment', authenticate, async (req, res) => {
     try {
         const { counter } = req.body;
-        if (!counter || typeof counter !== 'string') {
+        if (!counter || typeof counter !== 'string' || !COUNTER_NAME_PATTERN.test(counter)) {
             return res.status(400).json({ error: 'Invalid or missing counter name' });
+        }
+        if (counter.startsWith('_config')) {
+            return res.status(400).json({ error: 'Reserved counter name' });
         }
 
         const spreadsheetId = await resolveSpreadsheetId(req);
@@ -1426,7 +1631,7 @@ app.post('/api/counter/increment', authenticate, async (req, res) => {
         // If counter column doesn't exist, add it
         if (counterIdx === -1) {
             counterIdx = headers.length;
-            const colLetter = String.fromCharCode(65 + counterIdx); // Basic A-Z mapping (Z is enough for counters)
+            const colLetter = columnLetter(counterIdx);
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range: `${sheetName}!${colLetter}1`,
@@ -1441,7 +1646,7 @@ app.post('/api/counter/increment', authenticate, async (req, res) => {
         if (rowIndex !== -1) {
             const currentVal = parseInt(rows[rowIndex][counterIdx] || '0', 10);
             newValue = currentVal + 1;
-            const colLetter = String.fromCharCode(65 + counterIdx);
+            const colLetter = columnLetter(counterIdx);
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range: `${sheetName}!${colLetter}${rowIndex + 1}`,
@@ -1609,7 +1814,17 @@ async function verifySecurityEventToken(token) {
     return payload;
 }
 
-app.post('/api/risc/events', express.text({ type: 'application/secevent+jwt' }), async (req, res) => {
+// Unauthenticated endpoint (Google pushes SETs here): rate limit it so bogus
+// tokens cannot be used to hammer JWT verification / cert fetching.
+const riscLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 60,
+    message: { error: 'Too many requests, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+app.post('/api/risc/events', riscLimiter, express.text({ type: 'application/secevent+jwt' }), async (req, res) => {
     try {
         const token = req.body;
         if (!token || typeof token !== 'string') {
@@ -1620,13 +1835,13 @@ app.post('/api/risc/events', express.text({ type: 'application/secevent+jwt' }),
         const events = payload.events || {};
         const subject = payload.sub || null;
 
-        console.log(`[RISC] Received security event for subject=${subject}`, Object.keys(events));
+        console.log(`[RISC] Received security event for subject=${logId(subject)}`, Object.keys(events));
 
         const revoked = loadRevokedUsers();
 
         for (const [eventType, eventData] of Object.entries(events)) {
             const subjectEmail = eventData?.subject?.email || subject;
-            console.log(`[RISC] Event: ${eventType}, email=${subjectEmail}`);
+            console.log(`[RISC] Event: ${eventType}, user=${logId(subjectEmail)}`);
 
             switch (eventType) {
                 case 'https://schemas.openid.net/secevent/risc/event-type/sessions-revoked':
@@ -1640,14 +1855,14 @@ app.post('/api/risc/events', express.text({ type: 'application/secevent+jwt' }),
                             timestamp: new Date().toISOString(),
                             reason: eventData?.reason || 'security_event',
                         };
-                        console.log(`[RISC] Revoked access for ${subjectEmail} due to ${eventType}`);
+                        console.log(`[RISC] Revoked access for user=${logId(subjectEmail)} due to ${eventType}`);
                     }
                     break;
                 case 'https://schemas.openid.net/secevent/risc/event-type/account-enabled':
                     // Account re-enabled — remove from revoked list
                     if (subjectEmail && revoked[subjectEmail]) {
                         delete revoked[subjectEmail];
-                        console.log(`[RISC] Restored access for ${subjectEmail}`);
+                        console.log(`[RISC] Restored access for user=${logId(subjectEmail)}`);
                     }
                     break;
                 default:

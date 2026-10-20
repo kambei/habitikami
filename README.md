@@ -14,7 +14,7 @@ A **React + Vite + TypeScript** progressive web app for daily habit tracking, po
 - Graphs and analytics to visualize completion rates over time
 - Google Sheets integration — authenticates via Google Identity Services and reads/writes directly to your spreadsheet
 - Responsive design with Tailwind CSS
-- Dockerized with Nginx for self-hosting
+- Dockerized (Node.js + Express behind Traefik) for self-hosting; server secrets live in `GOOGLE_CLIENT_SECRET` (never a `VITE_` variable)
 - Multi-user support via Express backend
 
 **Tech stack:** React 19, TypeScript, Vite, Tailwind CSS, Recharts, Framer Motion, Express, Google Sheets API

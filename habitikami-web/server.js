@@ -212,13 +212,33 @@ async function migrateApiKeysToHashed() {
     if (migrated > 0) console.log(`Migrated ${migrated} API key(s) to hashed storage`);
 }
 
+// ─── OAuth client secret ─────────────────────────────────────────────────────
+// The secret is server-only, so it must not carry the VITE_ prefix (Vite
+// exposes VITE_* variables to the client bundle). The legacy name is still
+// honoured so existing deployments keep working — and keep the same value,
+// which matters because the refresh-token encryption key is derived from it.
+
+let clientSecretDeprecationWarned = false;
+function getClientSecret() {
+    if (process.env.GOOGLE_CLIENT_SECRET) return process.env.GOOGLE_CLIENT_SECRET;
+    const legacy = process.env.VITE_GOOGLE_CLIENT_SECRET;
+    if (legacy) {
+        if (!clientSecretDeprecationWarned) {
+            clientSecretDeprecationWarned = true;
+            console.warn('DEPRECATED: VITE_GOOGLE_CLIENT_SECRET is set but GOOGLE_CLIENT_SECRET is not. Rename the variable to GOOGLE_CLIENT_SECRET (same value); the VITE_ name will stop being read in a future release.');
+        }
+        return legacy;
+    }
+    return undefined;
+}
+
 // ─── Refresh token encryption ────────────────────────────────────────────────
 // Encrypt user refresh tokens at rest using a server-side key derived from
-// VITE_GOOGLE_CLIENT_SECRET (always available). AES-256-GCM.
+// GOOGLE_CLIENT_SECRET (always available). AES-256-GCM.
 
 function getEncryptionKey() {
-    const secret = process.env.VITE_GOOGLE_CLIENT_SECRET;
-    if (!secret) throw new Error('Cannot encrypt: VITE_GOOGLE_CLIENT_SECRET not set');
+    const secret = getClientSecret();
+    if (!secret) throw new Error('Cannot encrypt: GOOGLE_CLIENT_SECRET not set');
     return crypto.createHash('sha256').update(secret).digest();
 }
 
@@ -264,6 +284,11 @@ function decryptToken(ciphertext) {
     } else {
         console.warn('OWNER_EMAIL not set — owner account not seeded.');
     }
+}
+
+// Surface secret misconfiguration (and the VITE_ deprecation warning) at startup
+if (!getClientSecret()) {
+    console.warn('GOOGLE_CLIENT_SECRET not set — OAuth code exchange, token refresh and API key encryption will fail.');
 }
 
 // Rehash legacy plaintext API keys before serving any request
@@ -569,7 +594,7 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
         if (!code) return res.status(400).json({ error: 'Missing authorization code' });
 
         const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
-        const clientSecret = process.env.VITE_GOOGLE_CLIENT_SECRET;
+        const clientSecret = getClientSecret();
         if (!clientId || !clientSecret) {
             return res.status(500).json({ error: 'Server misconfiguration' });
         }
@@ -667,7 +692,7 @@ app.post('/api/auth/refresh', authLimiter, validateOrigin, async (req, res) => {
         if (!refresh_token) return res.status(400).json({ error: 'Missing refresh token' });
 
         const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
-        const clientSecret = process.env.VITE_GOOGLE_CLIENT_SECRET;
+        const clientSecret = getClientSecret();
         if (!clientId || !clientSecret) {
             return res.status(500).json({ error: 'Server misconfiguration' });
         }
@@ -1172,7 +1197,7 @@ const getUserSheetsClient = (accessToken) => {
 // Refresh an access token using a refresh_token
 async function refreshAccessToken(refreshToken) {
     const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.VITE_GOOGLE_CLIENT_SECRET;
+    const clientSecret = getClientSecret();
     if (!clientId || !clientSecret) throw new Error('Missing OAuth client credentials for token refresh');
 
     const params = new URLSearchParams({

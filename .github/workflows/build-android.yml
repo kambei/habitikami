@@ -36,7 +36,15 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
 
+      # Pull requests opened by Dependabot (or from forks) do not receive repository
+      # secrets. In that case we skip the keystore and build an unsigned release APK,
+      # so the PR still exercises compilation and R8 instead of failing on signing.
+      - name: Check signing secrets
+        id: keystore
+        run: echo "available=${{ secrets.KEYSTORE_BASE64 != '' }}" >> "$GITHUB_OUTPUT"
+
       - name: Decode keystore
+        if: steps.keystore.outputs.available == 'true'
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/keystore.jks
 
       - name: Build release APK

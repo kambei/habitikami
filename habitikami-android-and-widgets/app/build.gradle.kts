@@ -37,7 +37,15 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("release")
+            // Sign only when a keystore is actually available (CI on main, local
+            // release builds). Pull requests from Dependabot/forks have no secrets:
+            // they produce an unsigned APK instead of failing at packageRelease.
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile?.exists() == true && !releaseSigning.storePassword.isNullOrEmpty()) {
+                signingConfig = releaseSigning
+            } else {
+                logger.warn("No release keystore found: building an UNSIGNED release APK.")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

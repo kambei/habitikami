@@ -145,6 +145,11 @@ class StatsWidgetConfigActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            if (!WidgetConfigStore.isAllowedBaseUrl(baseUrl)) {
+                Toast.makeText(this, R.string.error_url_https_required, Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
             // Also save config for counter widget to reuse
             WidgetConfigStore.saveConfig(this, baseUrl, apiToken)
 

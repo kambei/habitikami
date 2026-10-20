@@ -51,6 +51,11 @@ class WidgetConfigActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            if (!WidgetConfigStore.isAllowedBaseUrl(baseUrl)) {
+                Toast.makeText(this, R.string.error_url_https_required, Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
             // Save config
             WidgetConfigStore.saveConfig(this, baseUrl, apiToken)
 

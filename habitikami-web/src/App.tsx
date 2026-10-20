@@ -4,7 +4,8 @@ import { cn } from './lib/utils'
 import { habitService } from './services/HabitService'
 import { Toaster, toast } from 'sonner'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LayoutDashboard, Settings, Github, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone, RefreshCw, Dumbbell } from 'lucide-react'
+import { LayoutDashboard, Settings, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone, RefreshCw, Dumbbell } from 'lucide-react'
+import { GithubIcon } from './components/ui/GithubIcon'
 import { useTranslation } from './i18n'
 
 const HabitTable = React.lazy(() => import('./components/HabitTable').then(m => ({ default: m.HabitTable })))
@@ -47,7 +48,7 @@ function GitHubDropdown() {
         className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 flex items-center justify-center transition-colors shadow-sm shrink-0"
         title="GitHub"
       >
-        <Github width={16} height={16} />
+        <GithubIcon width={16} height={16} />
       </button>
       {open && (
         <div className="absolute right-0 top-full mt-1 flex flex-col bg-card border border-border rounded-lg shadow-lg p-2 min-w-[180px] z-50">

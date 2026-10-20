@@ -251,6 +251,19 @@ class HabitServiceImpl {
     }
 
     clearSession() {
+        // Best-effort: ask the server to revoke the refresh token at Google
+        // before forgetting it. Fire-and-forget; keepalive lets the request
+        // complete even if the page unloads right after logout.
+        if (this.refreshToken) {
+            try {
+                fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh_token: this.refreshToken }),
+                    keepalive: true,
+                }).catch(() => { /* ignore */ });
+            } catch { /* ignore */ }
+        }
         this.accessToken = null;
         this.refreshToken = null;
         this.tokenExpiry = 0;

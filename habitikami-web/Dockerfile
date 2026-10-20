@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ ENV VITE_SPREADSHEET_ID=$VITE_SPREADSHEET_ID
 RUN npm run build
 
 # Stage 2: Runtime image
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
@@ -34,8 +34,8 @@ EXPOSE 80
 ENV PORT=80
 
 # Runtime secrets are injected via docker-compose env_file or -e flags — never baked in here
-# Required at runtime: VITE_GOOGLE_CLIENT_ID, VITE_GOOGLE_CLIENT_SECRET, VITE_SPREADSHEET_ID,
-#                      EXPORT_API_TOKEN, GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY
+# Required at runtime: VITE_GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET (legacy: VITE_GOOGLE_CLIENT_SECRET), VITE_SPREADSHEET_ID,
+#                      GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY (only for API keys without a stored refresh token)
 # Optional: ALLOWED_EMAILS (comma-separated allowlist; empty = open access)
 
 CMD ["npm", "run", "start"]

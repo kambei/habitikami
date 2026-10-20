@@ -1518,11 +1518,30 @@ app.get('/api/counter', authenticate, async (req, res) => {
 
 // ─── Counter increment endpoint ───────────────────────────────────────────────
 
+// Counter names end up as sheet column headers: keep them to a safe charset
+// and never let a client create/overwrite the reserved `_config` column.
+const COUNTER_NAME_PATTERN = /^[A-Za-z0-9 _\-]{1,40}$/;
+
+// 0-based column index → A1 column letters (A..Z, AA..AZ, BA.., ...)
+function columnLetter(idx) {
+    let n = idx + 1;
+    let letters = '';
+    while (n > 0) {
+        const rem = (n - 1) % 26;
+        letters = String.fromCharCode(65 + rem) + letters;
+        n = Math.floor((n - 1) / 26);
+    }
+    return letters;
+}
+
 app.post('/api/counter/increment', authenticate, async (req, res) => {
     try {
         const { counter } = req.body;
-        if (!counter || typeof counter !== 'string') {
+        if (!counter || typeof counter !== 'string' || !COUNTER_NAME_PATTERN.test(counter)) {
             return res.status(400).json({ error: 'Invalid or missing counter name' });
+        }
+        if (counter.startsWith('_config')) {
+            return res.status(400).json({ error: 'Reserved counter name' });
         }
 
         const spreadsheetId = await resolveSpreadsheetId(req);
@@ -1560,7 +1579,7 @@ app.post('/api/counter/increment', authenticate, async (req, res) => {
         // If counter column doesn't exist, add it
         if (counterIdx === -1) {
             counterIdx = headers.length;
-            const colLetter = String.fromCharCode(65 + counterIdx); // Basic A-Z mapping (Z is enough for counters)
+            const colLetter = columnLetter(counterIdx);
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range: `${sheetName}!${colLetter}1`,
@@ -1575,7 +1594,7 @@ app.post('/api/counter/increment', authenticate, async (req, res) => {
         if (rowIndex !== -1) {
             const currentVal = parseInt(rows[rowIndex][counterIdx] || '0', 10);
             newValue = currentVal + 1;
-            const colLetter = String.fromCharCode(65 + counterIdx);
+            const colLetter = columnLetter(counterIdx);
             await sheets.spreadsheets.values.update({
                 spreadsheetId,
                 range: `${sheetName}!${colLetter}${rowIndex + 1}`,

@@ -759,6 +759,27 @@ app.post('/api/auth/refresh', authLimiter, validateOrigin, async (req, res) => {
     }
 });
 
+// ─── Auth: logout (best-effort Google token revocation) ──────────────────────
+// Revokes the refresh token at Google so a copy left in a browser's storage
+// cannot mint new access tokens. Always 204: the client clears its session
+// regardless of whether Google accepted the revocation.
+
+app.post('/api/auth/logout', apiLimiter, validateOrigin, async (req, res) => {
+    const token = req.body?.refresh_token;
+    if (token && typeof token === 'string' && token.length <= 2048) {
+        try {
+            const r = await fetch('https://oauth2.googleapis.com/revoke?token=' + encodeURIComponent(token), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            });
+            if (!r.ok) console.warn(`Logout: Google token revocation returned ${r.status}`);
+        } catch (err) {
+            console.warn('Logout: Google token revocation failed:', err.message);
+        }
+    }
+    res.status(204).end();
+});
+
 // ─── User: register / update spreadsheet ID ───────────────────────────────────
 
 const SPREADSHEET_ID_PATTERN = /^[a-zA-Z0-9_-]{10,100}$/;

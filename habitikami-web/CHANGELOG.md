@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🤖 Android 5.3.3 - 2026-10-20
+### 🔒 Widget Key Security
+- **Encrypted Widget Config**: The server URL and API key used by the home screen widgets are now stored in `EncryptedSharedPreferences` (AES-256, master key in the Android Keystore) through a single `WidgetConfigStore` helper instead of a plaintext XML file. Non-sensitive widget data (counter definition cache, chart filter) stays in the regular preferences.
+- **Transparent Migration**: On first access after the update, the previously saved URL and key are moved into the encrypted store and wiped from the plaintext file — no need to reconfigure any widget. If the encrypted store cannot be opened (corrupted Keystore, data restored from another device), it is recreated empty and the widgets simply show as "not configured" instead of crashing.
+- **No Cloud Backup of the Key**: `android:allowBackup="false"`, plus `dataExtractionRules` (API 31+) and `fullBackupContent` (API < 31) that exclude both the encrypted and the legacy preferences file, so the key stays out of Google backups and device-to-device transfers even if backups are re-enabled in the future.
+- **HTTPS Only**: All four widget config screens reject a server URL that does not start with `https://` (translated error, Italian strings added for the config screen) and the app declares `usesCleartextTraffic="false"`. Debug builds keep an exception for `http://10.0.2.2` and `localhost` to test against a local server from the emulator.
+- **Release Build Fix**: ProGuard `-dontwarn` rules for the JSR-305 annotations referenced by Tink, so the minified release build keeps passing.
+
 ## 🌐 Web 5.9.2 - 2026-10-18
 ### 🔒 Private Mode (Account Allowlist)
 - **`ALLOWED_EMAILS` Environment Variable**: When set to a comma-separated list of Google accounts, only those accounts can sign in, renew a session or use a widget API key. Everyone else receives a 403 `access_restricted` response. Leave it empty for open access (default).

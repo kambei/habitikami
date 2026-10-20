@@ -22,7 +22,7 @@
     "gapi-script": "^1.2.0",
     "googleapis": "^186.0.0",
     "helmet": "^8.3.0",
-    "lucide-react": "^0.562.0",
+    "lucide-react": "^1.59.0",
     "proper-lockfile": "^4.1.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

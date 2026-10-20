@@ -11,7 +11,7 @@ plugins {
 
 android {
     namespace = "dev.kambei.habitikami"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "dev.kambei.habitikami"

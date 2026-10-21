@@ -530,4 +530,11 @@ export const it: Record<TranslationKey, string | string[]> = {
   focusNumericGoal: 'Obiettivo',
   graphsNumericTitle: 'Valori nel tempo',
   graphsNumericTarget: 'obiettivo',
+  habitNotePlaceholder: 'Com\'è andata oggi? Contesto, ostacoli, vittorie…',
+  habitNoteDelete: 'Elimina nota',
+  habitNoteHint: 'Tasto destro (o pressione lunga) su una cella per aprire la sua nota.',
+  habitNoteAdd: 'Aggiungi una nota',
+  habitNotesSearchPlaceholder: 'Cerca nelle note delle abitudini…',
+  habitNotesEmpty: 'Nessuna nota trovata.',
+  toastNoteSaveFailed: 'Impossibile salvare la nota: {error}',
 } as const;

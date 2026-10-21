@@ -529,6 +529,13 @@ export const en = {
   focusNumericGoal: 'Goal',
   graphsNumericTitle: 'Values over time',
   graphsNumericTarget: 'goal',
+  habitNotePlaceholder: 'How did it go today? Context, obstacles, wins…',
+  habitNoteDelete: 'Delete note',
+  habitNoteHint: 'Right-click (or long-press) a cell to open its note.',
+  habitNoteAdd: 'Add a note',
+  habitNotesSearchPlaceholder: 'Search habit notes…',
+  habitNotesEmpty: 'No note matches.',
+  toastNoteSaveFailed: 'Failed to save the note: {error}',
 } as const;
 
 export type TranslationKey = keyof typeof en;

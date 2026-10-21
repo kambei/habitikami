@@ -15,6 +15,10 @@ import { StreakBadge } from "./ui/StreakBadge";
 import { SlotTag } from "./ui/SlotTag";
 import { NumericCell } from "./ui/NumericCell";
 import { HabitMetaEditor, HabitMetaSummary } from "./HabitMetaEditor";
+import { HabitNoteEditor } from "./HabitNoteEditor";
+import { useHabitNotes } from "../hooks/useHabitNotes";
+import { noteKey } from "../utils/habitNotes";
+import { StickyNote } from "lucide-react";
 import { MilestoneCelebration } from "./MilestoneCelebration";
 import { useHabitColors } from "../hooks/useHabitColors";
 import { useUpdateCell, useAddHabit, useAddDay, useMoveColumn, useDeleteColumn, useSetHabitColor, useRenameHabit, useHabitMeta, useSetHabitMeta } from "../hooks/useHabitMutations";
@@ -72,6 +76,8 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
 
     // Streaks of every habit (both sheets, last year): header badges, milestones, Windows widget
     const { streaks } = useHabitStreaks();
+    const { data: habitNotes } = useHabitNotes();
+    const [noteTarget, setNoteTarget] = useState<{ date: string; habit: string } | null>(null);
     const widgetStreak = useMemo(
         () => Object.values(streaks).reduce((max, s) => Math.max(max, s.currentStreak), 0),
         [streaks]
@@ -368,6 +374,12 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     return (
         <div className="overflow-x-auto pb-4 relative min-h-[500px] h-full flex flex-col">
             <MilestoneCelebration streaks={streaks} />
+            <HabitNoteEditor
+                target={noteTarget}
+                initialNote={noteTarget ? (habitNotes?.[noteKey(noteTarget.date, noteTarget.habit)]?.note ?? '') : ''}
+                color={noteTarget ? colors[noteTarget.habit] : undefined}
+                onClose={() => setNoteTarget(null)}
+            />
             <div className="flex items-center justify-between p-4 bg-card border-b border-border sticky left-0">
                 <h2 className="text-lg font-semibold">{currentDate.toLocaleString(locale, { month: 'long', year: 'numeric' })}</h2>
                 <div className="flex gap-2 items-center">
@@ -387,6 +399,8 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                     <>
                         <CheckboxGridView
                             onSetValue={handleSetValue}
+                            onOpenNote={(date, habit) => setNoteTarget({ date, habit })}
+                            notes={habitNotes ?? {}}
                             headers={headers}
                             data={queryData}
                             colors={colors}
@@ -539,9 +553,24 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                          const checked = row.habits[h];
                                          const isPending = mutations.updateCell.isPending;
                                          const description = metaMap[h] && metaMap[h].trim();
-                                         const tooltip = description ? `${h} — ${description}` : h;
+                                         const note = habitNotes?.[noteKey(row.date, h)]?.note;
+                                         const tooltip = [h, description, note ? `📝 ${note}` : ''].filter(Boolean).join(' — ');
                                          return (
-                                             <td key={h} className="p-4 text-center" title={tooltip}>
+                                             <td
+                                                 key={h}
+                                                 className="p-4 text-center relative group/cell"
+                                                 title={tooltip}
+                                                 onContextMenu={(e) => { e.preventDefault(); setNoteTarget({ date: row.date, habit: h }); }}
+                                             >
+                                                 <button
+                                                     type="button"
+                                                     onClick={(e) => { e.stopPropagation(); setNoteTarget({ date: row.date, habit: h }); }}
+                                                     title={note || t('habitNoteAdd')}
+                                                     aria-label={t('habitNoteAdd')}
+                                                     className={`absolute top-1 right-1 p-0.5 rounded transition-opacity ${note ? 'opacity-80 text-amber-300' : 'opacity-0 group-hover/cell:opacity-50 text-muted-foreground'}`}
+                                                 >
+                                                     <StickyNote className="w-3 h-3" />
+                                                 </button>
                                                  <div className="flex justify-center">
                                                      {habitMeta?.[h]?.type === 'number' ? (
                                                          <NumericCell

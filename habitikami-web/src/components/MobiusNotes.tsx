@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { habitService } from '../services/HabitService';
 import type { NoteData } from '../types';
+import { HabitNotesSearch } from './HabitNotesSearch';
 import { MobiusRing } from './MobiusRing';
 import { useTranslation } from '../i18n';
 
@@ -162,6 +163,11 @@ export function MobiusNotes() {
                 {saveStatus === 'saving' && <span className="text-xs text-yellow-500 animate-pulse">{t('mobiusSaving')}</span>}
                 {saveStatus === 'saved' && <span className="text-xs text-green-500">{t('mobiusSaved')}</span>}
                 {saveStatus === 'error' && <span className="text-xs text-red-500">{t('mobiusError')}</span>}
+            </div>
+
+            {/* Per-habit notes (HabitNotes sheet): search and edit */}
+            <div className="absolute top-20 md:top-24 left-0 right-0 z-20">
+                <HabitNotesSearch />
             </div>
 
             <div className="flex flex-col md:flex-row w-full h-full items-center justify-center gap-4 md:gap-8 px-4 md:px-8 pt-16 md:pt-0">

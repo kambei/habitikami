@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pencil, Check, X } from 'lucide-react';
-import type { HabitCellValue, HabitData } from '../types';
+import type { HabitCellValue, HabitData, HabitNote } from '../types';
+import { noteKey } from '../utils/habitNotes';
 import { useTranslation } from '../i18n';
 import { translateDay } from '../utils/dayTranslation';
 import { useSheetData } from '../hooks/useSheetData';
@@ -22,6 +23,8 @@ interface CheckboxGridViewProps {
     dataStartRow: number;
     onToggle: (rowIndex: number, habit: string, currentValue: HabitCellValue) => void;
     onSetValue: (rowIndex: number, habit: string, value: number) => void;
+    onOpenNote: (date: string, habit: string) => void;
+    notes: Record<string, HabitNote>;
     isPending: boolean;
     sheetName: string;
     year: number;
@@ -34,6 +37,8 @@ export function CheckboxGridView({
     colors,
     onToggle,
     onSetValue,
+    onOpenNote,
+    notes,
     isPending,
     sheetName,
     year,
@@ -195,7 +200,8 @@ export function CheckboxGridView({
                                     const today = isToday(row.date);
 
                                     const desc = metaMap[habit]?.trim();
-                                    const checkTooltip = `${row.date}: ${checked === true ? '✓' : checked === 'skipped' ? '⏭' : '✗'}${desc ? ` — ${desc}` : ''}`;
+                                    const note = notes[noteKey(row.date, habit)]?.note;
+                                    const checkTooltip = `${row.date}: ${checked === true ? '✓' : checked === 'skipped' ? '⏭' : '✗'}${desc ? ` — ${desc}` : ''}${note ? ` — 📝 ${note}` : ''}`;
                                     if (habitMeta?.[habit]?.type === 'number') {
                                         return (
                                             <div key={row.date + rIndex} className={`shrink-0 w-[calc((100%-24px)/7)] md:w-[calc((100%-48px)/7)] h-6 md:h-8 ${today ? 'ring-1 ring-primary ring-offset-1 ring-offset-background rounded-sm' : ''}`}>
@@ -217,7 +223,8 @@ export function CheckboxGridView({
                                             title={checkTooltip}
                                             disabled={isPending}
                                             onClick={() => onToggle(rIndex, habit, checked)}
-                                            className={`shrink-0 w-[calc((100%-24px)/7)] md:w-[calc((100%-48px)/7)] h-6 md:h-8 rounded-sm transition-all duration-150 cursor-pointer hover:scale-110 active:scale-95 disabled:cursor-not-allowed ${today ? 'ring-1 ring-primary ring-offset-1 ring-offset-background' : ''}`}
+                                            onContextMenu={(e) => { e.preventDefault(); onOpenNote(row.date, habit); }}
+                                            className={`shrink-0 relative w-[calc((100%-24px)/7)] md:w-[calc((100%-48px)/7)] h-6 md:h-8 rounded-sm transition-all duration-150 cursor-pointer hover:scale-110 active:scale-95 disabled:cursor-not-allowed ${today ? 'ring-1 ring-primary ring-offset-1 ring-offset-background' : ''}`}
                                             style={checked === true
                                                 ? { backgroundColor: color, boxShadow: `0 0 6px ${color}40` }
                                                 : checked === 'skipped'
@@ -226,7 +233,9 @@ export function CheckboxGridView({
                                                 ? { background: `linear-gradient(to bottom right, ${color} 50%, transparent 50%)`, border: `2px solid ${color}` }
                                                 : { backgroundColor: 'transparent', border: `2px solid ${color}50` }
                                             }
-                                        />
+                                        >
+                                            {note && <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-300 shadow" />}
+                                        </button>
                                     );
                                 })}
                             </div>

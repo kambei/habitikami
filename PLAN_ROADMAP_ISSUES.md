@@ -13,7 +13,7 @@ Stato al 2026-10-21 su `main` (web 5.9.6, android 5.3.4). 67 issue aperte.
 Convenzioni: una PR per riga, un commit per issue con `Closes #n`, bump versione e CHANGELOG per PR, sequenziali sullo stesso branch (dopo ogni merge riparto da `main`). Effort: S < 2h · M mezza giornata · L 1-2 giorni.
 
 Vincoli di architettura che guidano le scelte (da `HabitService.ts`, `server.js`, `sw.js`):
-- Le abitudini sono colonne dei fogli Weekdays/Weekend, identificate dal nome; le celle valgono `TRUE/FALSE/SKIP/HALF`. I metadati per abitudine stanno in `HabitMeta` (Habit | Description): è il posto naturale per nuove colonne.
+- Le abitudini sono colonne dei fogli Weekdays/Weekend, identificate dal nome; le celle valgono `TRUE/FALSE/SKIP/HALF`. I metadati per abitudine stanno in `HabitMeta` (Habit \| Description): è il posto naturale per nuove colonne.
 - I dati vengono letti un mese alla volta (`getDataSubset`): streak, correlazioni, proiezioni ed export richiedono una lettura multi-mese.
 - Il mood vive solo in `localStorage` (max 100 voci): per correlarlo e averlo su più dispositivi va portato su foglio.
 - Il server non ha scheduler né notifiche; conserva però il refresh token cifrato degli utenti con API key, quindi può leggere i fogli in background (già lo fa per i widget).
@@ -29,7 +29,7 @@ Vincoli di architettura che guidano le scelte (da `HabitService.ts`, `server.js`
 | 0.1 Test e lint in CI | #73, #91 | S | vitest + supertest, `server.js` esporta l'app senza `listen` in test; test su exchange/aud/API key/counter; `npm run lint` e `npm test` in `build-web.yml`. Rete di sicurezza per le PR successive che toccano il server (export, push, counter). |
 | 0.2 Lettura multi-mese + streak condivisi | prereq #1 #4 #5 #7 #18 #3 | M | `getRangeData(sheet, from, to)` in `HabitService` (una chiamata `A:ZZ` filtrata per date, cache react-query `['sheetRange', …]`); modulo `utils/streaks.ts` con regole esplicite (decisione D1) usato da `CheckboxGridView`, Focus, HabitTable (oggi manda `currentStreak: 0` al widget Windows); stesso algoritmo allineato in `HabitStatsWidgetProvider.kt`. |
 | 0.3 HabitMeta esteso + parser | prereq #14 #12 | M | Colonne `Type` (check/number), `Target`, `Unit`, `Slot` (morning/afternoon/evening/any), `Time` in `HabitMeta`, lette/scritte da `useHabitMeta`; `parser.ts` riconosce celle numeriche → `{ value, target }`; `HabitData` tipizzato. Nessun cambio UI ancora. |
-| 0.4 Mood su foglio | prereq #5, #6 | S | Nuovo foglio `Mood` (Date ISO | Timestamp | Mood | Anxiety | Label | Source); migrazione una tantum da localStorage; `MoodGraph` legge dal foglio con react-query. |
+| 0.4 Mood su foglio | prereq #5, #6 | S | Nuovo foglio `Mood` (Date ISO \| Timestamp \| Mood \| Anxiety \| Label \| Source); migrazione una tantum da localStorage; `MoodGraph` legge dal foglio con react-query. |
 
 ## Ondata 1 · UX rapide (una PR)
 
@@ -45,14 +45,14 @@ Vincoli di architettura che guidano le scelte (da `HabitService.ts`, `server.js`
 | 2.2 Abitudini quantitative | #14 | L | Tipo scelto in `AddHabitModal` e nel popup info; cella numerica con stepper/input in tabella e griglia (valore ≥ target = completata, altrimenti parziale); barra di progresso in Focus; grafico "valore nel tempo" in Graphs. |
 | 2.2b Export con meta | #14 (server) | S | `/api/export` aggiunge `habitMeta` (type, target, slot) così i widget Android applicano le stesse regole di completamento. |
 | 2.3 Fasce orarie | #12 | M | Selettore fascia + orario opzionale nel popup info; raggruppamento per fascia in Focus con filtro "fascia corrente"; tag nell'intestazione; l'orario alimenta i promemoria (4.1). |
-| 2.4 Note per abitudine/giorno | #13 | M | Nuovo foglio `HabitNotes` (Date | Habit | Note); long-press/click destro sulla cella apre l'editor; pallino indicatore nella cella; tooltip; ricerca nelle note dentro MobiusNotes. |
+| 2.4 Note per abitudine/giorno | #13 | M | Nuovo foglio `HabitNotes` (Date \| Habit \| Note); long-press/click destro sulla cella apre l'editor; pallino indicatore nella cella; tooltip; ricerca nelle note dentro MobiusNotes. |
 | 2.5 Template di abitudini | #15 | M | `data/habitTemplates.ts` (Fitness, Produttività, Benessere mentale, Smettere di fumare) con nome, descrizione, colore, slot, tipo/target; scelta durante l'onboarding e da Impostazioni; applica via `addHabit` + `setHabitMeta` + `setHabitColor`. Template community: fuori perimetro. |
 
 ## Ondata 3 · Analytics
 
 | PR | Issue | Effort | Contenuto |
 |----|-------|--------|-----------|
-| 3.1 Correlazioni tra abitudini | #4 | M | Coefficiente phi per coppia su finestra 1/3/6 mesi; matrice heatmap in Graphs; lista "quando fai X tendi a fare Y" per |phi| ≥ 0.3 con almeno 20 giorni. |
+| 3.1 Correlazioni tra abitudini | #4 | M | Coefficiente phi per coppia su finestra 1/3/6 mesi; matrice heatmap in Graphs; lista "quando fai X tendi a fare Y" per \|phi\| ≥ 0.3 con almeno 20 giorni. |
 | 3.2 Correlazione mood-abitudini | #5 | M | Join per data tra foglio `Mood` e completamenti; differenza media del mood nei giorni con/senza abitudine; grafico a barre divergenti; top 3 abitudini "che fanno bene". |
 | 3.3 Proiezioni | #7 | S | Regressione lineare sul completion rate degli ultimi 30 giorni, linea tratteggiata in `CompletionTrends`; "al ritmo attuale raggiungi la streak di N tra K giorni". |
 | 3.4 Export CSV/PDF | #18 | M | Picker periodo; CSV lato client da `getRangeData` (abitudini, contatori, note, mood); PDF via stylesheet di stampa con grafici rasterizzati (`html-to-image`); download diretto. |
@@ -81,7 +81,7 @@ Vincoli di architettura che guidano le scelte (da `HabitService.ts`, `server.js`
 
 | PR | Issue | Effort | Contenuto |
 |----|-------|--------|-----------|
-| 6.1 Achievement | #3 | L | Catalogo statico (`data/achievements.ts`: streak 7/30/100, settimana perfetta, 50/200 resistenze, 10 note, 30 giorni mood, …) valutato sui dati già caricati; stato sbloccato nel foglio `Achievements` (Id | UnlockedAt) per averlo su tutti i dispositivi; pagina "Trofei" (sbloccati/bloccati con progresso); toast e animazione allo sblocco. |
+| 6.1 Achievement | #3 | L | Catalogo statico (`data/achievements.ts`: streak 7/30/100, settimana perfetta, 50/200 resistenze, 10 note, 30 giorni mood, …) valutato sui dati già caricati; stato sbloccato nel foglio `Achievements` (Id \| UnlockedAt) per averlo su tutti i dispositivi; pagina "Trofei" (sbloccati/bloccati con progresso); toast e animazione allo sblocco. |
 | 6.2 Card condivisibili | #10 | M | Componente card (streak, completion rate, achievement) renderizzato in DOM nascosto → PNG con `html-to-image`; 3 template; Web Share API con file (Android) o download. Nessuna pagina pubblica: solo immagine. |
 
 ## Ondata 7 · Accessibilità e AI

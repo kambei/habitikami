@@ -405,6 +405,9 @@ async function getEmailFromIdToken(idToken) {
     } catch {
         throw new TokenVerificationError('Malformed id_token');
     }
+    if (!header || typeof header !== 'object' || !payload || typeof payload !== 'object') {
+        throw new TokenVerificationError('Malformed id_token');
+    }
 
     // Validate issuer
     if (payload.iss !== 'https://accounts.google.com' && payload.iss !== 'accounts.google.com') {

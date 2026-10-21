@@ -140,3 +140,15 @@ describe('POST /api/counter/increment', () => {
         expect(res.status).toBe(400);
     });
 });
+
+describe('id_token edge cases', () => {
+    it('rejects an id_token whose header and payload decode to JSON null with 400', async () => {
+        const nullSegment = Buffer.from('null').toString('base64url');
+        google.token = { access_token: 'ya29.test', expires_in: 3599, id_token: `${nullSegment}.${nullSegment}.sig` };
+        const res = await request(app)
+            .post('/api/auth/exchange')
+            .send({ code: 'auth-code', redirect_uri: 'https://habitikami.test' });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe('Invalid id_token');
+    });
+});

@@ -47,7 +47,7 @@ class WidgetConfigActivity : AppCompatActivity() {
             val apiToken = etToken.text.toString().trim()
 
             if (baseUrl.isEmpty() || apiToken.isEmpty()) {
-                Toast.makeText(this, "Both fields are required", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.error_both_fields_required, Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -60,14 +60,7 @@ class WidgetConfigActivity : AppCompatActivity() {
             WidgetConfigStore.saveConfig(this, baseUrl, apiToken)
 
             // Trigger update for all widget types that use this config
-            CounterWidgetProvider.refreshAll(this)
-            CounterChartWidgetProvider.refreshAll(this)
-            ChecklistWidgetProvider.refreshAll(this)
-            WeeklySummaryWidgetProvider.refreshAll(this)
-            StreakFireWidgetProvider.refreshAll(this)
-            WorstHabitWidgetProvider.refreshAll(this)
-            HabitStatsWidgetProvider.refreshAll(this)
-            MiniHeatmapWidgetProvider.refreshAll(this)
+            WidgetRefresher.refreshAll(this)
 
             // Return success
             setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))

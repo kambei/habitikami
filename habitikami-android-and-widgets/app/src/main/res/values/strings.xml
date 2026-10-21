@@ -47,4 +47,50 @@
     <string name="widget_help_description">Quick button to open Habitikami Help</string>
     <string name="label_help">Help</string>
     <string name="label_ai_help">AI Help</string>
+
+    <!-- Shared widget states -->
+    <string name="widget_loading">Loading…</string>
+    <string name="widget_tap_to_configure">Tap to configure</string>
+    <string name="widget_tap_to_reconfigure">Invalid key: tap to reconfigure</string>
+    <string name="widget_offline">Offline</string>
+    <string name="widget_offline_last">Offline · last update %1$s</string>
+    <string name="widget_error">Could not load data</string>
+    <string name="widget_error_code">Error %1$d</string>
+    <string name="widget_not_configured">Not configured</string>
+    <string name="widget_day">day</string>
+    <string name="widget_days">days</string>
+    <string name="widget_day_streak">day streak</string>
+    <string name="widget_days_streak">days streak</string>
+    <string name="widget_label_streak">streak</string>
+    <string name="widget_label_best">best</string>
+    <string name="widget_label_30d">30d</string>
+    <string name="widget_label_total">total</string>
+    <string name="widget_worst_title">Needs attention</string>
+    <string name="widget_worst_all_good">All good!</string>
+    <string name="widget_worst_no_habits">No habits found</string>
+    <string name="widget_worst_rate_label">30-day rate</string>
+
+    <!-- Config activities -->
+    <string name="error_both_fields_required">Both fields are required</string>
+    <string name="error_enter_url_token_first">Enter URL and API key first</string>
+    <string name="error_no_habits_found">No habits found</string>
+    <string name="error_select_one_habit">Select at least one habit</string>
+    <string name="error_generic">Error: %1$s</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Pairing (web+habitikami://widget-config) -->
+    <string name="pairing_title">Configure the widgets?</string>
+    <string name="pairing_message">Server: %1$s\nAPI key: %2$s\n\nThe key is stored encrypted on this phone and used by every Habitikami widget.</string>
+    <string name="pairing_confirm">Configure</string>
+    <string name="pairing_done">Widgets configured</string>
+    <string name="pairing_invalid_link">Invalid pairing link</string>
+
+    <!-- Update dialog -->
+    <string name="update_title">Update available</string>
+    <string name="update_message">Version v%1$s is available (you have v%2$s).</string>
+    <string name="update_changelog_title">What\'s new</string>
+    <string name="update_download_note">Android will ask to allow installs from this source.</string>
+    <string name="update_now">Update</string>
+    <string name="update_later">Later</string>
+    <string name="update_skip">Skip this version</string>
 </resources>

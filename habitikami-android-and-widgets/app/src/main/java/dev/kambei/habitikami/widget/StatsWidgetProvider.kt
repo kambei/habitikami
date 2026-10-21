@@ -49,7 +49,7 @@ class StatsWidgetProvider : AppWidgetProvider() {
         // Show loading state
         val loading = RemoteViews(context.packageName, R.layout.widget_stats).apply {
             setImageViewResource(R.id.iv_chart, android.R.color.transparent)
-            setTextViewText(R.id.tv_status, "Loading…")
+            setTextViewText(R.id.tv_status, context.getString(R.string.widget_loading))
         }
         setupIntents(context, loading, widgetId)
         manager.updateAppWidget(widgetId, loading)
@@ -59,7 +59,7 @@ class StatsWidgetProvider : AppWidgetProvider() {
             val config = CounterWidgetProvider.getConfig(context)
 
             if (config == null) {
-                views.setTextViewText(R.id.tv_status, "Configure counter widget first")
+                WidgetErrors.applyNotConfigured(context, views, R.id.tv_status, widgetId)
             } else {
                 try {
                     val (baseUrl, apiToken) = config
@@ -89,8 +89,11 @@ class StatsWidgetProvider : AppWidgetProvider() {
 
                     views.setImageViewBitmap(R.id.iv_chart, bitmap)
                     views.setTextViewText(R.id.tv_status, "")
-                } catch (_: Exception) {
-                    views.setTextViewText(R.id.tv_status, "Failed to load data")
+                    WidgetErrors.markUpdated(context, "stats")
+                } catch (e: Exception) {
+                    // Offline: keep the last rendered data, just say so
+                    if (WidgetErrors.showOfflineKeepingContent(context, manager, widgetId, R.layout.widget_stats, R.id.tv_status, e, "stats")) return@launch
+                    WidgetErrors.applyFailure(context, views, R.id.tv_status, widgetId, e, "stats")
                 }
             }
 

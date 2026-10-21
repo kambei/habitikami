@@ -44,7 +44,7 @@ class StreakFireWidgetProvider : AppWidgetProvider() {
         val loading = RemoteViews(context.packageName, R.layout.widget_streak_fire).apply {
             setTextViewText(R.id.tv_fire, "")
             setTextViewText(R.id.tv_streak_number, "…")
-            setTextViewText(R.id.tv_streak_subtitle, "loading")
+            setTextViewText(R.id.tv_streak_subtitle, context.getString(R.string.widget_loading))
             setTextViewText(R.id.tv_streak_habit_name, "")
         }
         setupIntents(context, loading, widgetId)
@@ -57,7 +57,7 @@ class StreakFireWidgetProvider : AppWidgetProvider() {
             if (config == null) {
                 views.setTextViewText(R.id.tv_fire, "")
                 views.setTextViewText(R.id.tv_streak_number, "?")
-                views.setTextViewText(R.id.tv_streak_subtitle, "no config")
+                WidgetErrors.applyNotConfigured(context, views, R.id.tv_streak_subtitle, widgetId)
                 views.setTextViewText(R.id.tv_streak_habit_name, "")
             } else {
                 try {
@@ -90,18 +90,20 @@ class StreakFireWidgetProvider : AppWidgetProvider() {
 
                     views.setTextViewText(R.id.tv_fire, fire)
                     views.setTextViewText(R.id.tv_streak_number, "$bestStreak")
-                    views.setTextViewText(R.id.tv_streak_subtitle, if (bestStreak == 1) "day streak" else "days streak")
+                    views.setTextViewText(R.id.tv_streak_subtitle, context.getString(if (bestStreak == 1) R.string.widget_day_streak else R.string.widget_days_streak))
+                    WidgetErrors.markUpdated(context, "streakfire")
                     views.setTextViewText(R.id.tv_streak_habit_name, bestHabit)
 
                     val habitColor = export.colors[bestHabit]
                     if (habitColor != null) {
                         views.setTextColor(R.id.tv_streak_habit_name, habitColor)
                     }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    if (WidgetErrors.showOfflineKeepingContent(context, manager, widgetId, R.layout.widget_streak_fire, R.id.tv_streak_subtitle, e, "streakfire")) return@launch
                     views.setTextViewText(R.id.tv_fire, "")
                     views.setTextViewText(R.id.tv_streak_number, "!")
-                    views.setTextViewText(R.id.tv_streak_subtitle, "error")
                     views.setTextViewText(R.id.tv_streak_habit_name, "")
+                    WidgetErrors.applyFailure(context, views, R.id.tv_streak_subtitle, widgetId, e, "streakfire")
                 }
             }
 

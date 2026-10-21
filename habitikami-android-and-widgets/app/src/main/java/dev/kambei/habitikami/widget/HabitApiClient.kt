@@ -35,7 +35,7 @@ object HabitApiClient {
             conn.connectTimeout = 15_000
             conn.readTimeout = 15_000
 
-            if (conn.responseCode != 200) return ExportData(emptyList(), emptyList(), emptyList())
+            if (conn.responseCode != 200) throw ApiException(conn.responseCode)
 
             val body = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
             val json = JSONObject(body)

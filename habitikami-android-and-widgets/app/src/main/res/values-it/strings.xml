@@ -7,4 +7,66 @@
     <string name="api_key_info">ℹ️ Genera la tua API key nella web app Habitikami → Impostazioni → sezione API Key</string>
     <string name="btn_save">Salva e collega</string>
     <string name="error_url_https_required">L\'URL del server deve iniziare con https:// (http in chiaro non è consentito)</string>
+
+    <!-- Shared widget states -->
+    <string name="widget_loading">Caricamento…</string>
+    <string name="widget_tap_to_configure">Tocca per configurare</string>
+    <string name="widget_tap_to_reconfigure">Chiave non valida: tocca per riconfigurare</string>
+    <string name="widget_offline">Offline</string>
+    <string name="widget_offline_last">Offline · ultimo aggiornamento %1$s</string>
+    <string name="widget_error">Impossibile caricare i dati</string>
+    <string name="widget_error_code">Errore %1$d</string>
+    <string name="widget_not_configured">Non configurato</string>
+    <string name="widget_day">giorno</string>
+    <string name="widget_days">giorni</string>
+    <string name="widget_day_streak">giorno di fila</string>
+    <string name="widget_days_streak">giorni di fila</string>
+    <string name="widget_label_streak">streak</string>
+    <string name="widget_label_best">record</string>
+    <string name="widget_label_30d">30gg</string>
+    <string name="widget_label_total">totale</string>
+    <string name="widget_worst_title">Da curare</string>
+    <string name="widget_worst_all_good">Tutto bene!</string>
+    <string name="widget_worst_no_habits">Nessuna abitudine</string>
+    <string name="widget_worst_rate_label">tasso 30 giorni</string>
+
+    <!-- Config activities -->
+    <string name="error_both_fields_required">Entrambi i campi sono obbligatori</string>
+    <string name="error_enter_url_token_first">Inserisci prima URL e API key</string>
+    <string name="error_no_habits_found">Nessuna abitudine trovata</string>
+    <string name="error_select_one_habit">Seleziona almeno un\'abitudine</string>
+    <string name="error_generic">Errore: %1$s</string>
+    <string name="cancel">Annulla</string>
+
+    <!-- Pairing -->
+    <string name="pairing_title">Configurare i widget?</string>
+    <string name="pairing_message">Server: %1$s\nAPI key: %2$s\n\nLa chiave viene salvata cifrata su questo telefono e usata da tutti i widget Habitikami.</string>
+    <string name="pairing_confirm">Configura</string>
+    <string name="pairing_done">Widget configurati</string>
+    <string name="pairing_invalid_link">Link di configurazione non valido</string>
+
+    <!-- Update dialog -->
+    <string name="update_title">Aggiornamento disponibile</string>
+    <string name="update_message">È disponibile la versione v%1$s (hai la v%2$s).</string>
+    <string name="update_changelog_title">Novità</string>
+    <string name="update_download_note">Android chiederà di consentire l\'installazione da questa origine.</string>
+    <string name="update_now">Aggiorna</string>
+    <string name="update_later">Più tardi</string>
+    <string name="update_skip">Salta questa versione</string>
+
+    <!-- Widget descriptions -->
+    <string name="widget_description">Segna e incrementa i tuoi contatori giornalieri</string>
+    <string name="widget_stats_description">Heatmap di completamento delle abitudini con legenda</string>
+    <string name="widget_habit_stats_description">Streak, tasso e totale di una singola abitudine</string>
+    <string name="widget_counter_chart_description">Grafico a barre dei contatori su 14 giorni</string>
+    <string name="widget_streak_fire_description">La tua miglior streak corrente con fuoco motivazionale</string>
+    <string name="widget_worst_habit_description">Evidenzia l\'abitudine che ha più bisogno di attenzione</string>
+    <string name="widget_checklist_description">Le abitudini di oggi con stato fatto/non fatto</string>
+    <string name="widget_weekly_summary_description">Confronto tra questa settimana e la scorsa</string>
+    <string name="widget_mini_heatmap_description">Striscia colorata a 14 giorni per una singola abitudine</string>
+    <string name="widget_help_description">Pulsante rapido per aprire l\'aiuto di Habitikami</string>
+    <string name="label_help">Aiuto</string>
+    <string name="label_ai_help">Aiuto AI</string>
+    <string name="btn_refresh">Aggiorna</string>
+    <string name="config_title">Widget Habitikami</string>
 </resources>

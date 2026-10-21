@@ -46,7 +46,7 @@ class WeeklySummaryWidgetProvider : AppWidgetProvider() {
     private fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
         val loading = RemoteViews(context.packageName, R.layout.widget_weekly_summary).apply {
             setImageViewResource(R.id.iv_weekly, android.R.color.transparent)
-            setTextViewText(R.id.tv_weekly_status, "Loading…")
+            setTextViewText(R.id.tv_weekly_status, context.getString(R.string.widget_loading))
         }
         setupIntents(context, loading, widgetId)
         manager.updateAppWidget(widgetId, loading)
@@ -56,7 +56,7 @@ class WeeklySummaryWidgetProvider : AppWidgetProvider() {
             val config = CounterWidgetProvider.getConfig(context)
 
             if (config == null) {
-                views.setTextViewText(R.id.tv_weekly_status, "Configure counter widget first")
+                WidgetErrors.applyNotConfigured(context, views, R.id.tv_weekly_status, widgetId)
             } else {
                 try {
                     val (baseUrl, apiToken) = config
@@ -98,8 +98,11 @@ class WeeklySummaryWidgetProvider : AppWidgetProvider() {
 
                     views.setImageViewBitmap(R.id.iv_weekly, bitmap)
                     views.setTextViewText(R.id.tv_weekly_status, "")
-                } catch (_: Exception) {
-                    views.setTextViewText(R.id.tv_weekly_status, "Failed to load data")
+                    WidgetErrors.markUpdated(context, "weekly")
+                } catch (e: Exception) {
+                    // Offline: keep the last rendered data, just say so
+                    if (WidgetErrors.showOfflineKeepingContent(context, manager, widgetId, R.layout.widget_weekly_summary, R.id.tv_weekly_status, e, "weekly")) return@launch
+                    WidgetErrors.applyFailure(context, views, R.id.tv_weekly_status, widgetId, e, "weekly")
                 }
             }
 

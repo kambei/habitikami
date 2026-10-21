@@ -8,7 +8,7 @@ import java.net.URL
 
 object UpdateChecker {
 
-    data class Release(val tagName: String, val htmlUrl: String, val apkUrl: String?)
+    data class Release(val tagName: String, val htmlUrl: String, val apkUrl: String?, val body: String = "")
 
     suspend fun checkForUpdate(currentVersion: String): Release? = withContext(Dispatchers.IO) {
         try {
@@ -24,6 +24,7 @@ object UpdateChecker {
             val json = JSONObject(body)
             val tagName = json.optString("tag_name", "").removePrefix("v")
             val htmlUrl = json.optString("html_url", "")
+            val body = json.optString("body", "").trim()
 
             if (tagName.isEmpty() || !isNewer(tagName, currentVersion)) {
                 return@withContext null
@@ -43,10 +44,20 @@ object UpdateChecker {
                 }
             }
 
-            Release(tagName, htmlUrl, apkUrl)
+            Release(tagName, htmlUrl, apkUrl, shortChangelog(body))
         } catch (_: Exception) {
             null
         }
+    }
+
+    /** Keeps the first lines of the release notes, stripped of markdown noise, so they fit in a dialog. */
+    fun shortChangelog(body: String, maxLines: Int = 12): String {
+        val lines = body.lines()
+            .map { it.trim().removePrefix("#").removePrefix("#").removePrefix("#").trim() }
+            .map { it.replace(Regex("^[-*]\\s+"), "• ").replace("**", "").replace("`", "") }
+            .filter { it.isNotEmpty() && !it.startsWith("Claude-Session") && !it.startsWith("Co-Authored-By") }
+        val out = lines.take(maxLines).joinToString("\n")
+        return if (lines.size > maxLines) "$out\n…" else out
     }
 
     /** Compare semver strings, return true if remote > current. */

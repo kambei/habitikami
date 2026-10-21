@@ -1,10 +1,19 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, SkipForward, RefreshCw, Trophy, Calendar } from 'lucide-react';
-import type { SheetType } from '../types';
+import type { HabitCellValue, SheetType } from '../types';
 import { useTranslation } from '../i18n';
 import { useSheetData } from '../hooks/useSheetData';
 import { useUpdateCell } from '../hooks/useHabitMutations';
+import { useHabitStreaks } from '../hooks/useStreaks';
+import { StreakBadge } from './ui/StreakBadge';
+import { MilestoneCelebration } from './MilestoneCelebration';
+import { useHabitMeta } from '../hooks/useHabitMutations';
+import { countsAsDone } from '../utils/streaks';
+import { NumericCell } from './ui/NumericCell';
+import { SlotTag } from './ui/SlotTag';
+import { currentSlot, slotLabelKey } from '../utils/slots';
+import type { HabitSlot } from '../types';
 
 interface CompactHabitViewProps {
     refreshKey?: number;
@@ -13,6 +22,10 @@ interface CompactHabitViewProps {
 export function CompactHabitView({ }: CompactHabitViewProps) {
     const { t } = useTranslation();
     const [currentIndex, setCurrentIndex] = useState(0);
+    const { streaks } = useHabitStreaks();
+    const { data: habitMeta } = useHabitMeta();
+    // Habits of the current time slot first; 'all' shows every pending habit
+    const [slotFilter, setSlotFilter] = useState<'now' | 'all'>('now');
 
     const now = new Date();
     const day = now.getDay();
@@ -27,29 +40,42 @@ export function CompactHabitView({ }: CompactHabitViewProps) {
     const { data: sheetData, isLoading: loading, refetch } = useSheetData(sheetName, year, month);
     const updateCellMutation = useUpdateCell();
 
-    const { habits, completedCount, meta } = useMemo(() => {
-        if (!sheetData) return { habits: [], completedCount: 0, meta: null };
+    const { habits, completedCount, meta, todayValues, hiddenBySlot, hasSlots } = useMemo(() => {
+        const empty = { habits: [] as string[], completedCount: 0, meta: null, todayValues: {} as Record<string, HabitCellValue>, hiddenBySlot: 0, hasSlots: false };
+        if (!sheetData) return empty;
 
         const todayRowIndex = sheetData.data.findIndex(d => d.date === todayStr);
-        if (todayRowIndex === -1) return { habits: [], completedCount: 0, meta: null };
+        if (todayRowIndex === -1) return empty;
 
         const todayData = sheetData.data[todayRowIndex];
-        // Incomplete means habit is false (not true AND not skipped)
-        const incompleteHabits = sheetData.headers.filter(h => todayData.habits[h] === false);
-        const skippedCount = sheetData.headers.filter(h => todayData.habits[h] === 'skipped').length;
-        const checkedCount = sheetData.headers.filter(h => todayData.habits[h] === true).length;
-        const halfCount = sheetData.headers.filter(h => todayData.habits[h] === 'half').length;
+        const slotOf = (h: string): HabitSlot => habitMeta?.[h]?.slot ?? 'any';
+        const isPending = (h: string) => {
+            const v = todayData.habits[h];
+            if (v === 'skipped') return false;
+            if (habitMeta?.[h]?.type === 'number') return !countsAsDone(v, habitMeta[h].target);
+            return v === false;
+        };
+        const pending = sheetData.headers.filter(isPending);
+        const now = currentSlot();
+        const hasSlots = sheetData.headers.some(h => slotOf(h) !== 'any');
+        // Current slot first, then "any time", then the other slots
+        const rank = (h: string) => (slotOf(h) === now ? 0 : slotOf(h) === 'any' ? 1 : 2);
+        const ordered = [...pending].sort((a, b) => rank(a) - rank(b));
+        const visible = slotFilter === 'now' && hasSlots ? ordered.filter(h => rank(h) < 2) : ordered;
 
         return {
-            habits: incompleteHabits,
-            completedCount: checkedCount + skippedCount + halfCount,
+            habits: visible,
+            completedCount: sheetData.headers.length - pending.length,
+            todayValues: todayData.habits,
+            hiddenBySlot: ordered.length - visible.length,
+            hasSlots,
             meta: {
                 ...sheetData.meta,
                 headers: sheetData.headers,
                 rowHeight: todayRowIndex
             }
         };
-    }, [sheetData, todayStr]);
+    }, [sheetData, todayStr, habitMeta, slotFilter]);
 
     const handleComplete = async () => {
         if (!meta || habits.length === 0) return;
@@ -64,14 +90,29 @@ export function CompactHabitView({ }: CompactHabitViewProps) {
         const headerIndex = meta.headers.indexOf(currentHabit);
         const colIndex = meta.startCol + headerIndex;
 
+        const numericMeta = habitMeta?.[currentHabit]?.type === 'number' ? habitMeta[currentHabit] : null;
         updateCellMutation.mutate({ 
             sheetName, 
             rowIndex: sheetRow, 
             colIndex, 
-            value: true,
+            value: numericMeta ? (numericMeta.target ?? 1) : true,
             year,
             month,
             habitName: currentHabit
+        });
+    };
+
+    const handleSetValue = (value: number) => {
+        if (!meta || habits.length === 0) return;
+        const currentHabit = habits[displayedIndex];
+        updateCellMutation.mutate({
+            sheetName,
+            rowIndex: meta.dataStartRow + meta.rowHeight,
+            colIndex: meta.startCol + meta.headers.indexOf(currentHabit),
+            value,
+            year,
+            month,
+            habitName: currentHabit,
         });
     };
 
@@ -149,6 +190,7 @@ export function CompactHabitView({ }: CompactHabitViewProps) {
 
     return (
         <div className="flex flex-col h-full max-w-2xl mx-auto p-4 md:p-8">
+            <MilestoneCelebration streaks={streaks} />
             <div className="flex items-center justify-between mb-8 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                     <Calendar size={16} />
@@ -166,6 +208,23 @@ export function CompactHabitView({ }: CompactHabitViewProps) {
                 />
             </div>
 
+            {hasSlots && (
+                <div className="flex items-center justify-center gap-2 -mt-8 mb-6 text-xs">
+                    <button
+                        onClick={() => setSlotFilter('now')}
+                        className={`px-3 py-1 rounded-full border transition-colors ${slotFilter === 'now' ? 'border-primary bg-primary/15 text-foreground' : 'border-border text-muted-foreground'}`}
+                    >
+                        {t('focusSlotNow')} · {t(slotLabelKey(currentSlot()))}
+                    </button>
+                    <button
+                        onClick={() => setSlotFilter('all')}
+                        className={`px-3 py-1 rounded-full border transition-colors ${slotFilter === 'all' ? 'border-primary bg-primary/15 text-foreground' : 'border-border text-muted-foreground'}`}
+                    >
+                        {t('focusSlotAll')}{hiddenBySlot > 0 ? ` (+${hiddenBySlot})` : ''}
+                    </button>
+                </div>
+            )}
+
             <div className="flex-1 flex flex-col items-center justify-center relative min-h-[300px]">
                 <AnimatePresence mode="wait">
                     <motion.div
@@ -181,10 +240,33 @@ export function CompactHabitView({ }: CompactHabitViewProps) {
                         <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
                             {habits[displayedIndex]}
                         </h2>
+                        {streaks[habits[displayedIndex]]?.currentStreak > 0 && (
+                            <div className="flex items-center gap-2 -mt-4">
+                                <StreakBadge streak={streaks[habits[displayedIndex]].currentStreak} best={streaks[habits[displayedIndex]].bestStreak} size="lg" />
+                                <span className="text-sm text-muted-foreground">{t('focusStreakLabel')}</span>
+                            </div>
+                        )}
 
-                        <p className="text-muted-foreground text-lg">
-                            {t('focusReady')}
-                        </p>
+                        {habitMeta?.[habits[displayedIndex]] && (
+                            <SlotTag slot={habitMeta[habits[displayedIndex]].slot} time={habitMeta[habits[displayedIndex]].time} withLabel className="-mt-4" />
+                        )}
+
+                        {habitMeta?.[habits[displayedIndex]]?.type === 'number' ? (
+                            <div className="flex flex-col items-center gap-2">
+                                <NumericCell
+                                    value={typeof todayValues[habits[displayedIndex]] === 'number' ? (todayValues[habits[displayedIndex]] as number) : 0}
+                                    target={habitMeta[habits[displayedIndex]].target}
+                                    unit={habitMeta[habits[displayedIndex]].unit}
+                                    disabled={updateCellMutation.isPending}
+                                    onChange={handleSetValue}
+                                />
+                                <span className="text-xs text-muted-foreground">{t('focusNumericGoal')}: {habitMeta[habits[displayedIndex]].target}{habitMeta[habits[displayedIndex]].unit ? ` ${habitMeta[habits[displayedIndex]].unit}` : ''}</span>
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground text-lg">
+                                {t('focusReady')}
+                            </p>
+                        )}
 
                         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto mt-4">
                             <button

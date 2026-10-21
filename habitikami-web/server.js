@@ -1521,6 +1521,36 @@ const extractHabitColors = (sheetData) => {
 
 // ─── Export endpoint ──────────────────────────────────────────────────────────
 
+// HabitMeta!A:G → { [habit]: { type, target, unit, slot, time } }; {} when the sheet is missing.
+// Mirrors habitikami-web/src/utils/habitMeta.ts (rowToHabitMeta).
+async function readHabitMeta(sheets, spreadsheetId) {
+    try {
+        const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'HabitMeta!A:G' });
+        const rows = res.data.values || [];
+        const out = {};
+        const start = rows[0] && typeof rows[0][0] === 'string' && /habit/i.test(rows[0][0]) ? 1 : 0;
+        for (let i = start; i < rows.length; i++) {
+            const row = rows[i] || [];
+            const name = row[0];
+            if (!name) continue;
+            const type = String(row[2] || '').trim().toLowerCase() === 'number' ? 'number' : 'check';
+            const target = parseFloat(String(row[3] || '').replace(',', '.'));
+            const slot = String(row[5] || '').trim().toLowerCase();
+            const time = String(row[6] || '').trim();
+            out[name] = {
+                type,
+                target: Number.isFinite(target) && target > 0 ? target : null,
+                unit: String(row[4] || '').trim() || null,
+                slot: ['morning', 'afternoon', 'evening'].includes(slot) ? slot : 'any',
+                time: /^([01]?\d|2[0-3]):[0-5]\d$/.test(time) ? time : null,
+            };
+        }
+        return out;
+    } catch {
+        return {};
+    }
+}
+
 app.get('/api/export', authenticate, async (req, res) => {
     try {
         const spreadsheetId = await resolveSpreadsheetId(req);
@@ -1551,10 +1581,15 @@ app.get('/api/export', authenticate, async (req, res) => {
             else if (title === 'Weekend') colors.weekend = extractHabitColors(sheet);
         });
 
+        // Per-habit metadata (type, goal, unit, slot, time). The sheet may not
+        // exist yet, so it is read on its own and never fails the export.
+        const habitMeta = await readHabitMeta(sheets, spreadsheetId);
+
         const result = {
             timestamp: new Date().toISOString(),
             weekdays: [], weekend: [], counters: [], notes: [],
             colors,
+            habitMeta,
         };
 
         if (valueRanges) {

@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.11.0 + 🤖 Android 5.3.6 - 2026-10-21
+### 🔥 Streaks (#1)
+- **Streak Badges**: a flame chip with the current streak in the table header, next to each habit in the grid and under the habit in Focus (hover shows the best streak). Computed over the last year across Weekdays and Weekend with the shared rules (TRUE/HALF continue, SKIP neutral, today pending).
+- **Milestones**: reaching 7, 30 or 100 days in a row shows a one-off celebration card, remembered per device.
+- **Longest Streaks** section in Graphs: habits ranked by best streak with the current one next to it. The Windows widget summary uses the same numbers.
+
+### 🔢 Quantitative Habits (#14)
+- **Type, Goal, Unit** per habit from the habit info popup (table and grid), which now also opens right after adding a habit. The editor replaces the description-only one and keeps every other field.
+- **Numeric Cells**: +/- stepper with direct input and a progress bar in the table; compact tap-to-step cell in the grid (right-click steps down); goal and input in Focus, where "Complete" sets the goal.
+- **Values Over Time** chart with the goal line in Graphs for every numeric habit.
+- **Widgets**: `/api/export` returns `habitMeta`; the Android widgets count a numeric cell as done when it reaches its goal (Android 5.3.6).
+
+### 🌅 Time Slots (#12)
+- **Morning / Afternoon / Evening** tag and optional reminder time per habit; shown on the table header, the grid labels and the Focus card.
+- **Focus by Slot**: Focus lists the habits of the current slot first (then "any time", then the rest) with a Now/All toggle. The reminder time feeds the push reminders coming with #11.
+
+### 📝 Notes per Habit and Day (#13)
+- **HabitNotes Sheet** (`Date | Habit | Note`): a note button on every table cell (and right-click), a dot on grid cells with a note (right-click opens it), note text in the tooltips.
+- **Search**: the Notes view gets a search box over all habit notes with inline editing.
+
+### 📦 Habit Templates (#15)
+- **Four Packs**: fitness, productivity, mental wellbeing, quit smoking, in Italian and English, with colours, time slots, goals and descriptions.
+- **Picker** from the table header (next to "+") and from Help settings: choose the habits, add them to Weekdays, Weekend or both; existing names are skipped.
+
 ## 🌐 Web 5.10.1 - 2026-10-21
 ### ✨ UX Quick Wins
 - **Document Language** (#57): `<html lang>` now follows the app language on load and on every switch, instead of staying `en` until the language was toggled.

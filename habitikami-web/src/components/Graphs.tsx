@@ -12,6 +12,10 @@ import { parseDate } from '../utils/dateParsing';
 import { Skeleton } from './ui/Skeleton';
 import { useTranslation } from '../i18n';
 import { ExpandableGraph } from './graphs/ExpandableGraph';
+import { StreakLeaderboard } from './graphs/StreakLeaderboard';
+import { useHabitStreaks } from '../hooks/useStreaks';
+import { useHabitMeta } from '../hooks/useHabitMutations';
+import { NumericHabitChart } from './graphs/NumericHabitChart';
 
 // Deterministic color generation
 const COLORS = [
@@ -27,6 +31,9 @@ export function Graphs() {
     const [dailyTrends, setDailyTrends] = useState<DailyTrend[]>([]);
     const [dayOfWeekStats, setDayOfWeekStats] = useState<DayPerformance[]>([]);
     const [allData, setAllData] = useState<HabitData[]>([]);
+    const { streaks } = useHabitStreaks();
+    const { data: habitMeta } = useHabitMeta();
+    const numericHabits = Object.entries(habitMeta ?? {}).filter(([, m]) => m.type === 'number');
     const [trainingStats, setTrainingStats] = useState<TrainingStats | null>(null);
 
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -199,6 +206,12 @@ export function Graphs() {
                 <ExpandableGraph title={t('graphsWeeklyPerformance')}>
                     <DayOfWeekPerformance data={dayOfWeekStats} />
                 </ExpandableGraph>
+            </div>
+
+            {/* Streaks: best and current per habit, across both sheets */}
+            <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 mb-8">
+                <h2 className="text-lg md:text-xl font-bold mb-4">{t('graphsStreaks')}</h2>
+                <StreakLeaderboard streaks={streaks} colors={habitColors} />
             </div>
 
             {/* Main Stats: Bar Chart */}
@@ -374,6 +387,24 @@ export function Graphs() {
                     </div>
                 </ExpandableGraph>
             </div>
+
+            {/* Quantitative habits: values over time */}
+            {numericHabits.length > 0 && (
+                <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 mb-8">
+                    <h2 className="text-lg md:text-xl font-bold mb-4">{t('graphsNumericTitle')}</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {numericHabits.map(([name, meta]) => (
+                            <div key={name}>
+                                <div className="text-sm font-medium mb-1 flex items-center gap-2">
+                                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: habitColors[name] || '#6b7280' }} />
+                                    {name}
+                                </div>
+                                <NumericHabitChart data={allData} habitName={name} meta={meta} color={habitColors[name] || '#6b7280'} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Heatmaps Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

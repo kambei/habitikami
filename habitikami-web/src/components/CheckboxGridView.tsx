@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pencil, Check, X } from 'lucide-react';
-import type { HabitCellValue, HabitData } from '../types';
+import type { HabitCellValue, HabitData, HabitNote } from '../types';
+import { noteKey } from '../utils/habitNotes';
 import { useTranslation } from '../i18n';
 import { translateDay } from '../utils/dayTranslation';
 import { useSheetData } from '../hooks/useSheetData';
 import { useHabitMeta, useSetHabitMeta, useRenameHabit } from '../hooks/useHabitMutations';
 import { habitStreakStats } from '../utils/streaks';
 import { descriptionsOf } from '../utils/habitMeta';
+import { useHabitStreaks } from '../hooks/useStreaks';
+import { StreakBadge } from './ui/StreakBadge';
+import { SlotTag } from './ui/SlotTag';
+import { NumericCell } from './ui/NumericCell';
+import { HabitMetaEditor, HabitMetaSummary } from './HabitMetaEditor';
 
 interface CheckboxGridViewProps {
     headers: string[];
@@ -16,6 +22,9 @@ interface CheckboxGridViewProps {
     meta: { startCol: number; headerRowIndex: number; dataStartRow: number } | null;
     dataStartRow: number;
     onToggle: (rowIndex: number, habit: string, currentValue: HabitCellValue) => void;
+    onSetValue: (rowIndex: number, habit: string, value: number) => void;
+    onOpenNote: (date: string, habit: string) => void;
+    notes: Record<string, HabitNote>;
     isPending: boolean;
     sheetName: string;
     year: number;
@@ -27,6 +36,9 @@ export function CheckboxGridView({
     data,
     colors,
     onToggle,
+    onSetValue,
+    onOpenNote,
+    notes,
     isPending,
     sheetName,
     year,
@@ -37,6 +49,7 @@ export function CheckboxGridView({
     const [selectedHabit, setSelectedHabit] = useState<string | null>(null);
 
     const { data: habitMeta } = useHabitMeta();
+    const { streaks } = useHabitStreaks();
     const metaMap: Record<string, string> = useMemo(() => descriptionsOf(habitMeta), [habitMeta]);
     const setMeta = useSetHabitMeta();
     const renameHabit = useRenameHabit();
@@ -44,14 +57,12 @@ export function CheckboxGridView({
     const [editingName, setEditingName] = useState(false);
     const [nameDraft, setNameDraft] = useState('');
     const [editingDesc, setEditingDesc] = useState(false);
-    const [descDraft, setDescDraft] = useState('');
 
     const openHabit = (habit: string) => {
         setSelectedHabit(habit);
         setEditingName(false);
         setNameDraft(habit);
         setEditingDesc(false);
-        setDescDraft(metaMap[habit] || '');
     };
 
     const closePopup = () => {
@@ -75,12 +86,6 @@ export function CheckboxGridView({
     const cancelRename = () => {
         setEditingName(false);
         setNameDraft(selectedHabit || '');
-    };
-
-    const saveDesc = () => {
-        if (!selectedHabit) return;
-        setMeta.mutate({ habitName: selectedHabit, description: descDraft });
-        setEditingDesc(false);
     };
 
     // Fetch the other sheet (Weekdays↔Weekend) for merged stats
@@ -150,6 +155,10 @@ export function CheckboxGridView({
                                         style={{ backgroundColor: color }}
                                     />
                                     <span className="text-xs font-medium truncate">{habit}</span>
+                                    {habitMeta?.[habit] && <SlotTag slot={habitMeta[habit].slot} className="shrink-0" />}
+                                    {streaks[habit]?.currentStreak > 0 && (
+                                        <StreakBadge streak={streaks[habit].currentStreak} best={streaks[habit].bestStreak} className="ml-auto shrink-0" />
+                                    )}
                                 </button>
                             </motion.div>
                         );
@@ -191,14 +200,31 @@ export function CheckboxGridView({
                                     const today = isToday(row.date);
 
                                     const desc = metaMap[habit]?.trim();
-                                    const checkTooltip = `${row.date}: ${checked === true ? '✓' : checked === 'skipped' ? '⏭' : '✗'}${desc ? ` — ${desc}` : ''}`;
+                                    const note = notes[noteKey(row.date, habit)]?.note;
+                                    const checkTooltip = `${row.date}: ${checked === true ? '✓' : checked === 'skipped' ? '⏭' : '✗'}${desc ? ` — ${desc}` : ''}${note ? ` — 📝 ${note}` : ''}`;
+                                    if (habitMeta?.[habit]?.type === 'number') {
+                                        return (
+                                            <div key={row.date + rIndex} className={`shrink-0 w-[calc((100%-24px)/7)] md:w-[calc((100%-48px)/7)] h-6 md:h-8 ${today ? 'ring-1 ring-primary ring-offset-1 ring-offset-background rounded-sm' : ''}`}>
+                                                <NumericCell
+                                                    compact
+                                                    value={typeof checked === 'number' ? checked : 0}
+                                                    target={habitMeta[habit].target}
+                                                    unit={habitMeta[habit].unit}
+                                                    color={color}
+                                                    disabled={isPending}
+                                                    onChange={(v) => onSetValue(rIndex, habit, v)}
+                                                />
+                                            </div>
+                                        );
+                                    }
                                     return (
                                         <button
                                             key={row.date + rIndex}
                                             title={checkTooltip}
                                             disabled={isPending}
                                             onClick={() => onToggle(rIndex, habit, checked)}
-                                            className={`shrink-0 w-[calc((100%-24px)/7)] md:w-[calc((100%-48px)/7)] h-6 md:h-8 rounded-sm transition-all duration-150 cursor-pointer hover:scale-110 active:scale-95 disabled:cursor-not-allowed ${today ? 'ring-1 ring-primary ring-offset-1 ring-offset-background' : ''}`}
+                                            onContextMenu={(e) => { e.preventDefault(); onOpenNote(row.date, habit); }}
+                                            className={`shrink-0 relative w-[calc((100%-24px)/7)] md:w-[calc((100%-48px)/7)] h-6 md:h-8 rounded-sm transition-all duration-150 cursor-pointer hover:scale-110 active:scale-95 disabled:cursor-not-allowed ${today ? 'ring-1 ring-primary ring-offset-1 ring-offset-background' : ''}`}
                                             style={checked === true
                                                 ? { backgroundColor: color, boxShadow: `0 0 6px ${color}40` }
                                                 : checked === 'skipped'
@@ -207,7 +233,9 @@ export function CheckboxGridView({
                                                 ? { background: `linear-gradient(to bottom right, ${color} 50%, transparent 50%)`, border: `2px solid ${color}` }
                                                 : { backgroundColor: 'transparent', border: `2px solid ${color}50` }
                                             }
-                                        />
+                                        >
+                                            {note && <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-300 shadow" />}
+                                        </button>
                                     );
                                 })}
                             </div>
@@ -332,7 +360,7 @@ export function CheckboxGridView({
                                     <p className="text-xs text-muted-foreground">{t('habitInfoDescriptionLabel')}</p>
                                     {!editingDesc && (
                                         <button
-                                            onClick={() => { setDescDraft(metaMap[selectedHabit] || ''); setEditingDesc(true); }}
+                                            onClick={() => setEditingDesc(true)}
                                             className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                                         >
                                             <Pencil className="w-3 h-3" /> {t('habitInfoEdit')}
@@ -340,36 +368,20 @@ export function CheckboxGridView({
                                     )}
                                 </div>
                                 {editingDesc ? (
-                                    <>
-                                        <textarea
-                                            autoFocus
-                                            value={descDraft}
-                                            onChange={(e) => setDescDraft(e.target.value)}
-                                            placeholder={t('habitInfoDescriptionPlaceholder')}
-                                            rows={4}
-                                            className="w-full bg-background border border-border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
-                                        />
-                                        <div className="flex justify-end gap-2 mt-2">
-                                            <button
-                                                onClick={() => { setEditingDesc(false); setDescDraft(metaMap[selectedHabit] || ''); }}
-                                                className="px-3 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-xs font-medium transition-colors"
-                                            >
-                                                {t('habitInfoCancel')}
-                                            </button>
-                                            <button
-                                                onClick={saveDesc}
-                                                disabled={setMeta.isPending}
-                                                className="px-3 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium transition-colors disabled:opacity-60"
-                                            >
-                                                {t('habitInfoSave')}
-                                            </button>
-                                        </div>
-                                    </>
+                                    <HabitMetaEditor
+                                        meta={habitMeta?.[selectedHabit]}
+                                        saving={setMeta.isPending}
+                                        onCancel={() => setEditingDesc(false)}
+                                        onSave={(patch) => setMeta.mutate({ habitName: selectedHabit, ...patch }, { onSuccess: () => setEditingDesc(false) })}
+                                    />
                                 ) : (
-                                    <div className="text-sm whitespace-pre-wrap break-words text-foreground/90 bg-secondary/30 rounded-md p-3 border border-border/50 min-h-[60px]">
-                                        {metaMap[selectedHabit]?.trim() || (
-                                            <span className="text-muted-foreground italic text-xs">{t('habitInfoEmpty')}</span>
-                                        )}
+                                    <div className="space-y-2">
+                                        <div className="text-sm whitespace-pre-wrap break-words text-foreground/90 bg-secondary/30 rounded-md p-3 border border-border/50 min-h-[60px]">
+                                            {metaMap[selectedHabit]?.trim() || (
+                                                <span className="text-muted-foreground italic text-xs">{t('habitInfoEmpty')}</span>
+                                            )}
+                                        </div>
+                                        <HabitMetaSummary meta={habitMeta?.[selectedHabit]} />
                                     </div>
                                 )}
                             </div>

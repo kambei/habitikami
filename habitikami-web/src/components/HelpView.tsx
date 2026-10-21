@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { HeartHandshake, Key, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2, FilePlus2, Loader2, ScanLine } from 'lucide-react';
+import { HeartHandshake, Key, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2, FilePlus2, Loader2, ScanLine, LayoutTemplate } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import type { GuidedStep } from '../types';
@@ -10,6 +10,7 @@ import { schedeTemplates } from '../data/schedeTemplates';
 import { SchedeCompiler } from './SchedeCompiler';
 import { SchedaImporter } from './SchedaImporter';
 import { TemptationSettings } from './TemptationSettings';
+import { HabitTemplatesPicker } from './HabitTemplatesPicker';
 import type { SchedaTemplate } from '../data/schedeTemplates';
 import {
     type AIProvider,
@@ -58,6 +59,7 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     const [apiKeyCopied, setApiKeyCopied] = useState(false);
     const [showApiKey, setShowApiKey] = useState(false);
     const [apiKeyRegenerated, setApiKeyRegenerated] = useState(false);
+    const [templatesOpen, setTemplatesOpen] = useState(false);
     const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
     // Spreadsheet ID state
@@ -687,6 +689,27 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                     {/* 3. Temptation Management */}
                     <div className="border-t border-border/50 pt-5">
                         <TemptationSettings />
+                    </div>
+
+                    {/* 3b. Habit templates */}
+                    <div className="border-t border-border/50 pt-5 rounded-xl">
+                        <div className="rounded-xl border border-border/50 bg-background/30 p-4 flex items-center gap-3">
+                            <div className="w-8 h-8 bg-violet-500/15 rounded-lg flex items-center justify-center shrink-0">
+                                <LayoutTemplate className="w-4 h-4 text-violet-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-sm">{t('settingsTemplatesTitle')}</h3>
+                                <span className="text-[10px] text-muted-foreground">{t('settingsTemplatesDesc')}</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setTemplatesOpen(true)}
+                                className="shrink-0 text-xs font-medium px-3 py-2 rounded-lg bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-all"
+                            >
+                                {t('settingsTemplatesOpen')}
+                            </button>
+                        </div>
+                        <HabitTemplatesPicker isOpen={templatesOpen} onClose={() => setTemplatesOpen(false)} />
                     </div>
 
                     {/* 4. AI API Keys */}

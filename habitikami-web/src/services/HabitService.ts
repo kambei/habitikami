@@ -3,7 +3,8 @@ import { gapi } from 'gapi-script';
 // and we need to initialize the client.
 import { hexToSheetColor, sheetColorToHex } from '../utils/colors';
 import { findHeaderRowIndex } from '../utils/parser';
-import type { HabitMeta, MoodEntry } from '../types';
+import type { HabitMeta, HabitNote, MoodEntry } from '../types';
+import { HABIT_NOTES_COLUMNS, HABIT_NOTES_RANGE, HABIT_NOTES_SHEET, noteKey, rowsToHabitNotes } from '../utils/habitNotes';
 import { MOOD_COLUMNS, MOOD_RANGE, MOOD_SHEET, moodEntryToRow, rowsToMoodEntries } from '../utils/mood';
 import { HABIT_META_COLUMNS, HABIT_META_RANGE, mergeHabitMeta, rowToHabitMeta, habitMetaToRow } from '../utils/habitMeta';
 
@@ -1817,6 +1818,80 @@ class HabitServiceImpl {
      * Ensure the Training sheet exists; create it if missing.
      * Headers: Date | Section | Exercise | Session | Duration
      */
+    // ─── HabitNotes sheet ─────────────────────────────────────────────────────
+    // Date | Habit | Note, one row per (date, habit); see utils/habitNotes.ts
+
+    private async ensureHabitNotesSheet(): Promise<void> {
+        const spreadsheetId = this.getSpreadsheetId();
+        const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId, fields: 'sheets(properties(title))' });
+        if (meta.result.sheets?.some((s: any) => s.properties?.title === HABIT_NOTES_SHEET)) return;
+        await gapi.client.sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: { requests: [{ addSheet: { properties: { title: HABIT_NOTES_SHEET, gridProperties: { frozenRowCount: 1 } } } }] }
+        });
+        await gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `${HABIT_NOTES_SHEET}!A1:C1`,
+            valueInputOption: 'USER_ENTERED',
+            resource: { values: [[...HABIT_NOTES_COLUMNS]] }
+        });
+    }
+
+    /** All notes keyed by `date|habit`. A missing sheet reads as {}. */
+    async getHabitNotes(): Promise<{ notes: Record<string, HabitNote> } | { error: string }> {
+        try {
+            await this.ensureClient();
+            const res = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: this.getSpreadsheetId(), range: HABIT_NOTES_RANGE });
+            const notes: Record<string, HabitNote> = {};
+            for (const [key, { date, habit, note }] of rowsToHabitNotes(res.result.values || [])) {
+                if (note) notes[key] = { date, habit, note };
+            }
+            return { notes };
+        } catch (e: any) {
+            const msg: string = e.result?.error?.message || e.message || '';
+            if (e.status === 400 || /Unable to parse range/i.test(msg)) return { notes: {} };
+            return { error: msg };
+        }
+    }
+
+    /** Writes the note of one habit on one day; an empty note removes the row. */
+    async setHabitNote(date: string, habit: string, note: string): Promise<{ success: boolean } | { error: string }> {
+        try {
+            await this.ensureClient();
+            await this.ensureHabitNotesSheet();
+            const spreadsheetId = this.getSpreadsheetId();
+            const res = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId, range: HABIT_NOTES_RANGE });
+            const existing = rowsToHabitNotes(res.result.values || []).get(noteKey(date, habit));
+            const text = note.trim();
+
+            if (existing && !text) {
+                const sheetId = await this.getSheetId(HABIT_NOTES_SHEET);
+                if (sheetId === null) return { success: true };
+                await gapi.client.sheets.spreadsheets.batchUpdate({
+                    spreadsheetId,
+                    resource: { requests: [{ deleteDimension: { range: { sheetId, dimension: 'ROWS', startIndex: existing.rowIndex, endIndex: existing.rowIndex + 1 } } }] }
+                });
+            } else if (existing) {
+                await gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId,
+                    range: `${HABIT_NOTES_SHEET}!A${existing.rowIndex + 1}:C${existing.rowIndex + 1}`,
+                    valueInputOption: 'USER_ENTERED',
+                    resource: { values: [[date, habit, text]] }
+                });
+            } else if (text) {
+                await gapi.client.sheets.spreadsheets.values.append({
+                    spreadsheetId,
+                    range: HABIT_NOTES_RANGE,
+                    valueInputOption: 'USER_ENTERED',
+                    resource: { values: [[date, habit, text]] }
+                });
+            }
+            return { success: true };
+        } catch (e: any) {
+            return { error: e.result?.error?.message || e.message };
+        }
+    }
+
     // ─── Mood sheet ───────────────────────────────────────────────────────────
     // Date | Timestamp | Mood | Anxiety | Label | Source (see utils/mood.ts)
 

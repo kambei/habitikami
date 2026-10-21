@@ -93,3 +93,10 @@ export interface MoodEntry {
     label: string;       // e.g. "Guided Session", "Emotion Diary"
     source?: 'chat' | 'worksheet' | 'local';
 }
+
+/** Free-text note of one habit on one day (HabitNotes sheet, see utils/habitNotes.ts). */
+export interface HabitNote {
+    date: string;   // DD/MM/YYYY
+    habit: string;
+    note: string;
+}

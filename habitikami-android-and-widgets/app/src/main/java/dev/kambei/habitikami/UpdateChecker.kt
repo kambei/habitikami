@@ -24,7 +24,7 @@ object UpdateChecker {
             val json = JSONObject(body)
             val tagName = json.optString("tag_name", "").removePrefix("v")
             val htmlUrl = json.optString("html_url", "")
-            val body = json.optString("body", "").trim()
+            val notes = json.optString("body", "").trim()
 
             if (tagName.isEmpty() || !isNewer(tagName, currentVersion)) {
                 return@withContext null
@@ -44,7 +44,7 @@ object UpdateChecker {
                 }
             }
 
-            Release(tagName, htmlUrl, apkUrl, shortChangelog(body))
+            Release(tagName, htmlUrl, apkUrl, shortChangelog(notes))
         } catch (_: Exception) {
             null
         }

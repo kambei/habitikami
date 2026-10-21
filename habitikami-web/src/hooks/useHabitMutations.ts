@@ -63,6 +63,8 @@ export function useUpdateCell() {
             if (year !== undefined && month !== undefined) {
                 queryClient.invalidateQueries({ queryKey: ['sheetData', sheetName, year, month] });
             }
+            // Date-range queries (streaks, widget summary) include this cell too
+            queryClient.invalidateQueries({ queryKey: ['sheetData', sheetName, 'range'] });
         },
     });
 }

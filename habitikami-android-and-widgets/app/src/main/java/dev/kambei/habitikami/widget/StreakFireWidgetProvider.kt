@@ -73,7 +73,7 @@ class StreakFireWidgetProvider : AppWidgetProvider() {
                         val merged = HabitStatsWidgetProvider.smartMerge(
                             export.weekdays, export.weekend, habit
                         )
-                        val streak = currentStreak(merged.map { it.second })
+                        val streak = Streaks.currentStreak(merged)
                         if (streak > bestStreak) {
                             bestStreak = streak
                             bestHabit = habit
@@ -108,21 +108,6 @@ class StreakFireWidgetProvider : AppWidgetProvider() {
             setupIntents(context, views, widgetId)
             manager.updateAppWidget(widgetId, views)
         }
-    }
-
-    private fun currentStreak(entries: List<Boolean>): Int {
-        // Match grid view: skip trailing unchecked, then count consecutive checked
-        var streak = 0
-        var started = false
-        for (i in entries.indices.reversed()) {
-            if (!started) {
-                if (entries[i]) { started = true; streak = 1 }
-            } else {
-                if (entries[i]) streak++
-                else break
-            }
-        }
-        return streak
     }
 
     private fun setupIntents(context: Context, views: RemoteViews, widgetId: Int) {

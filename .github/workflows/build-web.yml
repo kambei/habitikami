@@ -38,6 +38,12 @@ jobs:
         working-directory: habitikami-web
         run: npm ci && npm audit --omit=dev --audit-level=high
 
+      # Guards the routes the native apps depend on (e.g. /.well-known/assetlinks.json
+      # for the Android TWA): a 404 there makes Chrome show the address bar in the app.
+      - name: Build and smoke test static routes
+        working-directory: habitikami-web
+        run: npm run build && npm run test:smoke
+
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0

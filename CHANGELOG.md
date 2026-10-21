@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.9.5 - 2026-10-21
+### 🐛 Fix Android App Showing the Browser Address Bar
+- **`/.well-known/assetlinks.json` Was a 404**: `serve-static` 2.x (pulled in by Express 5 in 5.9.4) ignores dotfile paths by default, so the Digital Asset Links file stopped being served. Chrome could no longer verify the TWA and fell back to a Custom Tab with the address bar. The `.well-known` folder is now mounted explicitly with `dotfiles: 'allow'`. Reopen the app once after the deploy: Chrome re-runs the verification on launch.
+- **Smoke Test in CI**: New `npm run test:smoke` starts the built server and asserts that `/.well-known/assetlinks.json` and `/manifest.json` answer `200` with JSON; `build-web.yml` runs it before building the Docker image so this cannot regress silently again.
+
 ## 🌐 Web 5.9.4 + 🤖 Android 5.3.4 - 2026-10-20
 ### 📦 Dependency Updates (Dependabot)
 - **Express 5** (Web): The SPA fallback route is now `/{*splat}` and serves `index.html` via `res.sendFile('index.html', { root })`, as required by the stricter Express 5 router. API routes are unchanged.

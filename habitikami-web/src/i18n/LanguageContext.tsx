@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { en, type TranslationKey } from './en';
 import { it } from './it';
 
@@ -31,9 +31,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('habitikami_language', lang);
-    // Update the HTML lang attribute
-    document.documentElement.lang = lang;
   }, []);
+
+  // Keep <html lang> in sync (index.html ships lang="en"): screen readers,
+  // hyphenation and translation prompts follow the app language.
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   const t = useCallback((key: TranslationKey): string => {
     const value = translations[language][key];

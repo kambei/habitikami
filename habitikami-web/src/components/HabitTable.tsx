@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { AddHabitModal } from "./AddHabitModal";
 import { ColorPickerPopover } from "./ColorPickerPopover";
 import { CheckboxGridView } from "./CheckboxGridView";
-import type { HabitData } from "../types";
+import type { HabitCellValue, HabitData } from "../types";
 import { Checkbox } from "./ui/Checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 import { Grid3X3, Table, Pencil, Info, Check, X } from "lucide-react";
@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 
 import { useSheetData, useSheetRange } from "../hooks/useSheetData";
 import { longestCurrentStreak } from "../utils/streaks";
+import { descriptionsOf, targetsOf } from "../utils/habitMeta";
 import { useHabitColors } from "../hooks/useHabitColors";
 import { useUpdateCell, useAddHabit, useAddDay, useMoveColumn, useDeleteColumn, useSetHabitColor, useRenameHabit, useHabitMeta, useSetHabitMeta } from "../hooks/useHabitMutations";
 import { Skeleton } from "./ui/Skeleton";
@@ -61,6 +62,9 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
 
     const { data: sheetData, isLoading: isSheetLoading, error: sheetError } = useSheetData(sheetName, year, month);
     const { data: habitColors, isLoading: isColorsLoading } = useHabitColors(sheetName);
+    const { data: habitMeta } = useHabitMeta();
+    const metaMap: Record<string, string> = useMemo(() => descriptionsOf(habitMeta), [habitMeta]);
+    const habitTargets = useMemo(() => targetsOf(habitMeta), [habitMeta]);
 
     // Last 90 days of both sheets, for the streak shown by the Windows widget
     const streakWindow = useMemo(() => {
@@ -72,8 +76,8 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     const { data: weekdaysRange } = useSheetRange('Weekdays', streakWindow.from, streakWindow.to);
     const { data: weekendRange } = useSheetRange('Weekend', streakWindow.from, streakWindow.to);
     const widgetStreak = useMemo(
-        () => longestCurrentStreak([weekdaysRange?.data ?? [], weekendRange?.data ?? []]).streak,
-        [weekdaysRange, weekendRange]
+        () => longestCurrentStreak([weekdaysRange?.data ?? [], weekendRange?.data ?? []], new Date(), habitTargets).streak,
+        [weekdaysRange, weekendRange, habitTargets]
     );
 
     // Derive everything from query data — no local copy
@@ -96,8 +100,6 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
         setHabitMeta: useSetHabitMeta(),
     };
 
-    const { data: habitMeta } = useHabitMeta();
-    const metaMap: Record<string, string> = habitMeta ?? {};
 
     const [editingHabit, setEditingHabit] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState('');
@@ -239,8 +241,10 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
         setCurrentDate(newDate);
     };
 
-    const handleToggle = useCallback((rowIndex: number, habit: string, currentValue: boolean | 'skipped' | 'half') => {
+    const handleToggle = useCallback((rowIndex: number, habit: string, currentValue: HabitCellValue) => {
         if (!meta) return;
+        // Quantitative cells are edited with a value input (coming with #14), not toggled
+        if (typeof currentValue === 'number') return;
 
         let newValue: boolean | 'HALF';
         if (currentValue === false || currentValue === 'skipped') newValue = true;

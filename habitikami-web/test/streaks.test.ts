@@ -71,19 +71,19 @@ describe('collectHabitDays', () => {
     ];
 
     it('merges sheets that contain the habit, sorted by date', () => {
-        const days = collectHabitDays('Read', weekdays, weekend);
+        const days = collectHabitDays('Read', [weekdays, weekend]);
         expect(days.map(d => d.date.getDate())).toEqual([16, 17, 18, 19]);
         expect(days.map(d => d.value)).toEqual([true, 'skipped', true, true]);
     });
 
     it('ignores sheets without the habit', () => {
-        const days = collectHabitDays('Gym', weekdays, weekend);
+        const days = collectHabitDays('Gym', [weekdays, weekend]);
         expect(days.map(d => d.date.getDate())).toEqual([16, 19]);
     });
 
     it('a done value wins when two sheets share a date', () => {
         const dup: HabitData[] = [{ day: 'Lunedì', date: '19/10/2026', habits: { Read: false } }];
-        const days = collectHabitDays('Read', weekdays, dup);
+        const days = collectHabitDays('Read', [weekdays, dup]);
         expect(days.find(d => d.date.getDate() === 19)?.value).toBe(true);
     });
 
@@ -91,5 +91,26 @@ describe('collectHabitDays', () => {
         const today = new Date(2026, 9, 19);
         expect(habitStreakStats('Read', [weekdays, weekend], today).currentStreak).toBe(3);
         expect(longestCurrentStreak([weekdays, weekend], today)).toEqual({ habit: 'Read', streak: 3 });
+    });
+});
+
+describe('quantitative habits', () => {
+    it('a numeric value reaching the target counts as done, below it as a miss', () => {
+        const s = computeStreaks([day(-2, 8), day(-1, 5), day(0, 9)], TODAY, 8);
+        expect(s.currentStreak).toBe(1);
+        expect(s.bestStreak).toBe(1);
+        expect(s.completed).toBe(2);
+        expect(s.total).toBe(3);
+    });
+
+    it('without a target any value above zero is done', () => {
+        const s = computeStreaks([day(-1, 3), day(0, 0)], TODAY);
+        expect(s.currentStreak).toBe(1);
+        expect(s.completed).toBe(1);
+    });
+
+    it('a zero value today is pending like an unchecked box', () => {
+        const s = computeStreaks([day(-2, 10), day(-1, 10), day(0, 0)], TODAY, 8);
+        expect(s.currentStreak).toBe(2);
     });
 });

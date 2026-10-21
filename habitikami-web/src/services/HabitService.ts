@@ -3,6 +3,8 @@ import { gapi } from 'gapi-script';
 // and we need to initialize the client.
 import { hexToSheetColor, sheetColorToHex } from '../utils/colors';
 import { findHeaderRowIndex } from '../utils/parser';
+import type { HabitMeta } from '../types';
+import { HABIT_META_COLUMNS, HABIT_META_RANGE, mergeHabitMeta, rowToHabitMeta, habitMetaToRow } from '../utils/habitMeta';
 
 // CLIENT_SECRET must never be referenced here; token exchange is backend-only
 const CLIENT_ID = (window as any).config?.VITE_GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -652,7 +654,7 @@ class HabitServiceImpl {
         return letter;
     }
 
-    async updateCell(sheetName: string, rowIndex: number, colIndex: number, value: boolean | 'SKIP' | 'HALF') {
+    async updateCell(sheetName: string, rowIndex: number, colIndex: number, value: boolean | 'SKIP' | 'HALF' | number) {
         try {
             await this.ensureClient();
             const colLetter = this.getColumnLetter(colIndex);
@@ -983,35 +985,43 @@ class HabitServiceImpl {
         const spreadsheetId = this.getSpreadsheetId();
         const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId, fields: 'sheets(properties(title))' });
         const exists = meta.result.sheets?.some((s: any) => s.properties?.title === 'HabitMeta');
-        if (exists) return;
 
-        await gapi.client.sheets.spreadsheets.batchUpdate({
-            spreadsheetId,
-            resource: {
-                requests: [{ addSheet: { properties: { title: 'HabitMeta', gridProperties: { frozenRowCount: 1 } } } }]
-            }
-        });
-        await gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId,
-            range: 'HabitMeta!A1:B1',
-            valueInputOption: 'USER_ENTERED',
-            resource: { values: [['Habit', 'Description']] }
-        });
+        if (!exists) {
+            await gapi.client.sheets.spreadsheets.batchUpdate({
+                spreadsheetId,
+                resource: {
+                    requests: [{ addSheet: { properties: { title: 'HabitMeta', gridProperties: { frozenRowCount: 1 } } } }]
+                }
+            });
+        }
+
+        // Header row: write the full column set (also upgrades the legacy "Habit | Description" header)
+        const header = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId, range: 'HabitMeta!A1:G1' });
+        const current = header.result.values?.[0] ?? [];
+        if (current.length < HABIT_META_COLUMNS.length) {
+            await gapi.client.sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: 'HabitMeta!A1:G1',
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: [[...HABIT_META_COLUMNS]] }
+            });
+        }
     }
 
-    async getHabitMeta(): Promise<Record<string, string> | { error: string }> {
+    /** All habit metadata, keyed by habit name. A missing sheet reads as {}. */
+    async getHabitMeta(): Promise<Record<string, HabitMeta> | { error: string }> {
         try {
             await this.ensureClient();
             const response = await gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: this.getSpreadsheetId(),
-                range: 'HabitMeta!A:B',
+                range: HABIT_META_RANGE,
             });
             const rows = response.result.values || [];
-            const out: Record<string, string> = {};
+            const out: Record<string, HabitMeta> = {};
             const start = rows[0] && typeof rows[0][0] === 'string' && /habit/i.test(rows[0][0]) ? 1 : 0;
             for (let i = start; i < rows.length; i++) {
                 const name = rows[i]?.[0];
-                if (name) out[name] = rows[i]?.[1] ?? '';
+                if (name) out[name] = rowToHabitMeta(rows[i]);
             }
             return out;
         } catch (e: any) {
@@ -1022,7 +1032,11 @@ class HabitServiceImpl {
         }
     }
 
-    async setHabitMeta(habitName: string, description: string): Promise<{ success: boolean } | { error: string }> {
+    /**
+     * Merges `patch` into the habit's metadata and writes the whole row
+     * (Habit | Description | Type | Target | Unit | Slot | Time).
+     */
+    async setHabitMeta(habitName: string, patch: Partial<HabitMeta>): Promise<{ success: boolean } | { error: string }> {
         try {
             await this.ensureClient();
             await this.ensureHabitMetaSheet();
@@ -1030,7 +1044,7 @@ class HabitServiceImpl {
 
             const res = await gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId,
-                range: 'HabitMeta!A:B',
+                range: HABIT_META_RANGE,
             });
             const rows = res.result.values || [];
             const start = rows[0] && typeof rows[0][0] === 'string' && /habit/i.test(rows[0][0]) ? 1 : 0;
@@ -1040,20 +1054,23 @@ class HabitServiceImpl {
                 if (rows[i]?.[0] === habitName) { rowIndex = i; break; }
             }
 
+            const existing = rowIndex !== -1 ? rowToHabitMeta(rows[rowIndex]) : undefined;
+            const row = habitMetaToRow(habitName, mergeHabitMeta(existing, patch));
+
             if (rowIndex !== -1) {
-                const range = `HabitMeta!A${rowIndex + 1}:B${rowIndex + 1}`;
+                const range = `HabitMeta!A${rowIndex + 1}:G${rowIndex + 1}`;
                 await gapi.client.sheets.spreadsheets.values.update({
                     spreadsheetId,
                     range,
                     valueInputOption: 'USER_ENTERED',
-                    resource: { values: [[habitName, description]] }
+                    resource: { values: [row] }
                 });
             } else {
                 await gapi.client.sheets.spreadsheets.values.append({
                     spreadsheetId,
-                    range: 'HabitMeta!A:B',
+                    range: HABIT_META_RANGE,
                     valueInputOption: 'USER_ENTERED',
-                    resource: { values: [[habitName, description]] }
+                    resource: { values: [row] }
                 });
             }
             return { success: true };

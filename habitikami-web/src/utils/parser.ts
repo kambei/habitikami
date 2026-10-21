@@ -1,4 +1,17 @@
-import type { HabitData } from "../types";
+import type { HabitCellValue, HabitData } from "../types";
+
+/** Numeric cell of a quantitative habit, e.g. "6", "6.5", "6,5" (USER_ENTERED values come back as strings). */
+const NUMERIC_CELL = /^-?\d+(?:[.,]\d+)?$/;
+
+/** Maps a raw sheet cell to its HabitCellValue. Exported for tests. */
+export function parseCell(val: unknown): HabitCellValue {
+    if (val === true || val === 'TRUE') return true;
+    if (val === 'SKIP') return 'skipped';
+    if (val === 'HALF') return 'half';
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string' && NUMERIC_CELL.test(val.trim())) return Number.parseFloat(val.trim().replace(',', '.'));
+    return false;
+}
 
 /** Header row detection pattern — shared with HabitService */
 const HEADER_PATTERN = /giorno|date|day/i;
@@ -54,20 +67,10 @@ export function parseSheetData(values: any[][]): {
         // Stop if no date (empty row)
         if (!date) continue;
 
-        const habits: Record<string, boolean | 'skipped' | 'half'> = {};
+        const habits: Record<string, HabitCellValue> = {};
 
         headers.forEach((h: string, index: number) => {
-            const colIndex = startCol + index;
-            const val = row[colIndex];
-            if (val === true || val === 'TRUE') {
-                habits[h] = true;
-            } else if (val === 'SKIP') {
-                habits[h] = 'skipped';
-            } else if (val === 'HALF') {
-                habits[h] = 'half';
-            } else {
-                habits[h] = false;
-            }
+            habits[h] = parseCell(row[startCol + index]);
         });
 
         data.push({

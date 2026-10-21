@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { habitService } from '../services/HabitService';
 import { toast } from 'sonner';
+import type { HabitMeta } from '../types';
+import { mergeHabitMeta } from '../utils/habitMeta';
 
 export function useUpdateCell() {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async ({ sheetName, rowIndex, colIndex, value }: {
-            sheetName: string, rowIndex: number, colIndex: number, value: boolean | 'SKIP' | 'HALF',
+            sheetName: string, rowIndex: number, colIndex: number, value: boolean | 'SKIP' | 'HALF' | number,
             year?: number, month?: number, habitName?: string
         }) => {
             return habitService.updateCell(sheetName, rowIndex, colIndex, value);
@@ -158,7 +160,7 @@ export function useHabitMeta() {
         queryFn: async () => {
             const result = await habitService.getHabitMeta();
             if (result && 'error' in result) throw new Error((result as any).error);
-            return result as Record<string, string>;
+            return result as Record<string, HabitMeta>;
         },
         staleTime: 1000 * 60 * 5,
     });
@@ -167,17 +169,18 @@ export function useHabitMeta() {
 export function useSetHabitMeta() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ habitName, description }: { habitName: string, description: string }) => {
-            const result = await habitService.setHabitMeta(habitName, description);
+        // Partial update: only the given fields change, the rest of the row is kept.
+        mutationFn: async ({ habitName, ...patch }: { habitName: string } & Partial<HabitMeta>) => {
+            const result = await habitService.setHabitMeta(habitName, patch);
             if (result && 'error' in result) throw new Error((result as any).error);
             return result;
         },
-        onMutate: async ({ habitName, description }) => {
+        onMutate: async ({ habitName, ...patch }) => {
             await queryClient.cancelQueries({ queryKey: ['habitMeta'] });
             const previous = queryClient.getQueryData(['habitMeta']);
-            queryClient.setQueryData(['habitMeta'], (old: any) => ({
+            queryClient.setQueryData(['habitMeta'], (old: Record<string, HabitMeta> | undefined) => ({
                 ...(old || {}),
-                [habitName]: description,
+                [habitName]: mergeHabitMeta(old?.[habitName], patch),
             }));
             return { previous };
         },

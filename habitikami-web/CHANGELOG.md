@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.9.9 - 2026-10-21
+### 🧱 Extended Habit Metadata and Numeric Cells (groundwork for #14 and #12)
+- **`HabitMeta` Sheet Grows to Seven Columns**: `Habit | Description | Type | Target | Unit | Slot | Time`. `Type` is `check` (default) or `number`; `Target` is the daily goal of a quantitative habit; `Unit` is free text; `Slot` is `morning`, `afternoon`, `evening` or empty for any time; `Time` is an optional `HH:MM` reminder time. Existing two-column sheets keep working: missing cells read as defaults and the header row is upgraded the first time metadata is saved. Rename still migrates the whole row.
+- **Partial Updates**: saving a description no longer touches the other columns; `setHabitMeta(name, patch)` merges the given fields into the existing row.
+- **Numeric Cells**: the sheet parser maps a numeric cell (`6`, `6.5`, `6,5`) to a number instead of "not done", and the cell type `HabitCellValue` is shared by every consumer. A numeric value counts as done when it reaches the habit's target (or is above zero without one); the streak rules and the grid popup apply it. Toggling a numeric cell is ignored until the value editor arrives with #14.
+- **Tests**: 11 new cases on the parser, the metadata row round-trip and quantitative streaks (38 in total).
+
 ## 🌐 Web 5.9.8 + 🤖 Android 5.3.5 - 2026-10-21
 ### 🔥 One Streak Rule Everywhere (groundwork for #1)
 - **Shared Streak Rules**: `TRUE` and `HALF` continue a streak, `SKIP` is neutral (it neither breaks nor extends it and is left out of completion rates), `FALSE` breaks it, and a day that is not over yet (today) is pending rather than missed. Dates without a row are neutral, so weekday-only habits are not penalised for weekends. The web app (`utils/streaks.ts`) and the Android widgets (`widget/Streaks.kt`) implement the same rules; before, both treated SKIP and HALF as misses and ignored any number of trailing unchecked days.

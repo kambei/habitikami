@@ -416,6 +416,7 @@ export const it: Record<TranslationKey, string | string[]> = {
   moodGraphEmpty: 'Nessun dato umore',
   moodGraphEmptyHint: 'Completa una sessione guidata o una scheda per iniziare a monitorare il tuo umore nel tempo.',
   moodGraphClear: 'Cancella storico',
+  moodGraphClearConfirm: 'Eliminare tutto lo storico dell\'umore dal tuo foglio Google? L\'operazione non si può annullare.',
   moodGraphMoodAvg: 'Umore (ultime 5)',
   moodGraphAnxietyAvg: 'Ansia (ultime 5)',
   moodGraphMoodTrend: 'Andamento Umore',

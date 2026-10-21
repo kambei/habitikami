@@ -21,7 +21,8 @@ import {
     getProviderLabel,
     callAI,
 } from '../utils/aiProvider';
-import { MoodGraph, saveMoodEntry } from './MoodGraph';
+import { MoodGraph } from './MoodGraph';
+import { saveMoodEntry } from '../hooks/useMood';
 import { renderMarkdown } from '../lib/renderMarkdown';
 
 interface Message {
@@ -284,6 +285,7 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                     anxiety: Math.max(0, Math.min(100, parsed.anxiety)),
                     mood: Math.max(0, Math.min(100, parsed.mood)),
                     label: sessionLabel,
+                    source: 'chat',
                 });
             }
         } catch {

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.10.0 - 2026-10-21
+### 🧠 Mood History Moves to Your Google Sheet (groundwork for #5 and #6)
+- **New `Mood` Sheet**: `Date | Timestamp | Mood | Anxiety | Label | Source`, created on the first assessment. Mood entries from guided sessions and worksheets are appended there instead of the browser storage, so the history follows you across devices and is no longer capped at 100 entries.
+- **Automatic Migration**: entries saved so far in the browser are written to the sheet (tagged `local`) the first time the Mood Tracker opens; nothing is lost. The same local key now works as an outbox: an assessment that cannot reach the sheet (offline) is queued and flushed on the next open.
+- **Clear History** asks for confirmation and empties the sheet (header kept).
+- **Tests**: 8 cases on row parsing, clamping and the pending queue (46 in total).
+
 ## 🌐 Web 5.9.9 - 2026-10-21
 ### 🧱 Extended Habit Metadata and Numeric Cells (groundwork for #14 and #12)
 - **`HabitMeta` Sheet Grows to Seven Columns**: `Habit | Description | Type | Target | Unit | Slot | Time`. `Type` is `check` (default) or `number`; `Target` is the daily goal of a quantitative habit; `Unit` is free text; `Slot` is `morning`, `afternoon`, `evening` or empty for any time; `Time` is an optional `HH:MM` reminder time. Existing two-column sheets keep working: missing cells read as defaults and the header row is upgraded the first time metadata is saved. Rename still migrates the whole row.

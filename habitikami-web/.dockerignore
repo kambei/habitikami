@@ -11,7 +11,8 @@ data
 *.md
 # CHANGELOG.md is copied into dist/ at build time and served by /api/changelog
 !CHANGELOG.md
-test_export.js
+test
+vitest.config.ts
 diagnose_weekend.js
 nginx.conf
 docker-entrypoint.sh

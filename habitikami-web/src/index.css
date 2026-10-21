@@ -110,3 +110,21 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background-color: hsl(var(--primary) / 0.5);
 }
+/* Habit titles that do not fit glide back and forth (ScrollingText) */
+@keyframes scroll-text-pingpong {
+  0%, 15% { transform: translateX(0); }
+  45%, 55% { transform: translateX(var(--scroll-x, 0)); }
+  85%, 100% { transform: translateX(0); }
+}
+.scroll-text {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 6px, #000 calc(100% - 6px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 6px, #000 calc(100% - 6px), transparent);
+}
+.scroll-text > span {
+  animation: scroll-text-pingpong linear infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scroll-text { -webkit-mask-image: none; mask-image: none; text-overflow: ellipsis; }
+  .scroll-text > span { animation: none; }
+}

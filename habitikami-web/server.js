@@ -26,6 +26,7 @@ const PORT = process.env.PORT || 80;
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const PREFS_FILE = path.join(__dirname, 'data', 'preferences.json');
 const APIKEYS_FILE = path.join(__dirname, 'data', 'apikeys.json');
+const RISC_REVOKED_FILE = path.join(__dirname, 'data', 'risc-revoked.json');
 
 // Ensure data directory exists
 fs.mkdirSync(path.dirname(USERS_FILE), { recursive: true });
@@ -540,10 +541,60 @@ function isAllowedEmail(email) {
     return !!email && allowedEmails.includes(email.toLowerCase());
 }
 
+// In private mode the server keeps no data about accounts outside the
+// allowlist: on every startup, entries of other accounts are removed from
+// users.json, preferences.json (legacy), apikeys.json and risc-revoked.json.
+// The accounts' own Google Sheets and Drive files are untouched.
+async function purgeDisallowedAccounts() {
+    if (allowedEmails.length === 0) return;
+
+    const purged = { users: 0, preferences: 0, apikeys: 0, risc: 0 };
+
+    // Files keyed by email
+    const emailKeyedFiles = [
+        [USERS_FILE, 'users'],
+        [PREFS_FILE, 'preferences'],
+        [RISC_REVOKED_FILE, 'risc'],
+    ];
+    for (const [file, label] of emailKeyedFiles) {
+        if (!fs.existsSync(file)) continue;
+        await withJsonFile(file, data => {
+            for (const email of Object.keys(data)) {
+                if (isAllowedEmail(email)) continue;
+                delete data[email];
+                purged[label]++;
+                console.log(`Private mode: removed ${label} entry for user=${logId(email)}`);
+            }
+            return data;
+        });
+    }
+
+    // API keys are keyed by hash; the owner is in the record
+    if (fs.existsSync(APIKEYS_FILE)) {
+        await saveApiKeysAtomic(apiKeys => {
+            for (const [hash, meta] of Object.entries(apiKeys)) {
+                if (isAllowedEmail(meta && meta.email)) continue;
+                delete apiKeys[hash];
+                purged.apikeys++;
+                console.log(`Private mode: removed API key ${meta && meta.prefix ? meta.prefix + '…' : hash.slice(0, 8)} of user=${logId(meta && meta.email)}`);
+            }
+            return apiKeys;
+        });
+    }
+
+    const total = Object.values(purged).reduce((a, b) => a + b, 0);
+    console.log(total > 0
+        ? `Private mode: purged data of other accounts (users=${purged.users}, preferences=${purged.preferences}, apikeys=${purged.apikeys}, risc=${purged.risc})`
+        : 'Private mode: no data of other accounts found.');
+}
+
 const ACCESS_RESTRICTED = {
     error: 'Access is temporarily restricted to authorized accounts.',
     code: 'access_restricted',
 };
+
+// Drop everything the server stores about accounts outside the allowlist
+await purgeDisallowedAccounts();
 
 // Resolve the email behind a Bearer access token (verifying its audience) and
 // enforce the allowlist. Sends 401 on an invalid/foreign token, 403 when the
@@ -1773,8 +1824,6 @@ app.post('/api/anthropic/chat', geminiLimiter, validateOrigin, async (req, res) 
 // ─── RISC: Cross-Account Protection (Security Event Tokens) ──────────────────
 // Google sends SETs (Security Event Tokens) when a user's account is compromised,
 // disabled, or sessions are revoked. We verify the JWT and revoke local sessions.
-
-const RISC_REVOKED_FILE = path.join(__dirname, 'data', 'risc-revoked.json');
 
 function loadRevokedUsers() {
     try {

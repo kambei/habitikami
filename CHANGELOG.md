@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.9.6 - 2026-10-21
+### 🔒 Private Mode Purges Other Accounts' Data
+- **Startup Cleanup**: When `ALLOWED_EMAILS` is set, the server now deletes on every startup everything it stores about accounts outside the allowlist: their entries in `users.json` (spreadsheet ID, preferences), `apikeys.json` (widget API keys and encrypted refresh tokens), `risc-revoked.json` and the legacy `preferences.json`. Emails are compared case-insensitively; API key records without an owner are removed too. The accounts' Google Sheets and Drive files are untouched, and open mode (empty `ALLOWED_EMAILS`) changes nothing.
+- **Logged Without PII**: Each removed entry is logged with the usual hashed user id, plus a per-file summary.
+
 ## 🌐 Web 5.9.5 - 2026-10-21
 ### 🐛 Fix Android App Showing the Browser Address Bar
 - **`/.well-known/assetlinks.json` Was a 404**: `serve-static` 2.x (pulled in by Express 5 in 5.9.4) ignores dotfile paths by default, so the Digital Asset Links file stopped being served. Chrome could no longer verify the TWA and fell back to a Custom Tab with the address bar. The `.well-known` folder is now mounted explicitly with `dotfiles: 'allow'`. Reopen the app once after the deploy: Chrome re-runs the verification on launch.

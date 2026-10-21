@@ -23,7 +23,8 @@ the user's own Google credentials. Only if no refresh token is stored does the
 server fall back to the optional service account (see section 3).
 
 When `ALLOWED_EMAILS` is set (private mode), API keys of accounts outside the
-allowlist receive `403 access_restricted`.
+allowlist receive `403 access_restricted`, and their records are deleted from
+`apikeys.json` at the next server startup.
 
 ## 2. Endpoints
 

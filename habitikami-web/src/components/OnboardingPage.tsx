@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Loader2, Plus, Link as LinkIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTranslation } from '../i18n';
+import { extractSpreadsheetId } from '../utils/spreadsheetId';
 
 interface Props {
     email: string;
@@ -68,11 +69,13 @@ export function OnboardingPage({ email, onComplete }: Props) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const id = spreadsheetId.trim();
+        // Accept the whole Google Sheets link too (what people usually copy)
+        const id = extractSpreadsheetId(spreadsheetId);
         if (!id) {
-            toast.error('Please enter a Spreadsheet ID');
+            toast.error(t('onboardingSpreadsheetInvalid'));
             return;
         }
+        setSpreadsheetId(id);
         setSaving(true);
         const saved = await checkAndSaveSpreadsheet(id);
         setSaving(false);

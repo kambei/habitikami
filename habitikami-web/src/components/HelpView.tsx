@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import type { GuidedStep } from '../types';
 import { useTranslation } from '../i18n';
+import { extractSpreadsheetId } from '../utils/spreadsheetId';
 import { habitService } from '../services/HabitService';
 import { schedeTemplates } from '../data/schedeTemplates';
 import { SchedeCompiler } from './SchedeCompiler';
@@ -124,13 +125,14 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     };
 
     const handleSaveSpreadsheetId = async () => {
-        const id = tempSpreadsheetId.trim();
-        if (!id) return;
-        const SPREADSHEET_ID_PATTERN = /^[a-zA-Z0-9_-]{10,100}$/;
-        if (!SPREADSHEET_ID_PATTERN.test(id)) {
+        if (!tempSpreadsheetId.trim()) return;
+        // Accept the whole Google Sheets link too (what people usually copy)
+        const id = extractSpreadsheetId(tempSpreadsheetId);
+        if (!id) {
             setSpreadsheetError(t('settingsSpreadsheetInvalid'));
             return;
         }
+        setTempSpreadsheetId(id);
         setSpreadsheetError(null);
         habitService.setSpreadsheetId(id);
         // Also register on server

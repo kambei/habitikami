@@ -73,7 +73,7 @@ export const en = {
   onboardingConnect: 'Connect existing sheet',
   onboardingHideManual: 'Hide manual setup',
   onboardingSpreadsheetId: 'Spreadsheet ID',
-  onboardingSpreadsheetHint: 'Found in the Google Sheets URL: docs.google.com/spreadsheets/d/<strong>ID</strong>/edit',
+  onboardingSpreadsheetHint: 'Paste the ID or the whole link of your sheet: docs.google.com/spreadsheets/d/<strong>ID</strong>/edit',
   onboardingLinking: 'Linking...',
   onboardingLinkSheet: 'Link Sheet',
 
@@ -318,7 +318,7 @@ export const en = {
   settingsApiKeyUsage: 'Use this key in the X-API-Token header to access /api/export, /api/counter, and /api/colors from external tools. Note: when using an API key, the Google Sheet must be shared with the service account.',
   settingsSpreadsheetTitle: 'Google Spreadsheet',
   settingsSpreadsheetDesc: 'The ID of the Google Sheet linked to your habits.',
-  settingsSpreadsheetPlaceholder: 'Spreadsheet ID (e.g. 1aBcDeFgHiJk...)',
+  settingsSpreadsheetPlaceholder: 'Spreadsheet ID or link (e.g. 1aBcDeFgHiJk...)',
   settingsSpreadsheetSaved: 'Spreadsheet ID saved!',
   settingsSpreadsheetInvalid: 'Invalid Spreadsheet ID format.',
   settingsSpreadsheetCreate: 'Create new Sheet',
@@ -476,6 +476,7 @@ export const en = {
   tourFinish: 'Get Started',
   tourReplay: 'App Guide',
   logoutClearAiKeys: 'Also remove the AI keys (Gemini/Anthropic) saved on this device?',
+  onboardingSpreadsheetInvalid: 'Paste the Spreadsheet ID or the full Google Sheets link.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

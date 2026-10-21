@@ -74,7 +74,7 @@ export const it: Record<TranslationKey, string | string[]> = {
   onboardingConnect: 'Collega un foglio esistente',
   onboardingHideManual: 'Nascondi setup manuale',
   onboardingSpreadsheetId: 'ID del Foglio',
-  onboardingSpreadsheetHint: 'Presente nell\'URL di Google Sheets: docs.google.com/spreadsheets/d/<strong>ID</strong>/edit',
+  onboardingSpreadsheetHint: 'Incolla l\'ID o l\'intero link del tuo foglio: docs.google.com/spreadsheets/d/<strong>ID</strong>/edit',
   onboardingLinking: 'Collegamento...',
   onboardingLinkSheet: 'Collega Foglio',
 
@@ -319,7 +319,7 @@ export const it: Record<TranslationKey, string | string[]> = {
   settingsApiKeyUsage: 'Usa questa chiave nell\'header X-API-Token per accedere a /api/export, /api/counter e /api/colors da strumenti esterni. Nota: quando usi un API key, il foglio Google deve essere condiviso con il service account.',
   settingsSpreadsheetTitle: 'Google Spreadsheet',
   settingsSpreadsheetDesc: 'L\'ID del Google Sheet collegato alle tue abitudini.',
-  settingsSpreadsheetPlaceholder: 'Spreadsheet ID (es. 1aBcDeFgHiJk...)',
+  settingsSpreadsheetPlaceholder: 'ID o link del foglio (es. 1aBcDeFgHiJk...)',
   settingsSpreadsheetSaved: 'Spreadsheet ID salvato!',
   settingsSpreadsheetInvalid: 'Formato Spreadsheet ID non valido.',
   settingsSpreadsheetCreate: 'Crea nuovo Sheet',
@@ -477,4 +477,5 @@ export const it: Record<TranslationKey, string | string[]> = {
   tourFinish: 'Inizia',
   tourReplay: 'Guida App',
   logoutClearAiKeys: 'Rimuovere anche le chiavi AI (Gemini/Anthropic) salvate su questo dispositivo?',
+  onboardingSpreadsheetInvalid: 'Incolla l\'ID del foglio o il link completo di Google Sheets.',
 } as const;

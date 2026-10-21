@@ -4,11 +4,33 @@ export interface UserProfile {
     spreadsheetId: string;
 }
 
+/**
+ * Value of one habit cell: checkbox states (`TRUE`/`FALSE`), `SKIP`, `HALF`,
+ * or a number for quantitative habits (the raw value; the target lives in HabitMeta).
+ */
+export type HabitCellValue = boolean | 'skipped' | 'half' | number;
+
 export interface HabitData {
     day: string;
     date: string;
-    habits: Record<string, boolean | 'skipped' | 'half'>;
+    habits: Record<string, HabitCellValue>;
     // ... potentially other fields
+}
+
+export type HabitType = 'check' | 'number';
+export type HabitSlot = 'any' | 'morning' | 'afternoon' | 'evening';
+
+/** Per-habit metadata stored in the HabitMeta sheet (see utils/habitMeta.ts). */
+export interface HabitMeta {
+    description: string;
+    type: HabitType;
+    /** Daily goal for quantitative habits (value >= target counts as done). */
+    target?: number;
+    /** Free-text unit shown next to the value, e.g. "glasses", "min". */
+    unit?: string;
+    slot: HabitSlot;
+    /** Optional reminder time, "HH:MM" local. */
+    time?: string;
 }
 
 export type SheetType = 'Weekdays' | 'Weekend' | 'Notes' | 'Counters'; // Added Notes, Counters

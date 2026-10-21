@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pencil, Check, X } from 'lucide-react';
-import type { HabitData } from '../types';
+import type { HabitCellValue, HabitData } from '../types';
 import { useTranslation } from '../i18n';
 import { translateDay } from '../utils/dayTranslation';
 import { useSheetData } from '../hooks/useSheetData';
 import { useHabitMeta, useSetHabitMeta, useRenameHabit } from '../hooks/useHabitMutations';
 import { habitStreakStats } from '../utils/streaks';
+import { descriptionsOf } from '../utils/habitMeta';
 
 interface CheckboxGridViewProps {
     headers: string[];
@@ -14,7 +15,7 @@ interface CheckboxGridViewProps {
     colors: Record<string, string>;
     meta: { startCol: number; headerRowIndex: number; dataStartRow: number } | null;
     dataStartRow: number;
-    onToggle: (rowIndex: number, habit: string, currentValue: boolean | 'skipped' | 'half') => void;
+    onToggle: (rowIndex: number, habit: string, currentValue: HabitCellValue) => void;
     isPending: boolean;
     sheetName: string;
     year: number;
@@ -36,7 +37,7 @@ export function CheckboxGridView({
     const [selectedHabit, setSelectedHabit] = useState<string | null>(null);
 
     const { data: habitMeta } = useHabitMeta();
-    const metaMap: Record<string, string> = habitMeta ?? {};
+    const metaMap: Record<string, string> = useMemo(() => descriptionsOf(habitMeta), [habitMeta]);
     const setMeta = useSetHabitMeta();
     const renameHabit = useRenameHabit();
 
@@ -116,9 +117,10 @@ export function CheckboxGridView({
         // Streak rules live in utils/streaks.ts (TRUE/HALF continue, SKIP neutral, FALSE breaks).
         // The other sheet (Weekdays<->Weekend) is merged in when it has the same habit.
         const merged = !!otherSheet && otherData.length > 0 && selectedHabit in (otherData[0]?.habits ?? {});
-        const stats = habitStreakStats(selectedHabit, merged ? [data, otherData] : [data]);
+        const target = habitMeta?.[selectedHabit]?.type === 'number' ? habitMeta[selectedHabit].target : undefined;
+        const stats = habitStreakStats(selectedHabit, merged ? [data, otherData] : [data], new Date(), target);
         return { ...stats, merged };
-    }, [selectedHabit, data, otherData, otherSheet]);
+    }, [selectedHabit, data, otherData, otherSheet, habitMeta]);
 
     return (
         <div className="flex-1 flex overflow-y-auto p-4">

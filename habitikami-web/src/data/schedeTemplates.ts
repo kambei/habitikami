@@ -1,9 +1,10 @@
+import type { TranslationKey } from '../i18n';
 export interface SchedaTemplate {
     id: string;
-    titleKey: string;
-    descriptionKey: string;
+    titleKey: TranslationKey;
+    descriptionKey: TranslationKey;
     template: string;
-    systemPromptKey: string;
+    systemPromptKey: TranslationKey;
 }
 
 export const schedeTemplates: SchedaTemplate[] = [

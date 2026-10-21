@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, ChevronLeft, Home, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, Menu, Coffee } from 'lucide-react';
-import { useTranslation } from '../i18n';
+import { useTranslation, type TranslationKey } from '../i18n';
 import type { ViewType } from '../types';
 
 const TOUR_KEY = 'habitikami_tour_completed';
@@ -10,8 +10,8 @@ const TOUR_KEY = 'habitikami_tour_completed';
 type TourPhase = 'opening-menu' | 'showing-menu' | 'closing-menu' | 'showing-card';
 
 interface TourStep {
-    titleKey: string;
-    descKey: string;
+    titleKey: TranslationKey;
+    descKey: TranslationKey;
     icon: React.ElementType;
     navigateTo?: ViewType;
     /** If true, skip the menu open/close sequence and jump straight to card */
@@ -173,10 +173,10 @@ export function AppTour({ onNavigate, onComplete, onHighlightChange, onMenuToggl
 
                         {/* Content */}
                         <h3 className="text-lg font-bold text-foreground mb-2">
-                            {t(current.titleKey as any)}
+                            {t(current.titleKey)}
                         </h3>
                         <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                            {t(current.descKey as any)}
+                            {t(current.descKey)}
                         </p>
 
                         {/* Progress & Nav */}

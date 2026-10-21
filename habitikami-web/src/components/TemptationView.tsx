@@ -81,10 +81,10 @@ export const TemptationView = () => {
         <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-4">
             <Flame className="w-16 h-16 text-muted-foreground/40" />
             <h2 className="text-2xl font-bold text-foreground">{t('tabSmokeTemptation')}</h2>
-            <p className="text-muted-foreground max-w-sm" dangerouslySetInnerHTML={{ __html: t('smokeNoTemptations' as any) }} />
+            <p className="text-muted-foreground max-w-sm" dangerouslySetInnerHTML={{ __html: t('smokeNoTemptations') }} />
             <div className="flex items-center gap-2 text-primary">
                 <Settings className="w-4 h-4" />
-                <span className="text-sm font-medium" dangerouslySetInnerHTML={{ __html: t('smokeSettingsPath' as any) }} />
+                <span className="text-sm font-medium" dangerouslySetInnerHTML={{ __html: t('smokeSettingsPath') }} />
             </div>
         </div>
     );
@@ -135,7 +135,7 @@ export const TemptationView = () => {
                     {activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking' ? t('smokeFeeling') : activeTemptation.label}
                 </h2>
                 <p className="text-muted-foreground text-base md:text-lg mt-1">
-                    {activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking' ? t('smokeStronger') : t('smokeStayStrong' as any)}
+                    {activeTemptation.label === 'Temptations' || activeTemptation.label === 'Smoking' ? t('smokeStronger') : t('smokeStayStrong')}
                 </p>
             </motion.div>
 

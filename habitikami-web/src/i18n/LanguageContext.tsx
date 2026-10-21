@@ -1,10 +1,8 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import { en, type TranslationKey } from './en';
-import { it } from './it';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import type { TranslationKey } from './en';
+import { translations, getInitialLanguage, type Language } from './core';
 
-export type Language = 'en' | 'it';
-
-const translations = { en, it } as const;
+export type { Language } from './core';
 
 interface LanguageContextType {
   language: Language;
@@ -16,24 +14,19 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
-function getInitialLanguage(): Language {
-  const stored = localStorage.getItem('habitikami_language');
-  if (stored === 'en' || stored === 'it') return stored;
-  // Auto-detect from browser
-  const browserLang = navigator.language.toLowerCase();
-  if (browserLang.startsWith('it')) return 'it';
-  return 'en';
-}
-
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(getInitialLanguage);
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('habitikami_language', lang);
-    // Update the HTML lang attribute
-    document.documentElement.lang = lang;
   }, []);
+
+  // Keep <html lang> in sync (index.html ships lang="en"): screen readers,
+  // hyphenation and translation prompts follow the app language.
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   const t = useCallback((key: TranslationKey): string => {
     const value = translations[language][key];

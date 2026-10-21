@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { habitService } from '../services/HabitService';
 import { toast } from 'sonner';
+import { translate } from '../i18n';
 import type { HabitMeta } from '../types';
 import { mergeHabitMeta } from '../utils/habitMeta';
 
@@ -58,7 +59,7 @@ export function useUpdateCell() {
             if (year !== undefined && month !== undefined) {
                 queryClient.setQueryData(['sheetData', sheetName, year, month], context?.previousData);
             }
-            toast.error(`Failed to update cell: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            toast.error(translate('toastUpdateCellFailed', { error: err instanceof Error ? err.message : translate('toastUnknownError') }));
         },
         onSettled: (_data, _error, variables) => {
             const { sheetName, year, month } = variables;
@@ -79,10 +80,10 @@ export function useAddHabit() {
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['sheetData', variables.sheetName] });
-            toast.success('Habit added successfully');
+            toast.success(translate('toastHabitAdded'));
         },
         onError: (error) => {
-            toast.error(`Failed to add habit: ${error.message}`);
+            toast.error(translate('toastHabitAddFailed', { error: error.message }));
         }
     });
 }
@@ -95,10 +96,10 @@ export function useAddDay() {
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['sheetData', variables.sheetName] });
-            toast.success('Day added successfully');
+            toast.success(translate('toastDayAdded'));
         },
         onError: (error) => {
-            toast.error(`Failed to add day: ${error.message}`);
+            toast.error(translate('toastDayAddFailed', { error: error.message }));
         }
     });
 }
@@ -113,7 +114,7 @@ export function useMoveColumn() {
             queryClient.invalidateQueries({ queryKey: ['sheetData', variables.sheetName] });
         },
         onError: (error) => {
-            toast.error(`Failed to move column: ${error.message}`);
+            toast.error(translate('toastMoveFailed', { error: error.message }));
         }
     });
 }
@@ -126,10 +127,10 @@ export function useDeleteColumn() {
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['sheetData', variables.sheetName] });
-            toast.success('Habit deleted');
+            toast.success(translate('toastHabitDeleted'));
         },
         onError: (error) => {
-            toast.error(`Failed to delete habit: ${error.message}`);
+            toast.error(translate('toastDeleteFailed', { error: error.message }));
         }
     });
 }
@@ -146,10 +147,10 @@ export function useRenameHabit() {
             queryClient.invalidateQueries({ queryKey: ['sheetData', variables.sheetName] });
             queryClient.invalidateQueries({ queryKey: ['habitColors', variables.sheetName] });
             queryClient.invalidateQueries({ queryKey: ['habitMeta'] });
-            toast.success('Habit renamed');
+            toast.success(translate('toastHabitRenamed'));
         },
         onError: (error) => {
-            toast.error(`Failed to rename habit: ${error.message}`);
+            toast.error(translate('toastRenameFailed', { error: error.message }));
         }
     });
 }
@@ -186,7 +187,7 @@ export function useSetHabitMeta() {
         },
         onError: (err, _variables, context) => {
             queryClient.setQueryData(['habitMeta'], context?.previous);
-            toast.error(`Failed to save info: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            toast.error(translate('toastSaveInfoFailed', { error: err instanceof Error ? err.message : translate('toastUnknownError') }));
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['habitMeta'] });
@@ -205,7 +206,7 @@ export function useSetHabitColor() {
             // Maybe also invalidate sheetData if colors are merged there? No, separate hook.
         },
         onError: (error) => {
-            toast.error(`Failed to set color: ${error.message}`);
+            toast.error(translate('toastSetColorFailed', { error: error.message }));
         }
     });
 }

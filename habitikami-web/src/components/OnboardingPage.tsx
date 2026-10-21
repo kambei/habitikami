@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Loader2, Plus, Link as LinkIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTranslation } from '../i18n';
+import { extractSpreadsheetId } from '../utils/spreadsheetId';
 
 interface Props {
     email: string;
@@ -29,13 +30,13 @@ export function OnboardingPage({ email, onComplete }: Props) {
             });
             const data = await res.json();
             if (!res.ok || data.error) {
-                toast.error(data.error || 'Failed to link spreadsheet ID');
+                toast.error(data.error || t('onboardingLinkFailed'));
                 return false;
             }
             habitService.setSpreadsheetId(id);
             return true;
         } catch {
-            toast.error('Network error — please try again');
+            toast.error(t('onboardingNetworkError'));
             return false;
         }
     };
@@ -46,18 +47,18 @@ export function OnboardingPage({ email, onComplete }: Props) {
             const result = await habitService.createInitialTemplate();
             
             if (result.error) {
-                toast.error("Error creating template: " + result.error);
+                toast.error(t('onboardingTemplateError').replace('{error}', result.error));
                 return;
             }
             
             if (result.spreadsheetId) {
-                toast.success('Tracker created successfully!');
+                toast.success(t('onboardingTrackerCreated'));
                 const saved = await checkAndSaveSpreadsheet(result.spreadsheetId);
                 if (saved) {
                     onComplete(result.spreadsheetId);
                 }
             } else {
-                toast.error("Unknown error creating template");
+                toast.error(t('onboardingTemplateError').replace('{error}', t('toastUnknownError')));
             }
         } catch (e: any) {
             toast.error("Failed to create template: " + e.message);
@@ -68,16 +69,18 @@ export function OnboardingPage({ email, onComplete }: Props) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const id = spreadsheetId.trim();
+        // Accept the whole Google Sheets link too (what people usually copy)
+        const id = extractSpreadsheetId(spreadsheetId);
         if (!id) {
-            toast.error('Please enter a Spreadsheet ID');
+            toast.error(t('onboardingSpreadsheetInvalid'));
             return;
         }
+        setSpreadsheetId(id);
         setSaving(true);
         const saved = await checkAndSaveSpreadsheet(id);
         setSaving(false);
         if (saved) {
-            toast.success('Spreadsheet linked successfully!');
+            toast.success(t('onboardingLinked'));
             onComplete(id);
         }
     };

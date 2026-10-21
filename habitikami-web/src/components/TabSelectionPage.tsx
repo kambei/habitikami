@@ -100,7 +100,7 @@ export function TabSelectionPage({ onComplete, currentTabs, currentDefaultTab, o
             }
             onComplete(tabs, defaultTab ?? undefined);
         } catch {
-            toast.error('Failed to save preferences');
+            toast.error(t('tabsSaveFailed'));
         } finally {
             setSaving(false);
         }

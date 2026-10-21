@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import type { GuidedStep } from '../types';
 import { useTranslation } from '../i18n';
+import { extractSpreadsheetId } from '../utils/spreadsheetId';
 import { habitService } from '../services/HabitService';
 import { schedeTemplates } from '../data/schedeTemplates';
 import { SchedeCompiler } from './SchedeCompiler';
@@ -56,6 +57,7 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     const [apiKeyLoading, setApiKeyLoading] = useState(false);
     const [apiKeyCopied, setApiKeyCopied] = useState(false);
     const [showApiKey, setShowApiKey] = useState(false);
+    const [apiKeyRegenerated, setApiKeyRegenerated] = useState(false);
     const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
     // Spreadsheet ID state
@@ -96,6 +98,9 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     };
 
     const handleGenerateApiKey = async () => {
+        // Regenerating invalidates the key the Android widgets hold: ask first
+        const isRegeneration = !!apiKeyInfo?.has_key;
+        if (isRegeneration && !window.confirm(t('settingsApiKeyRegenerateConfirm'))) return;
         setApiKeyLoading(true);
         setApiKeyError(null);
         setNewApiKey(null);
@@ -105,6 +110,7 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
         } else {
             setNewApiKey(result.api_key);
             setShowApiKey(true);
+            setApiKeyRegenerated(isRegeneration);
             await loadApiKeyInfo();
         }
         setApiKeyLoading(false);
@@ -119,18 +125,20 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
         } else {
             setApiKeyInfo({ has_key: false });
             setNewApiKey(null);
+            setApiKeyRegenerated(false);
         }
         setApiKeyLoading(false);
     };
 
     const handleSaveSpreadsheetId = async () => {
-        const id = tempSpreadsheetId.trim();
-        if (!id) return;
-        const SPREADSHEET_ID_PATTERN = /^[a-zA-Z0-9_-]{10,100}$/;
-        if (!SPREADSHEET_ID_PATTERN.test(id)) {
+        if (!tempSpreadsheetId.trim()) return;
+        // Accept the whole Google Sheets link too (what people usually copy)
+        const id = extractSpreadsheetId(tempSpreadsheetId);
+        if (!id) {
             setSpreadsheetError(t('settingsSpreadsheetInvalid'));
             return;
         }
+        setTempSpreadsheetId(id);
         setSpreadsheetError(null);
         habitService.setSpreadsheetId(id);
         // Also register on server
@@ -604,6 +612,9 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                                     {newApiKey && (
                                         <p className="text-xs text-emerald-300 font-medium">{t('settingsApiKeyNewWarning')}</p>
                                     )}
+                                    {newApiKey && apiKeyRegenerated && (
+                                        <p className="text-xs text-amber-300">{t('settingsApiKeyRegeneratedNote')}</p>
+                                    )}
                                     <div className="flex items-center gap-2">
                                         <code className="flex-1 text-xs bg-background/70 px-3 py-2 rounded font-mono break-all select-all">
                                             {newApiKey
@@ -794,8 +805,8 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                                             <FileText className="w-6 h-6 text-blue-400" />
                                         </div>
                                         <div>
-                                            <h3 className="font-semibold text-foreground mb-1">{t(scheda.titleKey as any)}</h3>
-                                            <p className="text-sm text-muted-foreground">{t(scheda.descriptionKey as any)}</p>
+                                            <h3 className="font-semibold text-foreground mb-1">{t(scheda.titleKey)}</h3>
+                                            <p className="text-sm text-muted-foreground">{t(scheda.descriptionKey)}</p>
                                         </div>
                                     </div>
                                 </motion.button>

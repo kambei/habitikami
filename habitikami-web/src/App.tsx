@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef, Suspense } from 'react'
 import type { SheetType, ViewType } from './types'
 import { cn } from './lib/utils'
 import { habitService } from './services/HabitService'
+import { hasAnyProvider, clearAllKeys } from './utils/aiProvider'
 import { Toaster, toast } from 'sonner'
 import { AnimatePresence, motion } from 'framer-motion'
 import { LayoutDashboard, Settings, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone, RefreshCw, Dumbbell } from 'lucide-react'
 import { GithubIcon } from './components/ui/GithubIcon'
-import { useTranslation } from './i18n'
+import { useTranslation, type TranslationKey } from './i18n'
 
 const HabitTable = React.lazy(() => import('./components/HabitTable').then(m => ({ default: m.HabitTable })))
 const Graphs = React.lazy(() => import('./components/Graphs').then(m => ({ default: m.Graphs })))
@@ -136,7 +137,7 @@ function VersionDropdown() {
 const ALL_TABS: ViewType[] = ['Weekdays', 'Weekend', 'Focus', 'Graphs', 'MobNotes', 'SmokeTemptation', 'Counters', 'Training', 'Help'];
 const TRAINING_OWNER_EMAIL = 'and.bovi@gmail.com';
 
-const TAB_LABEL_KEYS: Record<ViewType, string> = {
+const TAB_LABEL_KEYS: Record<ViewType, TranslationKey> = {
   Weekdays: 'tabWeekdays',
   Weekend: 'tabWeekend',
   Notes: 'tabNotes',
@@ -311,7 +312,7 @@ function App() {
         } else {
           lastBackTime.current = now;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          toast.info(t('backToExit' as any), { duration: 2000 });
+          toast.info(t('backToExit'), { duration: 2000 });
           // Guard state: push us back into the app flow
           const hash = isLoggedIn ? `#${activeSheet}` : '#home';
           const state = isLoggedIn ? { tab: activeSheet, isRoot: true } : { isHome: true };
@@ -391,6 +392,8 @@ function App() {
   };
 
   const handleLogout = () => {
+    // AI keys live in localStorage: on a shared device they must not outlive the session
+    if (hasAnyProvider() && window.confirm(t('logoutClearAiKeys'))) clearAllKeys();
     habitService.clearSession();
     setIsLoggedIn(false);
     setEmail(null);
@@ -540,7 +543,7 @@ function App() {
                                 >
                                   {Icon && <Icon className="w-4 h-4 shrink-0" />}
                                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                  <span className="flex-1">{t(TAB_LABEL_KEYS[tab] as any)}</span>
+                                  <span className="flex-1">{t(TAB_LABEL_KEYS[tab])}</span>
                                   {activeSheet === tab && (
                                     <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
                                   )}
@@ -583,7 +586,7 @@ function App() {
                             className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left relative"
                           >
                             <Info className="w-4 h-4 shrink-0 text-amber-400" />
-                            <span className="flex-1">What's New</span>
+                            <span className="flex-1">{t('menuWhatsNew')}</span>
                             {hasNewUpdates && (
                               <span className="flex h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse ring-4 ring-amber-400/20" />
                             )}
@@ -641,7 +644,7 @@ function App() {
                       )}
                     >
                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                      {t(TAB_LABEL_KEYS[tab] as any)}
+                      {t(TAB_LABEL_KEYS[tab])}
                     </button>
                   ))}
                 </div>
@@ -721,8 +724,8 @@ function App() {
                       <Info className="w-5 h-5 text-amber-500" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-sm font-bold text-foreground">{t('updateAvailableTitle' as any)}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">{t('updateAvailableMsg' as any)}</p>
+                      <h3 className="text-sm font-bold text-foreground">{t('updateAvailableTitle')}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('updateAvailableMsg')}</p>
                     </div>
                     <button 
                       onClick={() => setShowUpdatePopup(false)}
@@ -740,13 +743,13 @@ function App() {
                       className="flex-1 bg-primary text-primary-foreground text-xs font-bold py-2 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
                     >
                       <RefreshCw className="w-3 h-3" />
-                      {t('updateReloadBtn' as any)}
+                      {t('updateReloadBtn')}
                     </button>
                     <button
                       onClick={() => { setShowUpdatesOverlay(true); setShowUpdatePopup(false); }}
                       className="flex-1 bg-secondary text-secondary-foreground text-xs font-bold py-2 rounded-lg hover:bg-secondary/80 transition-all"
                     >
-                      {t('updateViewBtn' as any)}
+                      {t('updateViewBtn')}
                     </button>
                   </div>
                 </div>

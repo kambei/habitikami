@@ -395,26 +395,25 @@ export function Graphs() {
             {trainingStats && trainingStats.totalExercises > 0 && (
                 <div className="mt-8 space-y-6">
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    <h2 className="text-xl font-bold">{t('trainingStatsTitle' as any)}</h2>
+                    <h2 className="text-xl font-bold">{t('trainingStatsTitle')}</h2>
 
                     {/* Summary cards */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div className="bg-card border border-border rounded-xl p-4 text-center">
                             <div className="text-2xl font-bold text-primary">{trainingStats.totalExercises}</div>
-                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                            <div className="text-xs text-muted-foreground mt-1">{t('trainingTotal' as any)}</div>
+                            <div className="text-xs text-muted-foreground mt-1">{t('trainingTotal')}</div>
                         </div>
                         <div className="bg-card border border-border rounded-xl p-4 text-center">
                             <div className="text-2xl font-bold text-emerald-400">{trainingStats.activeDays}</div>
-                            <div className="text-xs text-muted-foreground mt-1">{t('graphsActiveDays' as any)}</div>
+                            <div className="text-xs text-muted-foreground mt-1">{t('graphsActiveDays')}</div>
                         </div>
                         <div className="bg-card border border-border rounded-xl p-4 text-center">
                             <div className="text-2xl font-bold text-amber-400">{trainingStats.averagePerDay}</div>
-                            <div className="text-xs text-muted-foreground mt-1">Media/giorno</div>
+                            <div className="text-xs text-muted-foreground mt-1">{t('graphsAvgPerDay')}</div>
                         </div>
                         <div className="bg-card border border-border rounded-xl p-4 text-center">
                             <div className="text-2xl font-bold text-purple-400">{trainingStats.sectionBreakdown.length}</div>
-                            <div className="text-xs text-muted-foreground mt-1">Sezioni attive</div>
+                            <div className="text-xs text-muted-foreground mt-1">{t('graphsActiveSections')}</div>
                         </div>
                     </div>
 
@@ -441,7 +440,7 @@ export function Graphs() {
                         {/* Section breakdown */}
                         {trainingStats.sectionBreakdown.length > 0 && (
                             /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-                            <ExpandableGraph title={t('trainingBySection' as any)}>
+                            <ExpandableGraph title={t('trainingBySection')}>
                                 <div className="space-y-2 p-2">
                                     {trainingStats.sectionBreakdown.map(sec => (
                                         <div key={sec.section} className="flex items-center gap-3">

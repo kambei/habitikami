@@ -16,6 +16,10 @@ import { StreakLeaderboard } from './graphs/StreakLeaderboard';
 import { useHabitStreaks } from '../hooks/useStreaks';
 import { useHabitMeta } from '../hooks/useHabitMutations';
 import { NumericHabitChart } from './graphs/NumericHabitChart';
+import { CorrelationMatrix } from './graphs/CorrelationMatrix';
+import { MoodHabitCorrelation } from './graphs/MoodHabitCorrelation';
+import { ReportCard } from './graphs/ReportCard';
+import { nextMilestones } from '../utils/projections';
 
 // Deterministic color generation
 const COLORS = [
@@ -155,6 +159,7 @@ export function Graphs() {
     };
 
     const sortedStats = getSortedStats();
+    const milestoneForecasts = nextMilestones(streaks).slice(0, 3);
 
     const filteredStats = selectedHabit === 'ALL'
         ? sortedStats
@@ -212,6 +217,40 @@ export function Graphs() {
             <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 mb-8">
                 <h2 className="text-lg md:text-xl font-bold mb-4">{t('graphsStreaks')}</h2>
                 <StreakLeaderboard streaks={streaks} colors={habitColors} />
+                {milestoneForecasts.length > 0 && (
+                    <ul className="mt-4 space-y-1 text-sm border-t border-border/50 pt-3">
+                        {milestoneForecasts.map(f => (
+                            <li key={f.habit} className="flex items-center gap-2">
+                                <span>🎯</span>
+                                <span>
+                                    {t('projectionMilestone')
+                                        .replace('{habit}', f.habit)
+                                        .replace('{milestone}', String(f.milestone))
+                                        .replace('{days}', String(f.daysLeft))
+                                        .replace('{date}', f.on.toLocaleDateString(locale, { day: 'numeric', month: 'short' }))}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+
+            {/* Weekly / monthly report with CSV and PDF export */}
+            <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6 mb-8">
+                <h2 className="text-lg md:text-xl font-bold mb-4 print:hidden">{t('reportTitle')}</h2>
+                <ReportCard colors={habitColors} />
+            </div>
+
+            {/* Habit-to-habit and mood correlations */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6">
+                    <h2 className="text-lg md:text-xl font-bold mb-4">{t('correlationsTitle')}</h2>
+                    <CorrelationMatrix colors={habitColors} />
+                </div>
+                <div className="bg-card border border-border rounded-xl shadow-sm p-4 md:p-6">
+                    <h2 className="text-lg md:text-xl font-bold mb-4">{t('moodHabitsTitle')}</h2>
+                    <MoodHabitCorrelation />
+                </div>
             </div>
 
             {/* Main Stats: Bar Chart */}

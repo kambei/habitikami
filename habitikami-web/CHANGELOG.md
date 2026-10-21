@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.13.0 - 2026-10-21
+### 📊 Analytics (Graphs)
+- **Habit correlations (#4)**: phi coefficient per pair over 1, 3 or 6 months, shown as a habit × habit heatmap plus plain sentences ("when you do X you tend to do Y too / to skip Y") for |φ| ≥ 0.3 on at least 20 shared days. Skips and empty cells are excluded.
+- **Mood and habits (#5)**: Mood sheet entries joined by day with the habit rows; diverging bars with the average mood on days with vs without each habit and a "habits that do you good" top 3.
+- **Projections (#7)**: dashed trend line on the daily completion chart (linear regression on the last 30 days) with the weekly slope, and "at this pace X reaches a N-day streak in K days" under the streak leaderboard.
+- **Weekly / monthly report (#6)**: completion vs the previous period, days tracked, active streaks, average mood, per-habit bars, most/least completed, counters. Built on the fly, no email.
+- **Export (#18)**: CSV of habits, counters, notes and mood for the report period (one section each, Excel-friendly) and PDF through the browser print dialog, which prints only the report card.
+
 ## 🌐 Web 5.12.1 - 2026-10-21
 ### ✨ UX
 - **Scrolling habit titles**: in the table and in the grid, a habit name that does not fit its box glides slowly back and forth (pause at each end, soft fade on the edges) instead of being cut with "…" or stretching the column. Names that fit stay still; with "reduce motion" enabled the ellipsis is kept.

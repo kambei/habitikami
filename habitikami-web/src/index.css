@@ -128,3 +128,12 @@ body {
   .scroll-text { -webkit-mask-image: none; mask-image: none; text-overflow: ellipsis; }
   .scroll-text > span { animation: none; }
 }
+
+/* Print only the report card (ReportCard → "PDF" button) */
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 16px; color: #000; }
+  .print-area .text-muted-foreground { color: #555 !important; }
+  .print-area .bg-background\/30 { background: #fff !important; }
+}

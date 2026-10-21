@@ -1,10 +1,8 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import { en, type TranslationKey } from './en';
-import { it } from './it';
+import type { TranslationKey } from './en';
+import { translations, getInitialLanguage, type Language } from './core';
 
-export type Language = 'en' | 'it';
-
-const translations = { en, it } as const;
+export type { Language } from './core';
 
 interface LanguageContextType {
   language: Language;
@@ -15,15 +13,6 @@ interface LanguageContextType {
 }
 
 const LanguageContext = createContext<LanguageContextType | null>(null);
-
-function getInitialLanguage(): Language {
-  const stored = localStorage.getItem('habitikami_language');
-  if (stored === 'en' || stored === 'it') return stored;
-  // Auto-detect from browser
-  const browserLang = navigator.language.toLowerCase();
-  if (browserLang.startsWith('it')) return 'it';
-  return 'en';
-}
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(getInitialLanguage);

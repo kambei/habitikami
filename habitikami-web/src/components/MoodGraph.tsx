@@ -485,7 +485,7 @@ ${JSON.stringify({
                                                     <Tooltip 
                                                         cursor={{ fill: '#ffffff10' }} 
                                                         contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333', borderRadius: 8, fontSize: 12 }}
-                                                        formatter={(value) => [typeof value === 'number' ? Math.abs(value) : '-', t('moodGraphIntensity' as any)]}
+                                                        formatter={(value) => [typeof value === 'number' ? Math.abs(value) : '-', t('moodGraphIntensity')]}
                                                     />
                                                     <Bar dataKey="displayScore" radius={[0, 4, 4, 0]}>
                                                         {aiInsights.chartData.map((entry, index) => {

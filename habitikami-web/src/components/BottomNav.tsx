@@ -1,17 +1,17 @@
 import { Home, BarChart2, CheckSquare, Flame, Coffee, StickyNote, Hash, HeartHandshake } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { ViewType } from '../types';
-import { useTranslation } from '../i18n';
+import { useTranslation, type TranslationKey } from '../i18n';
 
 const ALL_NAV_ITEMS = [
-    { id: 'Weekdays' as ViewType, labelKey: 'tabWeekdays', icon: Home },
-    { id: 'Weekend' as ViewType, labelKey: 'tabWeekend', icon: Coffee },
-    { id: 'Focus' as ViewType, labelKey: 'tabFocus', icon: CheckSquare },
-    { id: 'Graphs' as ViewType, labelKey: 'tabStats', icon: BarChart2 },
-    { id: 'MobNotes' as ViewType, labelKey: 'tabNotes', icon: StickyNote },
-    { id: 'SmokeTemptation' as ViewType, labelKey: 'tabSmoke', icon: Flame },
-    { id: 'Counters' as ViewType, labelKey: 'tabCounters', icon: Hash },
-    { id: 'Help' as ViewType, labelKey: 'tabHelp', icon: HeartHandshake },
+    { id: 'Weekdays' as ViewType, labelKey: 'tabWeekdays' as TranslationKey, icon: Home },
+    { id: 'Weekend' as ViewType, labelKey: 'tabWeekend' as TranslationKey, icon: Coffee },
+    { id: 'Focus' as ViewType, labelKey: 'tabFocus' as TranslationKey, icon: CheckSquare },
+    { id: 'Graphs' as ViewType, labelKey: 'tabStats' as TranslationKey, icon: BarChart2 },
+    { id: 'MobNotes' as ViewType, labelKey: 'tabNotes' as TranslationKey, icon: StickyNote },
+    { id: 'SmokeTemptation' as ViewType, labelKey: 'tabSmoke' as TranslationKey, icon: Flame },
+    { id: 'Counters' as ViewType, labelKey: 'tabCounters' as TranslationKey, icon: Hash },
+    { id: 'Help' as ViewType, labelKey: 'tabHelp' as TranslationKey, icon: HeartHandshake },
 ];
 
 interface BottomNavProps {
@@ -43,7 +43,7 @@ export function BottomNav({ activeTab, onTabChange, enabledTabs }: BottomNavProp
                     )}
                 >
                     <item.icon className="w-5 h-5" />
-                    <span className="text-[10px] font-medium whitespace-nowrap">{t(item.labelKey as any)}</span>
+                    <span className="text-[10px] font-medium whitespace-nowrap">{t(item.labelKey)}</span>
                 </button>
             ))}
         </div>

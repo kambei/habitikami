@@ -189,7 +189,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
         
         // Find first pending habit (not checked AND not skipped)
         const nextHabitPair = relevantHabits.find(([_, value]) => value === false);
-        const nextHabitName = nextHabitPair ? nextHabitPair[0] : (t('habitTableAllDone' as any) || 'Tutti completati!');
+        const nextHabitName = nextHabitPair ? nextHabitPair[0] : t('habitTableAllDone');
 
         const summary = {
             date: translateDay(todayRow.day, tArray('days')) + ' ' + todayRow.date,
@@ -229,7 +229,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                 const newUrl = window.location.pathname + window.location.hash;
                 window.history.replaceState({}, '', newUrl);
 
-                toast.info(`Skipping: ${habitName}`);
+                toast.info(t('habitTableSkipping').replace('{habit}', habitName));
                 mutations.updateCell.mutate({ sheetName, rowIndex: sheetRow, colIndex, value: 'SKIP' });
             }
         }

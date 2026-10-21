@@ -30,13 +30,13 @@ export function OnboardingPage({ email, onComplete }: Props) {
             });
             const data = await res.json();
             if (!res.ok || data.error) {
-                toast.error(data.error || 'Failed to link spreadsheet ID');
+                toast.error(data.error || t('onboardingLinkFailed'));
                 return false;
             }
             habitService.setSpreadsheetId(id);
             return true;
         } catch {
-            toast.error('Network error — please try again');
+            toast.error(t('onboardingNetworkError'));
             return false;
         }
     };
@@ -47,18 +47,18 @@ export function OnboardingPage({ email, onComplete }: Props) {
             const result = await habitService.createInitialTemplate();
             
             if (result.error) {
-                toast.error("Error creating template: " + result.error);
+                toast.error(t('onboardingTemplateError').replace('{error}', result.error));
                 return;
             }
             
             if (result.spreadsheetId) {
-                toast.success('Tracker created successfully!');
+                toast.success(t('onboardingTrackerCreated'));
                 const saved = await checkAndSaveSpreadsheet(result.spreadsheetId);
                 if (saved) {
                     onComplete(result.spreadsheetId);
                 }
             } else {
-                toast.error("Unknown error creating template");
+                toast.error(t('onboardingTemplateError').replace('{error}', t('toastUnknownError')));
             }
         } catch (e: any) {
             toast.error("Failed to create template: " + e.message);
@@ -80,7 +80,7 @@ export function OnboardingPage({ email, onComplete }: Props) {
         const saved = await checkAndSaveSpreadsheet(id);
         setSaving(false);
         if (saved) {
-            toast.success('Spreadsheet linked successfully!');
+            toast.success(t('onboardingLinked'));
             onComplete(id);
         }
     };

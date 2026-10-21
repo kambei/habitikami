@@ -805,8 +805,8 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                                             <FileText className="w-6 h-6 text-blue-400" />
                                         </div>
                                         <div>
-                                            <h3 className="font-semibold text-foreground mb-1">{t(scheda.titleKey as any)}</h3>
-                                            <p className="text-sm text-muted-foreground">{t(scheda.descriptionKey as any)}</p>
+                                            <h3 className="font-semibold text-foreground mb-1">{t(scheda.titleKey)}</h3>
+                                            <p className="text-sm text-muted-foreground">{t(scheda.descriptionKey)}</p>
                                         </div>
                                     </div>
                                 </motion.button>

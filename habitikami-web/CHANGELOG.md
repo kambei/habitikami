@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.10.1 - 2026-10-21
+### ✨ UX Quick Wins
+- **Document Language** (#57): `<html lang>` now follows the app language on load and on every switch, instead of staying `en` until the language was toggled.
+- **Logout Cleans AI Keys** (#65): signing out asks whether to remove the Gemini/Anthropic keys saved on the device, so they do not outlive the session on a shared computer.
+- **Paste the Sheet Link** (#66): onboarding and the settings field accept the whole Google Sheets URL (with `/edit#gid`, `?usp=sharing` or `/u/N/`) as well as the bare ID; the recognised ID replaces the input before saving.
+- **API Key Regeneration Warning** (#67): regenerating an existing key asks for confirmation and the new key is shown with a reminder to paste it into the Android widget settings, which otherwise stop working silently.
+- **Untranslated Strings** (#69): "What's New", the habit/day/column toasts, the onboarding and tab-selection toasts, the training stats labels and the Windows widget "all done" fallback are now translated (IT/EN). The two missing keys `graphsActiveDays` and `habitTableAllDone` exist, and the 27 `t('…' as any)` casts are gone: template, tour and tab keys are typed as `TranslationKey`. New `translate()` helper for code outside React.
+
 ## 🌐 Web 5.10.0 - 2026-10-21
 ### 🧠 Mood History Moves to Your Google Sheet (groundwork for #5 and #6)
 - **New `Mood` Sheet**: `Date | Timestamp | Mood | Anxiety | Label | Source`, created on the first assessment. Mood entries from guided sessions and worksheets are appended there instead of the browser storage, so the history follows you across devices and is no longer capped at 100 entries.

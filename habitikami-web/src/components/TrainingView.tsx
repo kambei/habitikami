@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check, ExternalLink /*, Filter*/ } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
-import { useTranslation } from '../i18n';
+import { useTranslation, type TranslationKey } from '../i18n';
 import { useTodayTrainingLog, useLogTrainingExercise, useRemoveTrainingExercise } from '../hooks/useTrainingData';
 import {
     DAYS, SECTIONS, MORNING_PLANS, AFTERNOON_PLANS,
@@ -180,7 +180,7 @@ export function TrainingView() {
             removeMutation.mutate(
                 { date: todayStr, section, exercise, session },
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                { onError: () => toast.error(t('trainingFailedUndo' as any)) }
+                { onError: () => toast.error(t('trainingFailedUndo')) }
             );
         } else {
             logMutation.mutate(
@@ -252,7 +252,7 @@ export function TrainingView() {
                     >
                         <span className="text-base leading-none mb-0.5">{sec.icon}</span>
                         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        {t(`training${sec.key.charAt(0).toUpperCase() + sec.key.slice(1)}` as any) || sec.label}
+                        {t(`training${sec.key.charAt(0).toUpperCase() + sec.key.slice(1)}` as TranslationKey) || sec.label}
                     </button>
                 ))}
             </div>
@@ -273,7 +273,7 @@ export function TrainingView() {
                     >
                         <span>{eq.icon}</span>
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        {t(eq.labelKey as any)}
+                        {t(eq.labelKey)}
                     </button>
                 ))}
             </div> */}
@@ -283,7 +283,7 @@ export function TrainingView() {
                 <div className="px-4 py-2 text-xs text-muted-foreground border-b border-border bg-card/30 flex items-center gap-2">
                     <span className="font-bold text-foreground">{todayEntries.length}</span>
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {t('trainingLoggedToday' as any)}
+                    {t('trainingLoggedToday')}
                 </div>
             )}
 
@@ -357,16 +357,16 @@ function EquipmentFilterView({ results, expandedId, onToggleExpand, isExerciseDo
 
     if (results.length === 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return <div className="text-center text-muted-foreground py-8">{t('trainingNoExercises' as any)}</div>;
+        return <div className="text-center text-muted-foreground py-8">{t('trainingNoExercises')}</div>;
     }
 
     return (
         <>
             <div className="text-xs bg-card border border-border rounded-lg p-3 leading-relaxed" style={{ borderLeftColor: accentColor, borderLeftWidth: 3 }}>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <b>🔧 {filterCount} {t('trainingFilterResults' as any)}</b>
+                <b>🔧 {filterCount} {t('trainingFilterResults')}</b>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <div className="text-muted-foreground mt-1">{t('trainingFilterHint' as any)}</div>
+                <div className="text-muted-foreground mt-1">{t('trainingFilterHint')}</div>
             </div>
 
             {results.map((item, i) => {
@@ -390,7 +390,7 @@ function EquipmentFilterView({ results, expandedId, onToggleExpand, isExerciseDo
                             <div className="flex-1 min-w-0">
                                 <div className={cn("font-bold text-sm", done && "line-through text-muted-foreground")}>{tData(ex.name, 'name')}</div>
                                 <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded inline-block mt-0.5" style={{ backgroundColor: `${accentColor}18`, color: accentColor }}>
-                                    {language === 'en' ? (t(`training${item.sectionKey.charAt(0).toUpperCase() + item.sectionKey.slice(1)}` as any) || item.source) : item.source}
+                                    {language === 'en' ? (t(`training${item.sectionKey.charAt(0).toUpperCase() + item.sectionKey.slice(1)}` as TranslationKey) || item.source) : item.source}
                                 </span>
                             </div>
                             <button
@@ -489,7 +489,7 @@ function PlanView({ selectedDay, onDayChange, expandedId, onToggleExpand, isExer
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mt-1"
                         style={{ backgroundColor: `${accentColor}20`, color: accentColor }}>
                         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        ⚡ {t('trainingSingle' as any)}
+                        ⚡ {t('trainingSingle')}
                     </span>
                 )}
             </div>
@@ -497,7 +497,7 @@ function PlanView({ selectedDay, onDayChange, expandedId, onToggleExpand, isExer
             {/* Morning / Single session */}
             <SessionBlock
                 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-                label={isWeekend && !afternoonPlan ? `⚡ ${t('trainingSingle' as any)}` : `🌅 ${t('trainingMorning' as any)}`}
+                label={isWeekend && !afternoonPlan ? `⚡ ${t('trainingSingle')}` : `🌅 ${t('trainingMorning')}`}
                 plan={morningPlan}
                 sessionName={isWeekend && !afternoonPlan ? 'Unica' : 'Mattina'}
                 expandedId={expandedId}
@@ -514,7 +514,7 @@ function PlanView({ selectedDay, onDayChange, expandedId, onToggleExpand, isExer
             {afternoonPlan && (
                 <SessionBlock
                     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-                    label={`🌇 ${t('trainingAfternoon' as any)}`}
+                    label={`🌇 ${t('trainingAfternoon')}`}
                     plan={afternoonPlan}
                     sessionName="Pomeriggio"
                     expandedId={expandedId}
@@ -531,11 +531,11 @@ function PlanView({ selectedDay, onDayChange, expandedId, onToggleExpand, isExer
             {/* Tips */}
             <div className="text-xs text-muted-foreground bg-card border border-border rounded-lg p-3 leading-relaxed border-l-2" style={{ borderLeftColor: accentColor }}>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <b>💡 {t('trainingIsometricTip' as any)}</b>
+                <b>💡 {t('trainingIsometricTip')}</b>
             </div>
             <div className="text-xs text-muted-foreground bg-card border border-border rounded-lg p-3 leading-relaxed border-l-2" style={{ borderLeftColor: accentColor }}>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <b>🪑 {t('trainingChairTip' as any)}</b>
+                <b>🪑 {t('trainingChairTip')}</b>
             </div>
         </>
     );
@@ -713,11 +713,11 @@ function CatalogView({ sectionKey, expandedId, onToggleExpand, isExerciseDone, o
 
     if (exercises.length === 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return <div className="text-center text-muted-foreground py-8">{t('trainingNoExercises' as any)}</div>;
+        return <div className="text-center text-muted-foreground py-8">{t('trainingNoExercises')}</div>;
     }
 
     // Section intro key mapping
-    const introKeys: Record<string, string> = {
+    const introKeys: Record<string, TranslationKey> = {
         stretch: 'trainingIntroStretch',
         chair: 'trainingIntroChair',
         aikido: 'trainingIntroAikido',
@@ -734,12 +734,12 @@ function CatalogView({ sectionKey, expandedId, onToggleExpand, isExerciseDone, o
             {introKey && sectionKey === 'craving' ? (
                 <div className="text-xs bg-card border border-border rounded-lg p-3 leading-relaxed mb-2" style={{ borderLeftColor: accentColor, borderLeftWidth: 3 }}>
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    <b>🧠 {t(introKey as any)}</b>
+                    <b>🧠 {t(introKey)}</b>
                 </div>
             ) : introKey ? (
                 <p className="text-xs text-muted-foreground leading-relaxed mb-2">
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {t(introKey as any)}
+                    {t(introKey)}
                 </p>
             ) : null}
 
@@ -911,14 +911,14 @@ function ExerciseDetail({ exercise, planExercise, accentColor }: ExerciseDetailP
             {prog && (
                 <div className="bg-background rounded-md px-2.5 py-2">
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    <div className="font-mono text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: accentColor }}>{t('trainingProgression' as any)}</div>
+                    <div className="font-mono text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: accentColor }}>{t('trainingProgression')}</div>
                     <div className="text-foreground/70">{prog}</div>
                 </div>
             )}
             {muscles && (
                 <div className="text-[10px]">
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    <b className="text-foreground/50">{t('trainingMuscles' as any)}:</b> {muscles}
+                    <b className="text-foreground/50">{t('trainingMuscles')}:</b> {muscles}
                 </div>
             )}
             {ytQuery && !isAppOrBike && (
@@ -931,7 +931,7 @@ function ExerciseDetail({ exercise, planExercise, accentColor }: ExerciseDetailP
                 >
                     <ExternalLink className="w-3 h-3" />
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {t('trainingYoutubeSearch' as any)}
+                    {t('trainingYoutubeSearch')}
                 </a>
             )}
         </div>

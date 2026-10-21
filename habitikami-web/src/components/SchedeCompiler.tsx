@@ -45,7 +45,7 @@ export function SchedeCompiler({ template, providerConfig, onBack }: Props) {
         setIsLoading(true);
         setError(null);
 
-        const systemPrompt = t(template.systemPromptKey as any);
+        const systemPrompt = t(template.systemPromptKey);
         const systemAck = t('schedaSystemAck');
 
         try {
@@ -60,7 +60,7 @@ export function SchedeCompiler({ template, providerConfig, onBack }: Props) {
             setHistory(updatedHistory);
 
             if (parsed.completed) {
-                assessMood(updatedHistory, t(template.titleKey as any));
+                assessMood(updatedHistory, t(template.titleKey));
             }
         } catch (err: any) {
             console.error(err);
@@ -130,7 +130,7 @@ export function SchedeCompiler({ template, providerConfig, onBack }: Props) {
             const now = new Date();
             const pad = (n: number) => n < 10 ? '0' + n : String(n);
             const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-            const schedaTitle = t(template.titleKey as any);
+            const schedaTitle = t(template.titleKey);
             const title = `${schedaTitle} - ${dateStr}`;
 
             const htmlContent = markdownToHtml(currentStep.compiledDocument);
@@ -157,7 +157,7 @@ export function SchedeCompiler({ template, providerConfig, onBack }: Props) {
                         <ArrowLeft className="w-4 h-4" />
                     </button>
                     <FileText className="w-5 h-5 text-primary" />
-                    <span className="font-semibold text-primary">{t(template.titleKey as any)}</span>
+                    <span className="font-semibold text-primary">{t(template.titleKey)}</span>
                 </div>
                 {currentStep && (
                     <div className="flex items-center gap-2">

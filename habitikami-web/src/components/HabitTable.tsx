@@ -8,9 +8,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Grid3X3, Table, Pencil, Info, Check, X } from "lucide-react";
 import { toast } from 'sonner';
 
-import { useSheetData, useSheetRange } from "../hooks/useSheetData";
-import { longestCurrentStreak } from "../utils/streaks";
-import { descriptionsOf, targetsOf } from "../utils/habitMeta";
+import { useSheetData } from "../hooks/useSheetData";
+import { descriptionsOf } from "../utils/habitMeta";
+import { useHabitStreaks } from "../hooks/useStreaks";
+import { StreakBadge } from "./ui/StreakBadge";
+import { MilestoneCelebration } from "./MilestoneCelebration";
 import { useHabitColors } from "../hooks/useHabitColors";
 import { useUpdateCell, useAddHabit, useAddDay, useMoveColumn, useDeleteColumn, useSetHabitColor, useRenameHabit, useHabitMeta, useSetHabitMeta } from "../hooks/useHabitMutations";
 import { Skeleton } from "./ui/Skeleton";
@@ -64,20 +66,12 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     const { data: habitColors, isLoading: isColorsLoading } = useHabitColors(sheetName);
     const { data: habitMeta } = useHabitMeta();
     const metaMap: Record<string, string> = useMemo(() => descriptionsOf(habitMeta), [habitMeta]);
-    const habitTargets = useMemo(() => targetsOf(habitMeta), [habitMeta]);
 
-    // Last 90 days of both sheets, for the streak shown by the Windows widget
-    const streakWindow = useMemo(() => {
-        const to = new Date();
-        const from = new Date();
-        from.setDate(from.getDate() - 90);
-        return { from, to };
-    }, []);
-    const { data: weekdaysRange } = useSheetRange('Weekdays', streakWindow.from, streakWindow.to);
-    const { data: weekendRange } = useSheetRange('Weekend', streakWindow.from, streakWindow.to);
+    // Streaks of every habit (both sheets, last year): header badges, milestones, Windows widget
+    const { streaks } = useHabitStreaks();
     const widgetStreak = useMemo(
-        () => longestCurrentStreak([weekdaysRange?.data ?? [], weekendRange?.data ?? []], new Date(), habitTargets).streak,
-        [weekdaysRange, weekendRange, habitTargets]
+        () => Object.values(streaks).reduce((max, s) => Math.max(max, s.currentStreak), 0),
+        [streaks]
     );
 
     // Derive everything from query data — no local copy
@@ -360,6 +354,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
 
     return (
         <div className="overflow-x-auto pb-4 relative min-h-[500px] h-full flex flex-col">
+            <MilestoneCelebration streaks={streaks} />
             <div className="flex items-center justify-between p-4 bg-card border-b border-border sticky left-0">
                 <h2 className="text-lg font-semibold">{currentDate.toLocaleString(locale, { month: 'long', year: 'numeric' })}</h2>
                 <div className="flex gap-2 items-center">
@@ -419,6 +414,9 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                     onContextMenu={(e) => handleContextMenu(e, index, h)}
                                 >
                                     <div className="flex flex-col items-center gap-1">
+                                        {!isEditing && streaks[h]?.currentStreak > 0 && (
+                                            <StreakBadge streak={streaks[h].currentStreak} best={streaks[h].bestStreak} className="absolute top-1 right-1" />
+                                        )}
                                         {isEditing ? (
                                             <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                                                 {colors[h] && <div className="w-3 h-3 rounded-full shadow-sm ring-1 ring-white/20 shrink-0" style={{ backgroundColor: colors[h] }} />}

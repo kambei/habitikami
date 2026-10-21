@@ -5,6 +5,9 @@ import type { SheetType } from '../types';
 import { useTranslation } from '../i18n';
 import { useSheetData } from '../hooks/useSheetData';
 import { useUpdateCell } from '../hooks/useHabitMutations';
+import { useHabitStreaks } from '../hooks/useStreaks';
+import { StreakBadge } from './ui/StreakBadge';
+import { MilestoneCelebration } from './MilestoneCelebration';
 
 interface CompactHabitViewProps {
     refreshKey?: number;
@@ -13,6 +16,7 @@ interface CompactHabitViewProps {
 export function CompactHabitView({ }: CompactHabitViewProps) {
     const { t } = useTranslation();
     const [currentIndex, setCurrentIndex] = useState(0);
+    const { streaks } = useHabitStreaks();
 
     const now = new Date();
     const day = now.getDay();
@@ -149,6 +153,7 @@ export function CompactHabitView({ }: CompactHabitViewProps) {
 
     return (
         <div className="flex flex-col h-full max-w-2xl mx-auto p-4 md:p-8">
+            <MilestoneCelebration streaks={streaks} />
             <div className="flex items-center justify-between mb-8 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                     <Calendar size={16} />
@@ -181,6 +186,12 @@ export function CompactHabitView({ }: CompactHabitViewProps) {
                         <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
                             {habits[displayedIndex]}
                         </h2>
+                        {streaks[habits[displayedIndex]]?.currentStreak > 0 && (
+                            <div className="flex items-center gap-2 -mt-4">
+                                <StreakBadge streak={streaks[habits[displayedIndex]].currentStreak} best={streaks[habits[displayedIndex]].bestStreak} size="lg" />
+                                <span className="text-sm text-muted-foreground">{t('focusStreakLabel')}</span>
+                            </div>
+                        )}
 
                         <p className="text-muted-foreground text-lg">
                             {t('focusReady')}

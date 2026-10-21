@@ -8,6 +8,8 @@ import { useSheetData } from '../hooks/useSheetData';
 import { useHabitMeta, useSetHabitMeta, useRenameHabit } from '../hooks/useHabitMutations';
 import { habitStreakStats } from '../utils/streaks';
 import { descriptionsOf } from '../utils/habitMeta';
+import { useHabitStreaks } from '../hooks/useStreaks';
+import { StreakBadge } from './ui/StreakBadge';
 
 interface CheckboxGridViewProps {
     headers: string[];
@@ -37,6 +39,7 @@ export function CheckboxGridView({
     const [selectedHabit, setSelectedHabit] = useState<string | null>(null);
 
     const { data: habitMeta } = useHabitMeta();
+    const { streaks } = useHabitStreaks();
     const metaMap: Record<string, string> = useMemo(() => descriptionsOf(habitMeta), [habitMeta]);
     const setMeta = useSetHabitMeta();
     const renameHabit = useRenameHabit();
@@ -150,6 +153,9 @@ export function CheckboxGridView({
                                         style={{ backgroundColor: color }}
                                     />
                                     <span className="text-xs font-medium truncate">{habit}</span>
+                                    {streaks[habit]?.currentStreak > 0 && (
+                                        <StreakBadge streak={streaks[habit].currentStreak} best={streaks[habit].bestStreak} className="ml-auto shrink-0" />
+                                    )}
                                 </button>
                             </motion.div>
                         );

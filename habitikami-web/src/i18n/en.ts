@@ -504,6 +504,13 @@ export const en = {
   onboardingTrackerCreated: 'Tracker created!',
   onboardingLinked: 'Spreadsheet linked!',
   tabsSaveFailed: 'Failed to save preferences',
+  milestoneTitle: 'Streak milestone',
+  milestoneMessage: '{days} days in a row. Keep going!',
+  graphsStreaks: 'Longest streaks',
+  graphsStreakCurrent: 'Current',
+  graphsStreakBest: 'Best',
+  graphsStreaksEmpty: 'No streak yet: complete a habit two days in a row.',
+  focusStreakLabel: 'day streak',
 } as const;
 
 export type TranslationKey = keyof typeof en;

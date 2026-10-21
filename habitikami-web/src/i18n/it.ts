@@ -505,4 +505,11 @@ export const it: Record<TranslationKey, string | string[]> = {
   onboardingTrackerCreated: 'Tracker creato!',
   onboardingLinked: 'Foglio collegato!',
   tabsSaveFailed: 'Impossibile salvare le preferenze',
+  milestoneTitle: 'Traguardo streak',
+  milestoneMessage: '{days} giorni di fila. Continua così!',
+  graphsStreaks: 'Streak più lunghe',
+  graphsStreakCurrent: 'Attuale',
+  graphsStreakBest: 'Record',
+  graphsStreaksEmpty: 'Nessuna streak ancora: completa un\'abitudine due giorni di fila.',
+  focusStreakLabel: 'giorni di fila',
 } as const;

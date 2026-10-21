@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.12.0 + 🤖 Android 5.4.0 - 2026-10-21
+### 🪟 Windows 11 Widgets (#67, #87, #88, #89, #94)
+- **Sync from any view**: the widget summary is pushed to the service worker from a single hook, so it stays fresh whatever page is open (not only the table).
+- **Real actions**: "Complete next" and "Skip next" open Focus and apply the action to the first pending habit; "Open" goes straight to the app.
+- **Translated** labels and dates (manifest in Italian too), **two new widgets**: today's counters and the longest streak.
+- Widget data is cached and survives service-worker updates; fallback cards when there is no data yet.
+
+### 🤖 Android Widgets (#74, #75, #76, #77, #78, #79, #93)
+- **Error states**: a widget with no server or key says "Tap to configure" and opens its settings; a 401/403 says the key is wrong and opens the settings; offline keeps the last data with a "last updated" line instead of going blank.
+- **Loading** indicator while refreshing, "last updated" time stored per widget.
+- **Italian** strings for every widget and settings screen.
+- **Refresh on launch**: opening the app refreshes every widget right away and again shortly after, so what you tick shows up on the home screen.
+- **Update dialog** with the release notes and a direct APK download (falls back to the release page).
+- `BaseWidgetProvider` refactor (#101) left out on purpose: the shared helpers in `WidgetErrors` cover the duplicated parts with less risk.
+
+### 🔗 Widget Pairing (#68, #90, #100)
+- **One tap on the phone**: after generating an API key in Help → Settings, a "Configure the widgets on this phone" button opens the Habitikami app, which stores server and key in the encrypted widget store and refreshes every widget. Nothing to type.
+- **QR from desktop**: the same screen shows a QR code; scanning it with the phone camera opens the app and configures the widgets. The key travels in the URL hash and never reaches the server.
+
 ## 🌐 Web 5.11.0 + 🤖 Android 5.3.6 - 2026-10-21
 ### 🔥 Streaks (#1)
 - **Streak Badges**: a flame chip with the current streak in the table header, next to each habit in the grid and under the habit in Focus (hover shows the best streak). Computed over the last year across Weekdays and Weekend with the shared rules (TRUE/HALF continue, SKIP neutral, today pending).

@@ -511,6 +511,35 @@ class HabitServiceImpl {
     async getDataSubset(sheetName: string, year: number, month: number): Promise<
         { values: any[][], dataStartRow: number, headerRowIndex: number } | { error: string }
     > { // month is 0-indexed (0=Jan)
+        return this.fetchRowsWhere(sheetName, d => d.y === year && d.m === month);
+    }
+
+    /**
+     * Rows whose date falls within [from, to] (inclusive, local calendar days),
+     * in one request for the whole span. Used for streaks, analytics and
+     * exports that need more than one month.
+     */
+    async getRangeData(sheetName: string, from: Date, to: Date): Promise<
+        { values: any[][], dataStartRow: number, headerRowIndex: number } | { error: string }
+    > {
+        const fromKey = from.getFullYear() * 10000 + from.getMonth() * 100 + from.getDate();
+        const toKey = to.getFullYear() * 10000 + to.getMonth() * 100 + to.getDate();
+        return this.fetchRowsWhere(sheetName, d => {
+            const key = d.y * 10000 + d.m * 100 + d.d;
+            return key >= fromKey && key <= toKey;
+        });
+    }
+
+    /**
+     * Shared reader: finds the header row, scans the date column and fetches
+     * the contiguous block of rows whose date satisfies `matches`.
+     * Returns `[headerRow, ...rows]` plus `dataStartRow`, the 1-based sheet row
+     * of the first returned data row (the append position when nothing matched).
+     */
+    private async fetchRowsWhere(
+        sheetName: string,
+        matches: (d: { y: number, m: number, d: number }) => boolean,
+    ): Promise<{ values: any[][], dataStartRow: number, headerRowIndex: number } | { error: string }> {
         try {
             await this.ensureClient();
 
@@ -534,9 +563,8 @@ class HabitServiceImpl {
             const dateColLetter = this.getColumnLetter(dateColIndex);
 
             // 2. Fetch All Dates (Column only) to find boundaries
-            // We fetch from headerRowIndex + 2 (start of data) to end
-            // Range: e.g. "Weekdays!B3:B"
-            const dataStartRow = headerRowIndex + 1 + 1; // 1-based index for API. Header is at headerRowIndex+1. Data starts at headerRowIndex+2
+            // Data starts at headerRowIndex + 2 (1-based): header is at headerRowIndex + 1
+            const dataStartRow = headerRowIndex + 1 + 1;
             const dateRange = `${sheetName}!${dateColLetter}${dataStartRow}:${dateColLetter}`;
 
             const datesRes = await gapi.client.sheets.spreadsheets.values.get({
@@ -554,8 +582,7 @@ class HabitServiceImpl {
                 };
             }
 
-            // 3. Filter for Start and End Index
-            // We need to parse dates "DD/MM/YYYY"
+            // 3. Find the first and last matching row ("DD/MM/YYYY")
             const parseDate = (d: string) => {
                 if (!d) return null;
                 const parts = d.split(/[-/]/);
@@ -571,34 +598,27 @@ class HabitServiceImpl {
             let startRowOffset = -1;
             let endRowOffset = -1;
 
-            // dateValues is array of arrays [[dateStr], [dateStr]...]
-            // The index i here corresponds to (dataStartRow + i) in 1-based sheet row
-
+            // dateValues[i] corresponds to sheet row (dataStartRow + i), 1-based
             for (let i = 0; i < dateValues.length; i++) {
-                const dateStr = dateValues[i][0];
-                const d = parseDate(dateStr);
+                const d = parseDate(dateValues[i][0]);
                 if (!d) continue;
 
-                if (d.y === year && d.m === month) {
+                if (matches(d)) {
                     if (startRowOffset === -1) startRowOffset = i;
                     endRowOffset = i;
                 }
             }
 
-            // If no data for this month found:
+            // Nothing matched: header only, dataStartRow is where a new row would go
             if (startRowOffset === -1) {
-                // Return just header? Or return empty data
                 return {
                     values: [headerRow],
-                    dataStartRow: dataStartRow + (dateValues.length), // Append at end?
+                    dataStartRow: dataStartRow + (dateValues.length),
                     headerRowIndex: headerRowIndex
                 };
             }
 
-            // 4. Fetch the actual data subset (Columns A to Z or whatever)
-            // Range 1-based:
-            // Start Row = dataStartRow + startRowOffset
-            // End Row = dataStartRow + endRowOffset
+            // 4. Fetch the matching block (rows are date-ordered, so it is contiguous)
             const fetchStart = dataStartRow + startRowOffset;
             const fetchEnd = dataStartRow + endRowOffset;
 
@@ -610,22 +630,6 @@ class HabitServiceImpl {
 
             const subsetValues = subsetRes.result.values || [];
 
-            // Combine Header + Subset
-            // But wait, the parser expects [Header, Data...]
-            // So we return [headerRow, ...subsetValues]
-            // AND we need to tell the consumer what the 'offset' is for updating cells.
-            // The 'offset' is how many rows were skipped BEFORE the first data row in this subset.
-            // The first row in subsetValues corresponds to sheet row `fetchStart`.
-            // The standard 'getData' returns rows starting at row 1 (or whatever).
-            // parseSheetData calculates index based on the array it receives.
-            // data[0] -> sheet row `fetchStart`.
-            // In original `getData`: data[0] -> sheet row `headerRowIndex + 2`.
-
-            // We need to return `startRowIndex` which is the 0-based index of the first data row in the real sheet?
-            // No, let's return `offset`. 
-            // `offset` = (fetchStart) - (headerRowIndex + 2) ?
-            // Let's just return `fetchStart` (1-based index of first data row).
-
             return {
                 values: [headerRow, ...subsetValues],
                 dataStartRow: fetchStart, // 1-based index of the first data row in this result
@@ -636,7 +640,6 @@ class HabitServiceImpl {
             console.error("Error fetching subset", e);
             return { error: e.result?.error?.message || e.message };
         }
-
     }
 
     private getColumnLetter(colIndex: number): string {

@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config'
 // Server tests only: the React app has no unit tests yet.
 export default defineConfig({
   test: {
-    include: ['test/**/*.test.js'],
+    include: ['test/**/*.test.{js,ts}'],
     environment: 'node',
     fileParallelism: false,
   },

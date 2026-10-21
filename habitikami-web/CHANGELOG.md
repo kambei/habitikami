@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.9.8 + 🤖 Android 5.3.5 - 2026-10-21
+### 🔥 One Streak Rule Everywhere (groundwork for #1)
+- **Shared Streak Rules**: `TRUE` and `HALF` continue a streak, `SKIP` is neutral (it neither breaks nor extends it and is left out of completion rates), `FALSE` breaks it, and a day that is not over yet (today) is pending rather than missed. Dates without a row are neutral, so weekday-only habits are not penalised for weekends. The web app (`utils/streaks.ts`) and the Android widgets (`widget/Streaks.kt`) implement the same rules; before, both treated SKIP and HALF as misses and ignored any number of trailing unchecked days.
+- **Grid View Popup**: current and best streak, completed count and percentage of the selected habit now follow these rules; the percentage is computed over non-skipped days.
+- **Windows Widget**: the summary pushed to the service worker carries the real longest current streak over the last 90 days (it was always 0).
+- **Android Widgets**: the export parser keeps `HALF` and `SKIP` apart from `FALSE`; Habit Stats and Streak Fire use the shared rules, and skipped days are excluded from the 30-day rate.
+- **Multi-month Reads**: new `HabitService.getRangeData(sheet, from, to)` and `useSheetRange` hook fetch any date span of a sheet in one request (the monthly reader now shares the same code path). Cell updates invalidate range queries as well.
+- **Tests**: 12 unit tests on the streak rules and the Weekdays/Weekend merge.
+
 ## 🌐 Web 5.9.7 - 2026-10-21
 ### 🧪 Server Route Tests in CI
 - **vitest + supertest** (#73): `npm test` imports `server.js` (which now only listens when run directly and reads its data files from `DATA_DIR`, defaulting to `./data`) and drives the routes with a stubbed Google backend, so no network or credentials are needed. `build-web.yml` runs the suite before the Docker build.

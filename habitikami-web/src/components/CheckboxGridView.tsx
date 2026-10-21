@@ -6,6 +6,7 @@ import { useTranslation } from '../i18n';
 import { translateDay } from '../utils/dayTranslation';
 import { useSheetData } from '../hooks/useSheetData';
 import { useHabitMeta, useSetHabitMeta, useRenameHabit } from '../hooks/useHabitMutations';
+import { habitStreakStats } from '../utils/streaks';
 
 interface CheckboxGridViewProps {
     headers: string[];
@@ -112,62 +113,12 @@ export function CheckboxGridView({
     const habitStats = useMemo(() => {
         if (!selectedHabit) return null;
 
-        // Merge current sheet data with other sheet data, sorted by date
-        const hasOtherSheet = otherSheet && otherData.length > 0 && selectedHabit in (otherData[0]?.habits ?? {});
-
-        type DayEntry = { checked: boolean | 'skipped' | 'half'; dateMs: number };
-        const entries: DayEntry[] = [];
-
-        // Add current sheet entries
-        for (let i = 0; i < data.length; i++) {
-            const checkedValue = data[i].habits[selectedHabit] as boolean | 'skipped' | 'half';
-            const dateMs = parseDate(data[i].date)?.getTime() ?? 0;
-            entries.push({ checked: checkedValue, dateMs });
-        }
-
-        // Add other sheet entries if habit exists there
-        if (hasOtherSheet) {
-            for (let i = 0; i < otherData.length; i++) {
-                const checkedValue = otherData[i].habits[selectedHabit] as boolean | 'skipped' | 'half';
-                const dateMs = parseDate(otherData[i].date)?.getTime() ?? 0;
-                entries.push({ checked: checkedValue, dateMs });
-            }
-        }
-
-        // Sort by date ascending
-        entries.sort((a, b) => a.dateMs - b.dateMs);
-
-        const total = entries.length;
-        let completed = 0;
-        let bestStreak = 0;
-        let streak = 0;
-
-        for (const entry of entries) {
-            if (entry.checked === true) {
-                completed++;
-                streak++;
-                if (streak > bestStreak) bestStreak = streak;
-            } else {
-                streak = 0;
-            }
-        }
-
-        // Current streak: from most recent backwards, skip trailing unchecked/skipped
-        let currentStreak = 0;
-        let started = false;
-        for (let i = entries.length - 1; i >= 0; i--) {
-            if (!started) {
-                if (entries[i].checked === true) { started = true; currentStreak = 1; }
-            } else {
-                if (entries[i].checked === true) currentStreak++;
-                else break;
-            }
-        }
-
-        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-        const merged = !!hasOtherSheet;
-        return { total, completed, percentage, currentStreak, bestStreak, merged };
-    }, [selectedHabit, data, otherData, otherSheet, parseDate]);
+        // Streak rules live in utils/streaks.ts (TRUE/HALF continue, SKIP neutral, FALSE breaks).
+        // The other sheet (Weekdays<->Weekend) is merged in when it has the same habit.
+        const merged = !!otherSheet && otherData.length > 0 && selectedHabit in (otherData[0]?.habits ?? {});
+        const stats = habitStreakStats(selectedHabit, merged ? [data, otherData] : [data]);
+        return { ...stats, merged };
+    }, [selectedHabit, data, otherData, otherSheet]);
 
     return (
         <div className="flex-1 flex overflow-y-auto p-4">

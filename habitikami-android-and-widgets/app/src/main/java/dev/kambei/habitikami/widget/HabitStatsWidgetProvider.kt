@@ -129,23 +129,30 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
             val weekdayHasHabit = weekdays.any { it.habits.containsKey(habit) }
             val weekendHasHabit = weekend.any { it.habits.containsKey(habit) }
 
-            val byDate = mutableMapOf<String, Boolean>()
-
-            if (weekdayHasHabit) {
-                for (day in weekdays) {
-                    val status = day.habits[habit] ?: false
-                    byDate[day.date] = byDate.getOrDefault(day.date, false) || status
+            // null = SKIP (neutral): the day is left out of the result.
+            // TRUE and HALF count as done; a done value wins over a miss, a miss over a skip.
+            val byDate = mutableMapOf<String, Boolean?>()
+            fun applyDay(day: DayEntry) {
+                val value: Boolean? = when {
+                    day.habits[habit] == true || habit in day.half -> true
+                    habit in day.skipped -> null
+                    else -> false
+                }
+                val prev = byDate[day.date]
+                byDate[day.date] = when {
+                    prev == true || value == true -> true
+                    prev == false || value == false -> false
+                    else -> null
                 }
             }
 
-            if (weekendHasHabit) {
-                for (day in weekend) {
-                    val status = day.habits[habit] ?: false
-                    byDate[day.date] = byDate.getOrDefault(day.date, false) || status
-                }
-            }
+            if (weekdayHasHabit) weekdays.forEach(::applyDay)
+            if (weekendHasHabit) weekend.forEach(::applyDay)
 
-            return byDate.entries.sortedBy { it.key }.map { it.key to it.value }
+            return byDate.entries
+                .filter { it.value != null }
+                .sortedBy { it.key }
+                .map { it.key to (it.value == true) }
         }
     }
 
@@ -161,29 +168,9 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
 
         val totalDone = entries.count { it.second }
 
-        // Best streak: simple consecutive checked count (matches grid view)
-        var bestStreak = 0
-        var streak = 0
-        for (entry in entries) {
-            if (entry.second) {
-                streak++
-                if (streak > bestStreak) bestStreak = streak
-            } else {
-                streak = 0
-            }
-        }
-
-        // Current streak: from most recent backwards, skip trailing unchecked (matches grid view)
-        var currentStreak = 0
-        var started = false
-        for (i in entries.indices.reversed()) {
-            if (!started) {
-                if (entries[i].second) { started = true; currentStreak = 1 }
-            } else {
-                if (entries[i].second) currentStreak++
-                else break
-            }
-        }
+        // Shared rules (Streaks.kt mirrors the web app's utils/streaks.ts)
+        val bestStreak = Streaks.bestStreak(entries)
+        val currentStreak = Streaks.currentStreak(entries)
 
         // 30-day rate: filter to entries within the last 30 calendar days
         val cutoff = java.time.LocalDate.now().minusDays(30).toString()

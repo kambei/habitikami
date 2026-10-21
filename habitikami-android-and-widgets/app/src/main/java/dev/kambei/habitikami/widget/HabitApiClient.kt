@@ -8,7 +8,9 @@ import java.net.URL
 
 data class DayEntry(
     val date: String,
-    val habits: Map<String, Boolean>,   // habit name → completed
+    val habits: Map<String, Boolean>,   // habit name → checked (TRUE)
+    val half: Set<String> = emptySet(),    // habits marked HALF (count as done for streaks)
+    val skipped: Set<String> = emptySet(), // habits marked SKIP (neutral for streaks)
 )
 
 data class ExportData(
@@ -62,6 +64,8 @@ object HabitApiClient {
             val keys = obj.keys()
             var date = ""
             val habits = mutableMapOf<String, Boolean>()
+            val half = mutableSetOf<String>()
+            val skipped = mutableSetOf<String>()
             while (keys.hasNext()) {
                 val key = keys.next()
                 if (SKIP_COLUMNS.contains(key.lowercase())) {
@@ -71,8 +75,12 @@ object HabitApiClient {
                     }
                 } else {
                     val value = obj.optString(key, "").trim()
-                    // Google Sheets checkboxes export as "TRUE"/"FALSE"
+                    // Cells are "TRUE"/"FALSE" (checkbox), "HALF" or "SKIP"
                     habits[key] = value.equals("TRUE", ignoreCase = true)
+                    when {
+                        value.equals("HALF", ignoreCase = true) -> half.add(key)
+                        value.equals("SKIP", ignoreCase = true) -> skipped.add(key)
+                    }
                 }
             }
             // Normalize date: DD/MM/YYYY → YYYY-MM-DD for proper sorting
@@ -80,7 +88,7 @@ object HabitApiClient {
                 date = normalizeDate(date)
                 // Only include entries that have at least one habit value
                 if (habits.isNotEmpty()) {
-                    result.add(DayEntry(date, habits))
+                    result.add(DayEntry(date, habits, half, skipped))
                 }
             }
         }

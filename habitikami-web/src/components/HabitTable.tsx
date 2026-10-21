@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { AddHabitModal } from "./AddHabitModal";
 import { ColorPickerPopover } from "./ColorPickerPopover";
 import { CheckboxGridView } from "./CheckboxGridView";
@@ -8,7 +8,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Grid3X3, Table, Pencil, Info, Check, X } from "lucide-react";
 import { toast } from 'sonner';
 
-import { useSheetData } from "../hooks/useSheetData";
+import { useSheetData, useSheetRange } from "../hooks/useSheetData";
+import { longestCurrentStreak } from "../utils/streaks";
 import { useHabitColors } from "../hooks/useHabitColors";
 import { useUpdateCell, useAddHabit, useAddDay, useMoveColumn, useDeleteColumn, useSetHabitColor, useRenameHabit, useHabitMeta, useSetHabitMeta } from "../hooks/useHabitMutations";
 import { Skeleton } from "./ui/Skeleton";
@@ -60,6 +61,20 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
 
     const { data: sheetData, isLoading: isSheetLoading, error: sheetError } = useSheetData(sheetName, year, month);
     const { data: habitColors, isLoading: isColorsLoading } = useHabitColors(sheetName);
+
+    // Last 90 days of both sheets, for the streak shown by the Windows widget
+    const streakWindow = useMemo(() => {
+        const to = new Date();
+        const from = new Date();
+        from.setDate(from.getDate() - 90);
+        return { from, to };
+    }, []);
+    const { data: weekdaysRange } = useSheetRange('Weekdays', streakWindow.from, streakWindow.to);
+    const { data: weekendRange } = useSheetRange('Weekend', streakWindow.from, streakWindow.to);
+    const widgetStreak = useMemo(
+        () => longestCurrentStreak([weekdaysRange?.data ?? [], weekendRange?.data ?? []]).streak,
+        [weekdaysRange, weekendRange]
+    );
 
     // Derive everything from query data — no local copy
     const headers: string[] = sheetData?.headers ?? [];
@@ -178,7 +193,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
             date: translateDay(todayRow.day, tArray('days')) + ' ' + todayRow.date,
             completedCount,
             totalCount,
-            currentStreak: 0, // Simplified for now
+            currentStreak: widgetStreak,
             nextHabitName
         };
 
@@ -188,7 +203,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                 data: summary
             });
         }
-    }, [queryData, headers, meta, isToday, tArray, t]);
+    }, [queryData, headers, meta, isToday, tArray, t, widgetStreak]);
 
     // Handle skip-next action from URL (Windows 11 Widget)
     useEffect(() => {

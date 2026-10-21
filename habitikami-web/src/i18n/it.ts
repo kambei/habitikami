@@ -476,4 +476,5 @@ export const it: Record<TranslationKey, string | string[]> = {
   tourDoneDesc: 'Inizia aggiungendo le tue abitudini nella sezione Giornaliere. Habitikami salva tutto nel tuo Google Sheet — i tuoi dati, il tuo controllo.',
   tourFinish: 'Inizia',
   tourReplay: 'Guida App',
+  logoutClearAiKeys: 'Rimuovere anche le chiavi AI (Gemini/Anthropic) salvate su questo dispositivo?',
 } as const;

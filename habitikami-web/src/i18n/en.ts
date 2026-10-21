@@ -475,6 +475,7 @@ export const en = {
   tourDoneDesc: 'Start by adding your habits in the Daily section. Habitikami stores everything in your own Google Sheet — your data, your control.',
   tourFinish: 'Get Started',
   tourReplay: 'App Guide',
+  logoutClearAiKeys: 'Also remove the AI keys (Gemini/Anthropic) saved on this device?',
 } as const;
 
 export type TranslationKey = keyof typeof en;

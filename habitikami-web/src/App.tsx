@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, Suspense } from 'react'
 import type { SheetType, ViewType } from './types'
 import { cn } from './lib/utils'
 import { habitService } from './services/HabitService'
+import { hasAnyProvider, clearAllKeys } from './utils/aiProvider'
 import { Toaster, toast } from 'sonner'
 import { AnimatePresence, motion } from 'framer-motion'
 import { LayoutDashboard, Settings, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone, RefreshCw, Dumbbell } from 'lucide-react'
@@ -391,6 +392,8 @@ function App() {
   };
 
   const handleLogout = () => {
+    // AI keys live in localStorage: on a shared device they must not outlive the session
+    if (hasAnyProvider() && window.confirm(t('logoutClearAiKeys'))) clearAllKeys();
     habitService.clearSession();
     setIsLoggedIn(false);
     setEmail(null);

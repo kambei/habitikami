@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.12.1 - 2026-10-21
+### ✨ UX
+- **Scrolling habit titles**: in the table and in the grid, a habit name that does not fit its box glides slowly back and forth (pause at each end, soft fade on the edges) instead of being cut with "…" or stretching the column. Names that fit stay still; with "reduce motion" enabled the ellipsis is kept.
+
 ## 🌐 Web 5.12.0 + 🤖 Android 5.4.0 - 2026-10-21
 ### 🪟 Windows 11 Widgets (#67, #87, #88, #89, #94)
 - **Sync from any view**: the widget summary is pushed to the service worker from a single hook, so it stays fresh whatever page is open (not only the table).

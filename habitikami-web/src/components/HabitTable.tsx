@@ -11,6 +11,7 @@ import { useSheetData } from "../hooks/useSheetData";
 import { descriptionsOf } from "../utils/habitMeta";
 import { useHabitStreaks } from "../hooks/useStreaks";
 import { StreakBadge } from "./ui/StreakBadge";
+import { ScrollingText } from "./ui/ScrollingText";
 import { SlotTag } from "./ui/SlotTag";
 import { NumericCell } from "./ui/NumericCell";
 import { HabitMetaEditor, HabitMetaSummary } from "./HabitMetaEditor";
@@ -422,8 +423,8 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                                     title={t('colorPickerTitle')}
                                                     aria-label={`Change color for habit ${h}`}
                                                 >
-                                                    {colors[h] && <div className="w-3 h-3 rounded-full shadow-sm ring-1 ring-white/20" style={{ backgroundColor: colors[h] }} />}
-                                                    <span>{h}</span>
+                                                    {colors[h] && <div className="w-3 h-3 rounded-full shadow-sm ring-1 ring-white/20 shrink-0" style={{ backgroundColor: colors[h] }} />}
+                                                    <ScrollingText text={h} className="max-w-[160px]" />
                                                 </div>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); startRename(h); }}

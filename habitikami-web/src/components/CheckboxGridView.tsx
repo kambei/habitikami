@@ -11,6 +11,7 @@ import { habitStreakStats } from '../utils/streaks';
 import { descriptionsOf } from '../utils/habitMeta';
 import { useHabitStreaks } from '../hooks/useStreaks';
 import { StreakBadge } from './ui/StreakBadge';
+import { ScrollingText } from './ui/ScrollingText';
 import { SlotTag } from './ui/SlotTag';
 import { NumericCell } from './ui/NumericCell';
 import { HabitMetaEditor, HabitMetaSummary } from './HabitMetaEditor';
@@ -154,7 +155,7 @@ export function CheckboxGridView({
                                         className="w-3 h-3 rounded-full shrink-0"
                                         style={{ backgroundColor: color }}
                                     />
-                                    <span className="text-xs font-medium truncate">{habit}</span>
+                                    <ScrollingText text={habit} className="text-xs font-medium flex-1" />
                                     {habitMeta?.[habit] && <SlotTag slot={habitMeta[habit].slot} className="shrink-0" />}
                                     {streaks[habit]?.currentStreak > 0 && (
                                         <StreakBadge streak={streaks[habit].currentStreak} best={streaks[habit].bestStreak} className="ml-auto shrink-0" />

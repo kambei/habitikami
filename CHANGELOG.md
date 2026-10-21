@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.9.7 - 2026-10-21
+### 🧪 Server Route Tests in CI
+- **vitest + supertest** (#73): `npm test` imports `server.js` (which now only listens when run directly and reads its data files from `DATA_DIR`, defaulting to `./data`) and drives the routes with a stubbed Google backend, so no network or credentials are needed. `build-web.yml` runs the suite before the Docker build.
+- **Covered cases** (#91): `/api/auth/exchange` without code, with an invalid `id_token` and from a foreign origin; Bearer tokens issued to another OAuth client (audience mismatch) vs. this client; unknown or missing `X-API-Token` on `/api/export`; malformed, reserved and missing counter names on `/api/counter/increment`.
+- **Two status codes fixed along the way**: an invalid `id_token` during the code exchange now answers `400 Invalid id_token` instead of `500`, and a browser origin outside `ALLOWED_ORIGINS` gets `403` instead of the default `500` from the CORS error.
+
 ## 🌐 Web 5.9.6 - 2026-10-21
 ### 🔒 Private Mode Purges Other Accounts' Data
 - **Startup Cleanup**: When `ALLOWED_EMAILS` is set, the server now deletes on every startup everything it stores about accounts outside the allowlist: their entries in `users.json` (spreadsheet ID, preferences), `apikeys.json` (widget API keys and encrypted refresh tokens), `risc-revoked.json` and the legacy `preferences.json`. Emails are compared case-insensitively; API key records without an owner are removed too. The accounts' Google Sheets and Drive files are untouched, and open mode (empty `ALLOWED_EMAILS`) changes nothing.

@@ -38,6 +38,10 @@ jobs:
         working-directory: habitikami-web
         run: npm ci && npm audit --omit=dev --audit-level=high
 
+      - name: Server route tests
+        working-directory: habitikami-web
+        run: npm test
+
       # Guards the routes the native apps depend on (e.g. /.well-known/assetlinks.json
       # for the Android TWA): a 404 there makes Chrome show the address bar in the app.
       - name: Build and smoke test static routes

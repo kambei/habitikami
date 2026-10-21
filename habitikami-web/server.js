@@ -23,10 +23,12 @@ const PORT = process.env.PORT || 80;
 // Persisted to data/users.json mounted as a Docker volume.
 // User preferences (e.g. enabled tabs) stored in data/preferences.json
 
-const USERS_FILE = path.join(__dirname, 'data', 'users.json');
-const PREFS_FILE = path.join(__dirname, 'data', 'preferences.json');
-const APIKEYS_FILE = path.join(__dirname, 'data', 'apikeys.json');
-const RISC_REVOKED_FILE = path.join(__dirname, 'data', 'risc-revoked.json');
+// DATA_DIR overrides the location (used by the test suite); default is ./data
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const PREFS_FILE = path.join(DATA_DIR, 'preferences.json');
+const APIKEYS_FILE = path.join(DATA_DIR, 'apikeys.json');
+const RISC_REVOKED_FILE = path.join(DATA_DIR, 'risc-revoked.json');
 
 // Ensure data directory exists
 fs.mkdirSync(path.dirname(USERS_FILE), { recursive: true });
@@ -388,35 +390,45 @@ function base64UrlDecode(str) {
 }
 
 // Verify and decode email from Google id_token (JWT) with full signature check
+// Validation failures throw TokenVerificationError (client error); anything
+// else (network, key fetch) propagates as a server error.
 async function getEmailFromIdToken(idToken) {
-    if (!idToken) throw new Error('No id_token provided');
+    if (!idToken) throw new TokenVerificationError('No id_token provided');
     const parts = idToken.split('.');
-    if (parts.length !== 3) throw new Error('Invalid id_token format');
+    if (parts.length !== 3) throw new TokenVerificationError('Invalid id_token format');
 
     // Decode header to find key ID
-    const header = JSON.parse(base64UrlDecode(parts[0]).toString('utf8'));
-    const payload = JSON.parse(base64UrlDecode(parts[1]).toString('utf8'));
+    let header, payload;
+    try {
+        header = JSON.parse(base64UrlDecode(parts[0]).toString('utf8'));
+        payload = JSON.parse(base64UrlDecode(parts[1]).toString('utf8'));
+    } catch {
+        throw new TokenVerificationError('Malformed id_token');
+    }
+    if (!header || typeof header !== 'object' || !payload || typeof payload !== 'object') {
+        throw new TokenVerificationError('Malformed id_token');
+    }
 
     // Validate issuer
     if (payload.iss !== 'https://accounts.google.com' && payload.iss !== 'accounts.google.com') {
-        throw new Error('Invalid id_token issuer');
+        throw new TokenVerificationError('Invalid id_token issuer');
     }
 
     // Validate audience matches our client ID
     const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
     if (payload.aud !== clientId) {
-        throw new Error('Invalid id_token audience');
+        throw new TokenVerificationError('Invalid id_token audience');
     }
 
     // Validate expiration
     if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) {
-        throw new Error('id_token has expired');
+        throw new TokenVerificationError('id_token has expired');
     }
 
     // Verify signature using Google's public keys
     const certs = await getGooglePublicKeys();
     const key = certs.keys?.find(k => k.kid === header.kid);
-    if (!key) throw new Error('id_token signed with unknown key');
+    if (!key) throw new TokenVerificationError('id_token signed with unknown key');
 
     const publicKey = crypto.createPublicKey({ key, format: 'jwk' });
     const signatureValid = crypto.verify(
@@ -425,9 +437,9 @@ async function getEmailFromIdToken(idToken) {
         publicKey,
         base64UrlDecode(parts[2])
     );
-    if (!signatureValid) throw new Error('id_token signature verification failed');
+    if (!signatureValid) throw new TokenVerificationError('id_token signature verification failed');
 
-    if (!payload.email) throw new Error('id_token does not contain email');
+    if (!payload.email) throw new TokenVerificationError('id_token does not contain email');
     return payload.email;
 }
 
@@ -686,11 +698,19 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
         // Verify and decode email from id_token (JWT) with signature validation
         // id_token is present when openid email scopes are requested
         let email;
-        if (tokenData.id_token) {
-            email = await getEmailFromIdToken(tokenData.id_token);
-        } else {
-            // Fallback: fetch from userinfo (requires outbound network to Google)
-            email = await getEmailFromToken(tokenData.access_token);
+        try {
+            if (tokenData.id_token) {
+                email = await getEmailFromIdToken(tokenData.id_token);
+            } else {
+                // Fallback: fetch from userinfo (requires outbound network to Google)
+                email = await getEmailFromToken(tokenData.access_token);
+            }
+        } catch (err) {
+            if (err instanceof TokenVerificationError) {
+                console.log(`Auth exchange rejected: ${err.message}`);
+                return res.status(400).json({ error: 'Invalid id_token' });
+            }
+            throw err;
         }
 
         // Check if user is revoked by RISC (Cross-Account Protection)
@@ -1986,6 +2006,22 @@ app.get('/{*splat}', (req, res) => {
     res.sendFile('index.html', { root: path.join(__dirname, 'dist') });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// A browser origin outside ALLOWED_ORIGINS is rejected by the cors middleware
+// with an Error; answer 403 instead of the default 500.
+app.use((err, req, res, next) => {
+    if (err && err.message === 'Not allowed by CORS') {
+        return res.status(403).json({ error: 'Forbidden: invalid origin' });
+    }
+    next(err);
 });
+
+// Listen only when run directly (`node server.js`); the test suite imports
+// the app and drives it with supertest instead.
+const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+if (isMainModule) {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
+
+export default app;

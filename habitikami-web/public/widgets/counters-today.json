@@ -1,0 +1,74 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "auto",
+          "items": [
+            { "type": "TextBlock", "text": "🔢", "size": "ExtraLarge" }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "stretch",
+          "verticalContentAlignment": "Center",
+          "items": [
+            { "type": "TextBlock", "text": "${labels.counters}", "size": "Medium", "weight": "Bolder", "color": "Accent", "wrap": true },
+            { "type": "TextBlock", "text": "${date}", "size": "Small", "isSubtle": true, "spacing": "None" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "spacing": "Medium",
+      "separator": true,
+      "$data": "${counters}",
+      "items": [
+        {
+          "type": "ColumnSet",
+          "spacing": "Small",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                { "type": "TextBlock", "text": "${label}", "wrap": true }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "auto",
+              "items": [
+                { "type": "TextBlock", "text": "${value}", "weight": "Bolder", "size": "Medium" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "text": "${labels.noCounters}",
+      "isSubtle": true,
+      "horizontalAlignment": "Center",
+      "$when": "${count(counters) == 0}"
+    },
+    {
+      "type": "TextBlock",
+      "text": "${labels.updated} ${updatedAt}",
+      "size": "Small",
+      "isSubtle": true,
+      "horizontalAlignment": "Right",
+      "spacing": "Small"
+    }
+  ],
+  "actions": [
+    { "type": "Action.Execute", "title": "${labels.openApp}", "verb": "open-counters" }
+  ]
+}

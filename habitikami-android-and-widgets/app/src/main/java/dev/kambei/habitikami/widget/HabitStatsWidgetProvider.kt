@@ -30,15 +30,15 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
 
     private fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
         val loading = RemoteViews(context.packageName, R.layout.widget_habit_stats).apply {
-            setTextViewText(R.id.tv_habit_name, "Loading…")
+            setTextViewText(R.id.tv_habit_name, context.getString(R.string.widget_loading))
             setTextViewText(R.id.tv_streak, "—")
-            setTextViewText(R.id.tv_streak_label, "streak")
+            setTextViewText(R.id.tv_streak_label, context.getString(R.string.widget_label_streak))
             setTextViewText(R.id.tv_best_streak, "—")
-            setTextViewText(R.id.tv_best_label, "best")
+            setTextViewText(R.id.tv_best_label, context.getString(R.string.widget_label_best))
             setTextViewText(R.id.tv_rate, "—")
-            setTextViewText(R.id.tv_rate_label, "30d")
+            setTextViewText(R.id.tv_rate_label, context.getString(R.string.widget_label_30d))
             setTextViewText(R.id.tv_total, "—")
-            setTextViewText(R.id.tv_total_label, "total")
+            setTextViewText(R.id.tv_total_label, context.getString(R.string.widget_label_total))
         }
         setupIntents(context, loading, widgetId)
         manager.updateAppWidget(widgetId, loading)
@@ -49,15 +49,17 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
             val habitName = HabitStatsConfigActivity.getSelectedHabit(context, widgetId)
 
             if (config == null || habitName == null) {
-                views.setTextViewText(R.id.tv_habit_name, "Not configured")
+                // No server config → generic config; config but no habit → this widget's picker
+                WidgetErrors.applyNotConfigured(context, views, R.id.tv_habit_name, widgetId,
+                    if (config == null) WidgetConfigActivity::class.java else HabitStatsConfigActivity::class.java)
                 views.setTextViewText(R.id.tv_streak, "—")
-                views.setTextViewText(R.id.tv_streak_label, "streak")
+                views.setTextViewText(R.id.tv_streak_label, context.getString(R.string.widget_label_streak))
                 views.setTextViewText(R.id.tv_best_streak, "—")
-                views.setTextViewText(R.id.tv_best_label, "best")
+                views.setTextViewText(R.id.tv_best_label, context.getString(R.string.widget_label_best))
                 views.setTextViewText(R.id.tv_rate, "—")
-                views.setTextViewText(R.id.tv_rate_label, "30d")
+                views.setTextViewText(R.id.tv_rate_label, context.getString(R.string.widget_label_30d))
                 views.setTextViewText(R.id.tv_total, "—")
-                views.setTextViewText(R.id.tv_total_label, "total")
+                views.setTextViewText(R.id.tv_total_label, context.getString(R.string.widget_label_total))
             } else {
                 try {
                     val (baseUrl, apiToken) = config
@@ -75,15 +77,17 @@ class HabitStatsWidgetProvider : AppWidgetProvider() {
                     }
 
                     views.setTextViewText(R.id.tv_streak, "${stats.currentStreak}")
-                    views.setTextViewText(R.id.tv_streak_label, if (stats.currentStreak == 1) "day" else "days")
+                    views.setTextViewText(R.id.tv_streak_label, context.getString(if (stats.currentStreak == 1) R.string.widget_day else R.string.widget_days))
+                    WidgetErrors.markUpdated(context, "habitstats")
                     views.setTextViewText(R.id.tv_best_streak, "${stats.bestStreak}")
                     views.setTextViewText(R.id.tv_best_label, "best")
                     views.setTextViewText(R.id.tv_rate, "${stats.rate30d}%")
                     views.setTextViewText(R.id.tv_rate_label, "30d")
                     views.setTextViewText(R.id.tv_total, "${stats.totalDone}")
                     views.setTextViewText(R.id.tv_total_label, "total")
-                } catch (_: Exception) {
-                    views.setTextViewText(R.id.tv_habit_name, habitName ?: "Error")
+                } catch (e: Exception) {
+                    if (WidgetErrors.showOfflineKeepingContent(context, manager, widgetId, R.layout.widget_habit_stats, R.id.tv_total_label, e, "habitstats")) return@launch
+                    WidgetErrors.applyFailure(context, views, R.id.tv_habit_name, widgetId, e, "habitstats")
                     views.setTextViewText(R.id.tv_streak, "!")
                     views.setTextViewText(R.id.tv_streak_label, "")
                     views.setTextViewText(R.id.tv_best_streak, "")

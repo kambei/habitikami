@@ -42,19 +42,15 @@ class ChecklistWidgetProvider : AppWidgetProvider() {
     }
 
     private fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
-        val loading = RemoteViews(context.packageName, R.layout.widget_checklist).apply {
-            setImageViewResource(R.id.iv_checklist, android.R.color.transparent)
-            setTextViewText(R.id.tv_checklist_status, "Loading…")
-        }
-        setupIntents(context, loading, widgetId)
-        manager.updateAppWidget(widgetId, loading)
+        // Status line only: the previous content stays visible while loading
+        WidgetErrors.showLoading(context, manager, widgetId, R.layout.widget_checklist, R.id.tv_checklist_status)
 
         scope.launch {
             val views = RemoteViews(context.packageName, R.layout.widget_checklist)
             val config = CounterWidgetProvider.getConfig(context)
 
             if (config == null) {
-                views.setTextViewText(R.id.tv_checklist_status, "Configure counter widget first")
+                WidgetErrors.applyNotConfigured(context, views, R.id.tv_checklist_status, widgetId)
             } else {
                 try {
                     val (baseUrl, apiToken) = config
@@ -82,8 +78,11 @@ class ChecklistWidgetProvider : AppWidgetProvider() {
 
                     views.setImageViewBitmap(R.id.iv_checklist, bitmap)
                     views.setTextViewText(R.id.tv_checklist_status, "")
-                } catch (_: Exception) {
-                    views.setTextViewText(R.id.tv_checklist_status, "Failed to load data")
+                    WidgetErrors.markUpdated(context, "checklist")
+                } catch (e: Exception) {
+                    // Offline: keep the last rendered data, just say so
+                    if (WidgetErrors.showOfflineKeepingContent(context, manager, widgetId, R.layout.widget_checklist, R.id.tv_checklist_status, e, "checklist")) return@launch
+                    WidgetErrors.applyFailure(context, views, R.id.tv_checklist_status, widgetId, e, "checklist")
                 }
             }
 

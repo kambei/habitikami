@@ -29,7 +29,7 @@ object CounterApiClient {
             conn.connectTimeout = 10_000
             conn.readTimeout = 10_000
 
-            if (conn.responseCode != 200) return emptyList()
+            if (conn.responseCode != 200) throw ApiException(conn.responseCode)
 
             val body = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
             val json = JSONObject(body)
@@ -69,7 +69,7 @@ object CounterApiClient {
             conn.connectTimeout = 10_000
             conn.readTimeout = 10_000
 
-            if (conn.responseCode != 200) return emptyMap()
+            if (conn.responseCode != 200) throw ApiException(conn.responseCode)
 
             val body = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
             val json = JSONObject(body)
@@ -129,7 +129,7 @@ object CounterApiClient {
             conn.connectTimeout = 10_000
             conn.readTimeout = 10_000
 
-            if (conn.responseCode != 200) return emptyList()
+            if (conn.responseCode != 200) throw ApiException(conn.responseCode)
 
             val body = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
             val json = JSONObject(body)

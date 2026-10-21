@@ -8,7 +8,11 @@
   "background_color": "#0a0a0f",
   "theme_color": "#7c3aed",
   "orientation": "any",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
   "protocol_handlers": [
     {
       "protocol": "web+habitikami",
@@ -55,7 +59,7 @@
     {
       "name": "Habitikami Summary",
       "short_name": "Habits",
-      "description": "Daily habit progress at a glance.",
+      "description": "Today's progress, streak and next habit, with quick actions.",
       "tag": "habit-summary",
       "template": "/widgets/habit-summary.json",
       "ms_ac_template": "/widgets/habit-summary.json",
@@ -70,13 +74,67 @@
       ],
       "screenshots": [
         {
+          "src": "/screenshots/widgets/widget-summary.png",
+          "sizes": "600x524",
+          "type": "image/png",
+          "label": "Habitikami Summary"
+        }
+      ],
+      "update": 900
+    },
+    {
+      "name": "Habitikami Counters",
+      "short_name": "Counters",
+      "description": "Today's counters (resisted, smoked, coffee…) at a glance.",
+      "tag": "counters-today",
+      "template": "/widgets/counters-today.json",
+      "ms_ac_template": "/widgets/counters-today.json",
+      "data": "/widgets/data/habit-summary-data.json",
+      "type": "application/json",
+      "icons": [
+        {
           "src": "/icons/icon-512.png",
           "sizes": "512x512",
+          "type": "image/png"
+        }
+      ],
+      "screenshots": [
+        {
+          "src": "/screenshots/widgets/widget-counters.png",
+          "sizes": "600x428",
           "type": "image/png",
-          "label": "Habitikami Widget"
+          "label": "Habitikami Counters"
+        }
+      ],
+      "update": 900
+    },
+    {
+      "name": "Habitikami Streak",
+      "short_name": "Streak",
+      "description": "Your longest current streak and the habit behind it.",
+      "tag": "streak",
+      "template": "/widgets/streak.json",
+      "ms_ac_template": "/widgets/streak.json",
+      "data": "/widgets/data/habit-summary-data.json",
+      "type": "application/json",
+      "icons": [
+        {
+          "src": "/icons/icon-512.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ],
+      "screenshots": [
+        {
+          "src": "/screenshots/widgets/widget-streak.png",
+          "sizes": "600x472",
+          "type": "image/png",
+          "label": "Habitikami Streak"
         }
       ],
       "update": 900
     }
-  ]
+  ],
+  "lang": "en",
+  "dir": "ltr"
 }

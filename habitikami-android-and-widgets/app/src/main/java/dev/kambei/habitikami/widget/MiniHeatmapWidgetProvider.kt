@@ -55,7 +55,7 @@ class MiniHeatmapWidgetProvider : AppWidgetProvider() {
 
     private fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
         val loading = RemoteViews(context.packageName, R.layout.widget_mini_heatmap).apply {
-            setTextViewText(R.id.tv_mini_habit_name, "Loading…")
+            setTextViewText(R.id.tv_mini_habit_name, context.getString(R.string.widget_loading))
             setImageViewResource(R.id.iv_mini_heatmap, android.R.color.transparent)
         }
         setupIntents(context, loading, widgetId)
@@ -67,7 +67,8 @@ class MiniHeatmapWidgetProvider : AppWidgetProvider() {
             val habitName = getSelectedHabit(context, widgetId)
 
             if (config == null || habitName == null) {
-                views.setTextViewText(R.id.tv_mini_habit_name, "Not configured")
+                WidgetErrors.applyNotConfigured(context, views, R.id.tv_mini_habit_name, widgetId,
+                    if (config == null) WidgetConfigActivity::class.java else MiniHeatmapConfigActivity::class.java)
             } else {
                 try {
                     val (baseUrl, apiToken) = config
@@ -92,8 +93,10 @@ class MiniHeatmapWidgetProvider : AppWidgetProvider() {
                         views.setTextColor(R.id.tv_mini_habit_name, habitColor)
                     }
                     views.setImageViewBitmap(R.id.iv_mini_heatmap, bitmap)
-                } catch (_: Exception) {
-                    views.setTextViewText(R.id.tv_mini_habit_name, habitName ?: "Error")
+                    WidgetErrors.markUpdated(context, "miniheatmap")
+                } catch (e: Exception) {
+                    if (WidgetErrors.showOfflineKeepingContent(context, manager, widgetId, R.layout.widget_mini_heatmap, R.id.tv_mini_habit_name, e, "miniheatmap")) return@launch
+                    WidgetErrors.applyFailure(context, views, R.id.tv_mini_habit_name, widgetId, e, "miniheatmap")
                 }
             }
 

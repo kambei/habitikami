@@ -5,9 +5,11 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import dev.kambei.habitikami.widget.WidgetRefresher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -27,15 +29,20 @@ class MainActivity : AppCompatActivity() {
         val cachedVersion = prefs.getString("cached_version", null)
         val cachedApkUrl = prefs.getString("cached_apk_url", null)
         val cachedHtmlUrl = prefs.getString("cached_html_url", null)
+        val cachedBody = prefs.getString("cached_body", null)
         val skippedVersion = prefs.getString("skipped_version", null)
 
         if (cachedVersion != null && cachedVersion != skippedVersion
             && UpdateChecker.isNewer(cachedVersion, BuildConfig.VERSION_NAME)
         ) {
-            showUpdateDialog(cachedVersion, cachedApkUrl, cachedHtmlUrl)
+            showUpdateDialog(cachedVersion, cachedApkUrl, cachedHtmlUrl, cachedBody)
         } else {
             launchTwa()
         }
+
+        // The user is about to change data in the app: refresh the home screen widgets now
+        // and again shortly after, so what they tick in the TWA shows up without waiting.
+        refreshWidgets()
 
         // Always refresh the cache in the background for next launch
         scope.launch {
@@ -45,32 +52,41 @@ class MainActivity : AppCompatActivity() {
                 editor.putString("cached_version", release.tagName)
                 editor.putString("cached_apk_url", release.apkUrl)
                 editor.putString("cached_html_url", release.htmlUrl)
+                editor.putString("cached_body", release.body)
             } else {
                 // No update or couldn't reach GitHub — clear cache
                 editor.remove("cached_version")
                 editor.remove("cached_apk_url")
                 editor.remove("cached_html_url")
+                editor.remove("cached_body")
             }
             editor.apply()
         }
     }
 
-    private fun showUpdateDialog(version: String, apkUrl: String?, htmlUrl: String?) {
+    private fun showUpdateDialog(version: String, apkUrl: String?, htmlUrl: String?, body: String?) {
+        val message = buildString {
+            append(getString(R.string.update_message, version, BuildConfig.VERSION_NAME))
+            if (!body.isNullOrBlank()) {
+                append("\n\n").append(getString(R.string.update_changelog_title)).append("\n").append(body)
+            }
+            if (apkUrl != null) append("\n\n").append(getString(R.string.update_download_note))
+        }
         AlertDialog.Builder(this, R.style.Theme_Habitikami_Dialog)
-            .setTitle("Update Available")
-            .setMessage("A new version (v$version) is available.\nYou are on v${BuildConfig.VERSION_NAME}.")
-            .setPositiveButton("Update") { _, _ ->
-                // Open release page so user can download — don't launch TWA
-                val url = htmlUrl ?: apkUrl
+            .setTitle(R.string.update_title)
+            .setMessage(message)
+            .setPositiveButton(R.string.update_now) { _, _ ->
+                // Prefer the APK itself so the download starts right away; fall back to the release page
+                val url = apkUrl ?: htmlUrl
                 if (url != null) {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                 }
                 finish()
             }
-            .setNegativeButton("Later") { _, _ ->
+            .setNegativeButton(R.string.update_later) { _, _ ->
                 launchTwa()
             }
-            .setNeutralButton("Skip this version") { _, _ ->
+            .setNeutralButton(R.string.update_skip) { _, _ ->
                 getSharedPreferences(PREFS, MODE_PRIVATE)
                     .edit()
                     .putString("skipped_version", version)
@@ -79,6 +95,16 @@ class MainActivity : AppCompatActivity() {
             }
             .setCancelable(false)
             .show()
+    }
+
+    /** Refreshes every widget now and once more after a short delay (the app may have just been used). */
+    private fun refreshWidgets() {
+        val app = applicationContext
+        runCatching { WidgetRefresher.refreshAll(app) }
+        scope.launch {
+            delay(WIDGET_REFRESH_DELAY_MS)
+            runCatching { WidgetRefresher.refreshAll(app) }
+        }
     }
 
     private fun launchTwa() {
@@ -101,5 +127,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val PREFS = "habitikami_updates"
+        private const val WIDGET_REFRESH_DELAY_MS = 45_000L
     }
 }

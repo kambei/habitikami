@@ -11,6 +11,7 @@ import { SchedeCompiler } from './SchedeCompiler';
 import { SchedaImporter } from './SchedaImporter';
 import { TemptationSettings } from './TemptationSettings';
 import { HabitTemplatesPicker } from './HabitTemplatesPicker';
+import { WidgetPairing } from './WidgetPairing';
 import type { SchedaTemplate } from '../data/schedeTemplates';
 import {
     type AIProvider,
@@ -648,6 +649,7 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                                     {apiKeyInfo?.created_at && (
                                         <p className="text-[10px] text-muted-foreground">{t('settingsApiKeyCreated')}: {new Date(apiKeyInfo.created_at).toLocaleDateString()}</p>
                                     )}
+                                    {newApiKey && <WidgetPairing apiKey={newApiKey} />}
                                 </div>
                             )}
 

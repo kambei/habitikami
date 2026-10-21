@@ -3,6 +3,7 @@ import type { SheetType, ViewType } from './types'
 import { cn } from './lib/utils'
 import { habitService } from './services/HabitService'
 import { hasAnyProvider, clearAllKeys } from './utils/aiProvider'
+import { useWidgetSync } from './hooks/useWidgetSync'
 import { Toaster, toast } from 'sonner'
 import { AnimatePresence, motion } from 'framer-motion'
 import { LayoutDashboard, Settings, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone, RefreshCw, Dumbbell } from 'lucide-react'
@@ -187,6 +188,9 @@ function App() {
   });
 
   const [activeSheet, setActiveSheet] = useState<ViewType>(() => {
+    // 0. A Windows widget action lands on Focus
+    const action = new URLSearchParams(window.location.search).get('action');
+    if (action === 'complete-next' || action === 'skip-next') return 'Focus';
     // 1. Check URL Hash
     const hash = window.location.hash.replace('#', '') as ViewType;
     if (hash && ALL_TABS.includes(hash)) return hash;
@@ -205,6 +209,12 @@ function App() {
   const lastBackTime = useRef(0);
 
   const [refreshKey, setRefreshKey] = useState(0);
+  // Windows widget action (?action=complete-next|skip-next): handled by Focus once loaded
+  const [widgetAction, setWidgetAction] = useState<'complete-next' | 'skip-next' | null>(() => {
+    const action = new URLSearchParams(window.location.search).get('action');
+    return action === 'complete-next' || action === 'skip-next' ? action : null;
+  });
+  useWidgetSync(isLoggedIn && !!spreadsheetId);
   const [openSettings, setOpenSettings] = useState(false);
   const prevTabBeforeSettings = useRef<ViewType | null>(null);
   const [showTour, setShowTour] = useState(false);
@@ -666,7 +676,7 @@ function App() {
                 {activeSheet === 'Graphs' ? (
                   <Graphs />
                 ) : activeSheet === 'Focus' ? (
-                  <CompactHabitView refreshKey={refreshKey} />
+                  <CompactHabitView refreshKey={refreshKey} pendingAction={widgetAction} onActionHandled={() => setWidgetAction(null)} />
                 ) : activeSheet === 'MobNotes' ? (
                   <MobiusNotes />
                 ) : activeSheet === 'SmokeTemptation' ? (

@@ -1,0 +1,140 @@
+{
+  "name": "Habitikami",
+  "short_name": "Habitikami",
+  "description": "Costruisci abitudini migliori, segui i progressi e migliora la tua routine quotidiana.",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#7c3aed",
+  "orientation": "any",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+habitikami",
+      "url": "/?url=%s"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-1024x500.png",
+      "sizes": "1024x500",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile.png",
+      "sizes": "768x1713",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Vista mobile"
+    },
+    {
+      "src": "/screenshots/desktop.png",
+      "sizes": "768x1713",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Vista desktop"
+    }
+  ],
+  "widgets": [
+    {
+      "name": "Riepilogo Habitikami",
+      "short_name": "Abitudini",
+      "description": "Progressi di oggi, streak e prossima abitudine, con azioni rapide.",
+      "tag": "habit-summary",
+      "template": "/widgets/habit-summary.json",
+      "ms_ac_template": "/widgets/habit-summary.json",
+      "data": "/widgets/data/habit-summary-data.json",
+      "type": "application/json",
+      "icons": [
+        {
+          "src": "/icons/icon-512.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ],
+      "screenshots": [
+        {
+          "src": "/screenshots/widgets/widget-summary.png",
+          "sizes": "600x524",
+          "type": "image/png",
+          "label": "Riepilogo Habitikami"
+        }
+      ],
+      "update": 900
+    },
+    {
+      "name": "Contatori Habitikami",
+      "short_name": "Contatori",
+      "description": "I contatori di oggi (resistito, fumate, caffè…) a colpo d'occhio.",
+      "tag": "counters-today",
+      "template": "/widgets/counters-today.json",
+      "ms_ac_template": "/widgets/counters-today.json",
+      "data": "/widgets/data/habit-summary-data.json",
+      "type": "application/json",
+      "icons": [
+        {
+          "src": "/icons/icon-512.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ],
+      "screenshots": [
+        {
+          "src": "/screenshots/widgets/widget-counters.png",
+          "sizes": "600x428",
+          "type": "image/png",
+          "label": "Contatori Habitikami"
+        }
+      ],
+      "update": 900
+    },
+    {
+      "name": "Streak Habitikami",
+      "short_name": "Streak",
+      "description": "La tua streak corrente più lunga e l'abitudine che la regge.",
+      "tag": "streak",
+      "template": "/widgets/streak.json",
+      "ms_ac_template": "/widgets/streak.json",
+      "data": "/widgets/data/habit-summary-data.json",
+      "type": "application/json",
+      "icons": [
+        {
+          "src": "/icons/icon-512.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ],
+      "screenshots": [
+        {
+          "src": "/screenshots/widgets/widget-streak.png",
+          "sizes": "600x472",
+          "type": "image/png",
+          "label": "Streak Habitikami"
+        }
+      ],
+      "update": 900
+    }
+  ],
+  "lang": "it",
+  "dir": "ltr"
+}

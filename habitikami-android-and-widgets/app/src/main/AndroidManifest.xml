@@ -192,6 +192,20 @@
                 android:resource="@xml/widget_help_info" />
         </receiver>
 
+        <!-- Widget pairing from the web app: web+habitikami://widget-config?url=…&key=… -->
+        <activity
+            android:name=".widget.WidgetPairingActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Habitikami"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="web+habitikami" android:host="widget-config" />
+            </intent-filter>
+        </activity>
+
         <!-- Counter Widget Config Activity -->
         <activity
             android:name=".widget.WidgetConfigActivity"

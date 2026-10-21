@@ -42,10 +42,10 @@ class WorstHabitWidgetProvider : AppWidgetProvider() {
 
     private fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
         val loading = RemoteViews(context.packageName, R.layout.widget_worst_habit).apply {
-            setTextViewText(R.id.tv_worst_title, "Needs attention")
-            setTextViewText(R.id.tv_worst_habit_name, "Loading…")
+            setTextViewText(R.id.tv_worst_title, context.getString(R.string.widget_worst_title))
+            setTextViewText(R.id.tv_worst_habit_name, context.getString(R.string.widget_loading))
             setTextViewText(R.id.tv_worst_rate, "—")
-            setTextViewText(R.id.tv_worst_label, "30-day rate")
+            setTextViewText(R.id.tv_worst_label, context.getString(R.string.widget_worst_rate_label))
             setProgressBar(R.id.pb_worst_rate, 100, 0, false)
         }
         setupIntents(context, loading, widgetId)
@@ -56,8 +56,8 @@ class WorstHabitWidgetProvider : AppWidgetProvider() {
             val config = CounterWidgetProvider.getConfig(context)
 
             if (config == null) {
-                views.setTextViewText(R.id.tv_worst_title, "Needs attention")
-                views.setTextViewText(R.id.tv_worst_habit_name, "Not configured")
+                views.setTextViewText(R.id.tv_worst_title, context.getString(R.string.widget_worst_title))
+                WidgetErrors.applyNotConfigured(context, views, R.id.tv_worst_habit_name, widgetId)
                 views.setTextViewText(R.id.tv_worst_rate, "—")
                 views.setTextViewText(R.id.tv_worst_label, "")
                 views.setProgressBar(R.id.pb_worst_rate, 100, 0, false)
@@ -84,8 +84,8 @@ class WorstHabitWidgetProvider : AppWidgetProvider() {
                     }
 
                     if (worstHabit.isEmpty()) {
-                        views.setTextViewText(R.id.tv_worst_title, "All good!")
-                        views.setTextViewText(R.id.tv_worst_habit_name, "No habits found")
+                        views.setTextViewText(R.id.tv_worst_title, context.getString(R.string.widget_worst_all_good))
+                        views.setTextViewText(R.id.tv_worst_habit_name, context.getString(R.string.widget_worst_no_habits))
                         views.setTextViewText(R.id.tv_worst_rate, "—")
                         views.setTextViewText(R.id.tv_worst_label, "")
                         views.setProgressBar(R.id.pb_worst_rate, 100, 0, false)
@@ -101,12 +101,14 @@ class WorstHabitWidgetProvider : AppWidgetProvider() {
                             views.setTextColor(R.id.tv_worst_habit_name, habitColor)
                         }
                     }
-                } catch (_: Exception) {
-                    views.setTextViewText(R.id.tv_worst_title, "Needs attention")
-                    views.setTextViewText(R.id.tv_worst_habit_name, "Error loading")
+                    WidgetErrors.markUpdated(context, "worst")
+                } catch (e: Exception) {
+                    if (WidgetErrors.showOfflineKeepingContent(context, manager, widgetId, R.layout.widget_worst_habit, R.id.tv_worst_label, e, "worst")) return@launch
+                    views.setTextViewText(R.id.tv_worst_title, context.getString(R.string.widget_worst_title))
                     views.setTextViewText(R.id.tv_worst_rate, "!")
                     views.setTextViewText(R.id.tv_worst_label, "")
                     views.setProgressBar(R.id.pb_worst_rate, 100, 0, false)
+                    WidgetErrors.applyFailure(context, views, R.id.tv_worst_habit_name, widgetId, e, "worst")
                 }
             }
 

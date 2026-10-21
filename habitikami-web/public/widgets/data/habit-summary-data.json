@@ -3,5 +3,20 @@
   "completedCount": 0,
   "totalCount": 0,
   "currentStreak": 0,
-  "nextHabitName": "No habits yet — open the app to get started!"
+  "streakHabit": "",
+  "nextHabitName": "Open Habitikami to sync",
+  "counters": [],
+  "updatedAt": "--:--",
+  "labels": {
+    "completed": "Completed",
+    "streak": "🔥 Streak",
+    "nextUp": "Next up",
+    "days": "days",
+    "counters": "Today's counters",
+    "updated": "Updated at",
+    "noCounters": "No counters yet",
+    "completeNext": "✅ Complete next",
+    "skipNext": "⏭️ Skip",
+    "openApp": "🏠 Open app"
+  }
 }

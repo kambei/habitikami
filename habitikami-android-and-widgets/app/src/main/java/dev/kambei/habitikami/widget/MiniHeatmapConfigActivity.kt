@@ -63,7 +63,7 @@ class MiniHeatmapConfigActivity : AppCompatActivity() {
             val apiToken = etToken.text.toString().trim()
 
             if (baseUrl.isEmpty() || apiToken.isEmpty()) {
-                Toast.makeText(this, "Enter URL and token first", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, R.string.error_enter_url_token_first, Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
@@ -89,7 +89,7 @@ class MiniHeatmapConfigActivity : AppCompatActivity() {
                         btnLoad.isEnabled = true
 
                         if (allHabits.isEmpty()) {
-                            Toast.makeText(this@MiniHeatmapConfigActivity, "No habits found", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MiniHeatmapConfigActivity, R.string.error_no_habits_found, Toast.LENGTH_SHORT).show()
                             return@withContext
                         }
 
@@ -127,7 +127,7 @@ class MiniHeatmapConfigActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         progressBar.visibility = View.GONE
                         btnLoad.isEnabled = true
-                        Toast.makeText(this@MiniHeatmapConfigActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@MiniHeatmapConfigActivity, getString(R.string.error_generic, e.message ?: ""), Toast.LENGTH_LONG).show()
                     }
                 }
             }

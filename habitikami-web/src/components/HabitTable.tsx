@@ -6,7 +6,6 @@ import type { HabitCellValue, HabitData } from "../types";
 import { Checkbox } from "./ui/Checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 import { Grid3X3, Table, Pencil, Info, Check, X, LayoutTemplate } from "lucide-react";
-import { toast } from 'sonner';
 
 import { useSheetData } from "../hooks/useSheetData";
 import { descriptionsOf } from "../utils/habitMeta";
@@ -76,14 +75,10 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     const { data: habitMeta } = useHabitMeta();
     const metaMap: Record<string, string> = useMemo(() => descriptionsOf(habitMeta), [habitMeta]);
 
-    // Streaks of every habit (both sheets, last year): header badges, milestones, Windows widget
+    // Streaks of every habit (both sheets, last year): header badges and milestones
     const { streaks } = useHabitStreaks();
     const { data: habitNotes } = useHabitNotes();
     const [noteTarget, setNoteTarget] = useState<{ date: string; habit: string } | null>(null);
-    const widgetStreak = useMemo(
-        () => Object.values(streaks).reduce((max, s) => Math.max(max, s.currentStreak), 0),
-        [streaks]
-    );
 
     // Derive everything from query data — no local copy
     const headers: string[] = sheetData?.headers ?? [];
@@ -171,66 +166,6 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     useEffect(() => {
         setScrollDone(false);
     }, [sheetName, refreshKey]);
-
-    useEffect(() => {
-        if (!meta || queryData.length === 0) return;
-        
-        // Find today’s row
-        const todayRow = queryData.find(row => isToday(row.date));
-        if (!todayRow) return;
-
-        // Calculate stats
-        const relevantHabits = Object.entries(todayRow.habits);
-        const totalCount = relevantHabits.length;
-        const completedCount = relevantHabits.filter(([_, value]) => value === true).length;
-        
-        // Find first pending habit (not checked AND not skipped)
-        const nextHabitPair = relevantHabits.find(([_, value]) => value === false);
-        const nextHabitName = nextHabitPair ? nextHabitPair[0] : t('habitTableAllDone');
-
-        const summary = {
-            date: translateDay(todayRow.day, tArray('days')) + ' ' + todayRow.date,
-            completedCount,
-            totalCount,
-            currentStreak: widgetStreak,
-            nextHabitName
-        };
-
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-                type: 'WIDGET_UPDATE',
-                data: summary
-            });
-        }
-    }, [queryData, headers, meta, isToday, tArray, t, widgetStreak]);
-
-    // Handle skip-next action from URL (Windows 11 Widget)
-    useEffect(() => {
-        if (!meta || queryData.length === 0 || loading) return;
-        
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('action') === 'skip-next') {
-            const todayRow = queryData.find(row => isToday(row.date));
-            if (!todayRow) return;
-
-            const relevantHabits = Object.entries(todayRow.habits);
-            const nextHabitPair = relevantHabits.find(([_, value]) => value === false);
-            
-            if (nextHabitPair) {
-                const habitName = nextHabitPair[0];
-                const rowIndex = queryData.indexOf(todayRow);
-                const sheetRow = dataStartRow + rowIndex;
-                const colIndex = meta.startCol + headers.indexOf(habitName);
-
-                // Clean up URL to avoid re-triggering
-                const newUrl = window.location.pathname + window.location.hash;
-                window.history.replaceState({}, '', newUrl);
-
-                toast.info(t('habitTableSkipping').replace('{habit}', habitName));
-                mutations.updateCell.mutate({ sheetName, rowIndex: sheetRow, colIndex, value: 'SKIP' });
-            }
-        }
-    }, [meta, queryData, loading, isToday, headers, dataStartRow, mutations.updateCell, sheetName]);
 
     const changeMonth = (delta: number) => {
         const newDate = new Date(currentDate);

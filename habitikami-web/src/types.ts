@@ -83,3 +83,13 @@ export type CounterData = {
     date: string;
     [key: string]: any; // Allow any counter name
 }
+
+/** One mood/anxiety assessment, stored in the Mood sheet (see utils/mood.ts). */
+export interface MoodEntry {
+    date: string;        // ISO timestamp of the assessment
+    timestamp: number;   // ms epoch
+    anxiety: number;     // 0-100
+    mood: number;        // 0-100 (0 = very bad, 100 = great)
+    label: string;       // e.g. "Guided Session", "Emotion Diary"
+    source?: 'chat' | 'worksheet' | 'local';
+}

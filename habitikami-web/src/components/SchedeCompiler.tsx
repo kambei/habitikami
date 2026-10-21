@@ -6,7 +6,7 @@ import { habitService } from '../services/HabitService';
 import type { SchedaStep } from '../types';
 import type { SchedaTemplate } from '../data/schedeTemplates';
 import { type AIProviderConfig, callAI } from '../utils/aiProvider';
-import { saveMoodEntry } from './MoodGraph';
+import { saveMoodEntry } from '../hooks/useMood';
 import { renderMarkdown } from '../lib/renderMarkdown';
 import { markdownToHtml } from '../lib/markdownUtils';
 
@@ -90,6 +90,7 @@ export function SchedeCompiler({ template, providerConfig, onBack }: Props) {
                     anxiety: Math.max(0, Math.min(100, parsed.anxiety)),
                     mood: Math.max(0, Math.min(100, parsed.mood)),
                     label: sessionLabel,
+                    source: 'worksheet',
                 });
             }
         } catch {

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import type { MoodEntry } from '../types';
+import { useMoodEntries, useClearMoodEntries } from '../hooks/useMood';
 import { BarChart3, Trash2, TrendingDown, TrendingUp, Minus, Sparkles, Loader2, Save, Check, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, BarChart, Bar, Cell, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
@@ -10,13 +12,7 @@ import { toast } from 'sonner';
 import { renderMarkdown } from '../lib/renderMarkdown';
 import { markdownToHtml } from '../lib/markdownUtils';
 
-export interface MoodEntry {
-    date: string;        // ISO date string
-    timestamp: number;   // ms epoch
-    anxiety: number;     // 0-100
-    mood: number;        // 0-100 (0=very bad, 100=great)
-    label: string;       // e.g. "Guided Session", "Emotion Diary"
-}
+export type { MoodEntry } from '../types';
 
 export interface AiInsights {
     insightText: string;
@@ -24,26 +20,10 @@ export interface AiInsights {
     emotionsData: { emotion: string; score: number }[];
 }
 
-const MOOD_STORAGE_KEY = 'habitikami_mood_history';
 const AI_CACHE_KEY = 'habitikami_ai_insights_cache';
 const AI_CACHE_IDS_KEY = 'habitikami_ai_insights_ids';
 
-export function getMoodHistory(): MoodEntry[] {
-    const saved = localStorage.getItem(MOOD_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-}
-
-export function saveMoodEntry(entry: MoodEntry) {
-    const history = getMoodHistory();
-    history.push(entry);
-    // Keep last 100 entries
-    const trimmed = history.slice(-100);
-    localStorage.setItem(MOOD_STORAGE_KEY, JSON.stringify(trimmed));
-}
-
-export function clearMoodHistory() {
-    localStorage.removeItem(MOOD_STORAGE_KEY);
-}
+// Mood entries are stored in the Mood sheet; see hooks/useMood.ts and utils/mood.ts.
 
 interface Props {
     onBack: () => void;
@@ -51,7 +31,9 @@ interface Props {
 
 export function MoodGraph({ onBack }: Props) {
     const { t } = useTranslation();
-    const [entries, setEntries] = useState<MoodEntry[]>([]);
+    const { data: moodEntries } = useMoodEntries();
+    const entries: MoodEntry[] = moodEntries ?? [];
+    const clearMood = useClearMoodEntries();
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [aiInsights, setAiInsights] = useState<AiInsights | null>(null);
     const [aiError, setAiError] = useState<string | null>(null);
@@ -66,7 +48,6 @@ export function MoodGraph({ onBack }: Props) {
     const providerConfig = getActiveProvider();
 
     useEffect(() => {
-        setEntries(getMoodHistory());
         checkCache();
     }, [analysisLimit]); // Re-check cache if analysisLimit changes
 
@@ -141,8 +122,10 @@ export function MoodGraph({ onBack }: Props) {
     };
 
     const handleClear = () => {
-        clearMoodHistory();
-        setEntries([]);
+        if (!window.confirm(t('moodGraphClearConfirm'))) return;
+        clearMood.mutate(undefined, {
+            onError: (e) => toast.error(e instanceof Error ? e.message : 'Failed to clear mood history'),
+        });
     };
 
     // Format data for charts - group by date, average if multiple per day

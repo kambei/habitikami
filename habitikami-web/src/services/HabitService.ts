@@ -3,7 +3,8 @@ import { gapi } from 'gapi-script';
 // and we need to initialize the client.
 import { hexToSheetColor, sheetColorToHex } from '../utils/colors';
 import { findHeaderRowIndex } from '../utils/parser';
-import type { HabitMeta } from '../types';
+import type { HabitMeta, MoodEntry } from '../types';
+import { MOOD_COLUMNS, MOOD_RANGE, MOOD_SHEET, moodEntryToRow, rowsToMoodEntries } from '../utils/mood';
 import { HABIT_META_COLUMNS, HABIT_META_RANGE, mergeHabitMeta, rowToHabitMeta, habitMetaToRow } from '../utils/habitMeta';
 
 // CLIENT_SECRET must never be referenced here; token exchange is backend-only
@@ -1816,6 +1817,80 @@ class HabitServiceImpl {
      * Ensure the Training sheet exists; create it if missing.
      * Headers: Date | Section | Exercise | Session | Duration
      */
+    // ─── Mood sheet ───────────────────────────────────────────────────────────
+    // Date | Timestamp | Mood | Anxiety | Label | Source (see utils/mood.ts)
+
+    private async ensureMoodSheet(): Promise<void> {
+        const spreadsheetId = this.getSpreadsheetId();
+        const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId, fields: 'sheets(properties(title))' });
+        const exists = meta.result.sheets?.some((s: any) => s.properties?.title === MOOD_SHEET);
+        if (exists) return;
+
+        await gapi.client.sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: {
+                requests: [{ addSheet: { properties: { title: MOOD_SHEET, gridProperties: { frozenRowCount: 1 } } } }]
+            }
+        });
+        await gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `${MOOD_SHEET}!A1:F1`,
+            valueInputOption: 'USER_ENTERED',
+            resource: { values: [[...MOOD_COLUMNS]] }
+        });
+    }
+
+    /** All mood entries, oldest first. A missing sheet reads as an empty list. */
+    async getMoodEntries(): Promise<{ entries: MoodEntry[] } | { error: string }> {
+        try {
+            await this.ensureClient();
+            const res = await gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: this.getSpreadsheetId(),
+                range: MOOD_RANGE,
+            });
+            return { entries: rowsToMoodEntries(res.result.values || []) };
+        } catch (e: any) {
+            const msg: string = e.result?.error?.message || e.message || '';
+            if (e.status === 400 || /Unable to parse range/i.test(msg)) return { entries: [] };
+            return { error: msg };
+        }
+    }
+
+    /** Appends entries (creating the sheet on first use). */
+    async appendMoodEntries(entries: MoodEntry[]): Promise<{ success: boolean } | { error: string }> {
+        if (entries.length === 0) return { success: true };
+        try {
+            await this.ensureClient();
+            await this.ensureMoodSheet();
+            await gapi.client.sheets.spreadsheets.values.append({
+                spreadsheetId: this.getSpreadsheetId(),
+                range: MOOD_RANGE,
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: entries.map(moodEntryToRow) }
+            });
+            return { success: true };
+        } catch (e: any) {
+            return { error: e.result?.error?.message || e.message };
+        }
+    }
+
+    /** Removes every entry, keeping the header row. */
+    async clearMoodEntries(): Promise<{ success: boolean } | { error: string }> {
+        try {
+            await this.ensureClient();
+            await gapi.client.sheets.spreadsheets.values.clear({
+                spreadsheetId: this.getSpreadsheetId(),
+                range: `${MOOD_SHEET}!A2:F`,
+                resource: {}
+            });
+            return { success: true };
+        } catch (e: any) {
+            const msg: string = e.result?.error?.message || e.message || '';
+            if (e.status === 400 || /Unable to parse range/i.test(msg)) return { success: true };
+            return { error: msg };
+        }
+    }
+
     async ensureTrainingSheet(): Promise<{ success: boolean } | { error: string }> {
         try {
             await this.ensureClient();

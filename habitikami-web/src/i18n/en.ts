@@ -415,6 +415,7 @@ export const en = {
   moodGraphEmpty: 'No mood data yet',
   moodGraphEmptyHint: 'Complete a guided session or a worksheet to start tracking your mood over time.',
   moodGraphClear: 'Clear history',
+  moodGraphClearConfirm: 'Delete the whole mood history from your Google Sheet? This cannot be undone.',
   moodGraphMoodAvg: 'Mood (last 5)',
   moodGraphAnxietyAvg: 'Anxiety (last 5)',
   moodGraphMoodTrend: 'Mood Trend',

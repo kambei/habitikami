@@ -1148,6 +1148,15 @@ app.delete('/api/user/apikey', apiLimiter, validateOrigin, async (req, res) => {
 
 // ─── Static files ─────────────────────────────────────────────────────────────
 
+// /.well-known (Digital Asset Links for the Android TWA, RFC 8615) must be served
+// explicitly: serve-static 2.x (Express 5) ignores dotfile paths by default, so
+// the generic handler below answers 404 for /.well-known/assetlinks.json. Chrome
+// then fails the TWA verification and shows the browser address bar in the app.
+app.use('/.well-known', express.static(path.join(__dirname, 'dist', '.well-known'), {
+    dotfiles: 'allow',
+    index: false,
+}));
+
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // ─── API token middleware (for export / counter endpoints) ────────────────────

@@ -1,0 +1,15 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    { "type": "TextBlock", "text": "🔥", "size": "ExtraLarge", "horizontalAlignment": "Center" },
+    { "type": "TextBlock", "text": "${currentStreak}", "size": "ExtraLarge", "weight": "Bolder", "color": "Warning", "horizontalAlignment": "Center", "spacing": "None" },
+    { "type": "TextBlock", "text": "${labels.days}", "size": "Small", "isSubtle": true, "horizontalAlignment": "Center", "spacing": "None" },
+    { "type": "TextBlock", "text": "${streakHabit}", "size": "Medium", "weight": "Bolder", "horizontalAlignment": "Center", "wrap": true, "spacing": "Small" },
+    { "type": "TextBlock", "text": "${labels.updated} ${updatedAt}", "size": "Small", "isSubtle": true, "horizontalAlignment": "Right", "spacing": "Small" }
+  ],
+  "actions": [
+    { "type": "Action.Execute", "title": "${labels.openApp}", "verb": "open-app" }
+  ]
+}

@@ -4,99 +4,44 @@
   "version": "1.5",
   "body": [
     {
-      "type": "Container",
-      "items": [
+      "type": "ColumnSet",
+      "columns": [
         {
-          "type": "ColumnSet",
-          "columns": [
-            {
-              "type": "Column",
-              "width": "auto",
-              "items": [
-                {
-                  "type": "TextBlock",
-                  "text": "🏯",
-                  "size": "ExtraLarge"
-                }
-              ]
-            },
-            {
-              "type": "Column",
-              "width": "stretch",
-              "verticalContentAlignment": "Center",
-              "items": [
-                {
-                  "type": "TextBlock",
-                  "text": "Habitikami",
-                  "size": "Medium",
-                  "weight": "Bolder",
-                  "color": "Accent",
-                  "wrap": true
-                },
-                {
-                  "type": "TextBlock",
-                  "text": "${date}",
-                  "size": "Small",
-                  "isSubtle": true,
-                  "spacing": "None"
-                }
-              ]
-            }
+          "type": "Column",
+          "width": "auto",
+          "items": [
+            { "type": "TextBlock", "text": "🏯", "size": "ExtraLarge" }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "stretch",
+          "verticalContentAlignment": "Center",
+          "items": [
+            { "type": "TextBlock", "text": "Habitikami", "size": "Medium", "weight": "Bolder", "color": "Accent", "wrap": true },
+            { "type": "TextBlock", "text": "${date}", "size": "Small", "isSubtle": true, "spacing": "None" }
           ]
         }
       ]
     },
     {
-      "type": "Container",
+      "type": "ColumnSet",
       "spacing": "Large",
-      "items": [
+      "columns": [
         {
-          "type": "ColumnSet",
-          "columns": [
-            {
-              "type": "Column",
-              "width": "stretch",
-              "items": [
-                {
-                  "type": "TextBlock",
-                  "text": "Completed",
-                  "size": "Small",
-                  "isSubtle": true,
-                  "horizontalAlignment": "Center"
-                },
-                {
-                  "type": "TextBlock",
-                  "text": "${completedCount} / ${totalCount}",
-                  "size": "Large",
-                  "weight": "Bolder",
-                  "color": "Good",
-                  "spacing": "None",
-                  "horizontalAlignment": "Center"
-                }
-              ]
-            },
-            {
-              "type": "Column",
-              "width": "stretch",
-              "items": [
-                {
-                  "type": "TextBlock",
-                  "text": "🔥 Streak",
-                  "size": "Small",
-                  "isSubtle": true,
-                  "horizontalAlignment": "Center"
-                },
-                {
-                  "type": "TextBlock",
-                  "text": "${currentStreak} days",
-                  "size": "Large",
-                  "weight": "Bolder",
-                  "color": "Warning",
-                  "spacing": "None",
-                  "horizontalAlignment": "Center"
-                }
-              ]
-            }
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            { "type": "TextBlock", "text": "${labels.completed}", "size": "Small", "isSubtle": true, "horizontalAlignment": "Center" },
+            { "type": "TextBlock", "text": "${completedCount} / ${totalCount}", "size": "Large", "weight": "Bolder", "color": "Good", "spacing": "None", "horizontalAlignment": "Center" }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            { "type": "TextBlock", "text": "${labels.streak}", "size": "Small", "isSubtle": true, "horizontalAlignment": "Center" },
+            { "type": "TextBlock", "text": "${currentStreak} ${labels.days}", "size": "Large", "weight": "Bolder", "color": "Warning", "spacing": "None", "horizontalAlignment": "Center" }
           ]
         }
       ]
@@ -106,41 +51,22 @@
       "spacing": "Medium",
       "separator": true,
       "items": [
-        {
-          "type": "TextBlock",
-          "text": "Next up",
-          "size": "Small",
-          "isSubtle": true,
-          "horizontalAlignment": "Center"
-        },
-        {
-          "type": "TextBlock",
-          "text": "${nextHabitName}",
-          "size": "Medium",
-          "weight": "Bolder",
-          "spacing": "None",
-          "horizontalAlignment": "Center",
-          "wrap": true
-        }
+        { "type": "TextBlock", "text": "${labels.nextUp}", "size": "Small", "isSubtle": true, "horizontalAlignment": "Center" },
+        { "type": "TextBlock", "text": "${nextHabitName}", "size": "Medium", "weight": "Bolder", "spacing": "None", "horizontalAlignment": "Center", "wrap": true }
       ]
+    },
+    {
+      "type": "TextBlock",
+      "text": "${labels.updated} ${updatedAt}",
+      "size": "Small",
+      "isSubtle": true,
+      "horizontalAlignment": "Right",
+      "spacing": "Small"
     }
   ],
   "actions": [
-    {
-      "type": "Action.Execute",
-      "title": "✅ Complete Next",
-      "verb": "complete-next",
-      "style": "positive"
-    },
-    {
-      "type": "Action.Execute",
-      "title": "⏭️ Skip",
-      "verb": "skip-next"
-    },
-    {
-      "type": "Action.Execute",
-      "title": "🏠 Open App",
-      "verb": "open-app"
-    }
+    { "type": "Action.Execute", "title": "${labels.completeNext}", "verb": "complete-next", "style": "positive" },
+    { "type": "Action.Execute", "title": "${labels.skipNext}", "verb": "skip-next" },
+    { "type": "Action.Execute", "title": "${labels.openApp}", "verb": "open-app" }
   ]
 }

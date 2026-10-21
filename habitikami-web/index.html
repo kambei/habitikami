@@ -4,7 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="/habitikami.png" />
-  <link rel="manifest" href="/manifest.json" />
+  <link rel="manifest" href="/manifest.json" id="app-manifest" />
+  <script>
+    // Localised manifest (widget names, descriptions): Italian when the app language is Italian
+    try {
+      var lang = localStorage.getItem('habitikami_language') || (navigator.language || '').toLowerCase();
+      if (lang.indexOf('it') === 0) document.getElementById('app-manifest').setAttribute('href', '/manifest.it.json');
+    } catch (e) { /* ignore */ }
+  </script>
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

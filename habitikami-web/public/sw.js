@@ -1,5 +1,13 @@
 // Habitikami Service Worker — Cache-first for static assets, network-first for API calls
-const CACHE_NAME = 'habitikami-v3';
+const CACHE_NAME = 'habitikami-v4';
+const WIDGET_CACHE = 'widget-data';
+
+// Every Windows widget shares the same data payload (see hooks/useWidgetSync.ts)
+const WIDGETS = [
+  { tag: 'habit-summary', template: '/widgets/habit-summary.json' },
+  { tag: 'counters-today', template: '/widgets/counters-today.json' },
+  { tag: 'streak', template: '/widgets/streak.json' },
+];
 
 // ---------------------------------------------------------------------------
 // Windows 11 PWA Widget Support
@@ -7,7 +15,7 @@ const CACHE_NAME = 'habitikami-v3';
 
 async function getWidgetData() {
   try {
-    const cache = await caches.open('widget-data');
+    const cache = await caches.open(WIDGET_CACHE);
     const response = await cache.match('/widget-summary');
     if (response) {
       return await response.json();
@@ -16,37 +24,39 @@ async function getWidgetData() {
     console.warn('[SW] Failed to get cached widget data', e);
   }
 
-  try {
-    const response = await fetch('/widgets/data/habit-summary-data.json');
-    if (response.ok) {
-      return await response.json();
-    }
-  } catch (_) {
-    // offline – return fallback data
-  }
+  // Nothing synced yet: localised placeholder until the app is opened once
+  const it = (self.navigator && self.navigator.language || '').toLowerCase().startsWith('it');
   return {
-    date: 'Today',
+    date: it ? 'Oggi' : 'Today',
     completedCount: 0,
     totalCount: 0,
     currentStreak: 0,
-    nextHabitName: 'Open the app to sync your habits.',
+    streakHabit: '',
+    nextHabitName: it ? 'Apri Habitikami per sincronizzare' : 'Open Habitikami to sync',
+    counters: [],
+    updatedAt: '--:--',
+    labels: it
+      ? { completed: 'Completate', streak: '🔥 Streak', nextUp: 'Prossima', days: 'giorni', counters: 'Contatori di oggi', updated: 'Aggiornato alle', noCounters: 'Nessun contatore', completeNext: '✅ Completa la prossima', skipNext: '⏭️ Salta', openApp: "🏠 Apri l'app" }
+      : { completed: 'Completed', streak: '🔥 Streak', nextUp: 'Next up', days: 'days', counters: "Today's counters", updated: 'Updated at', noCounters: 'No counters yet', completeNext: '✅ Complete next', skipNext: '⏭️ Skip', openApp: '🏠 Open app' },
   };
 }
 
+// Refresh one widget (by its definition) or all of them with the cached payload
 async function updateWidget(widget) {
-  try {
-    console.log('[SW] Updating widget:', widget?.tag || 'habit-summary');
-    const data = await getWidgetData();
-    const templateResponse = await fetch('/widgets/habit-summary.json');
-    if (!templateResponse.ok) throw new Error('Template not found');
-    const template = await templateResponse.text();
-    
-    if (self.widgets && self.widgets.updateByTag) {
-      await self.widgets.updateByTag('habit-summary', { template, data: JSON.stringify(data) });
-      console.log('[SW] Widget updated successfully with data:', data);
+  if (!self.widgets || !self.widgets.updateByTag) return;
+  const targets = widget && widget.definition && widget.definition.tag
+    ? WIDGETS.filter((w) => w.tag === widget.definition.tag)
+    : WIDGETS;
+  const data = await getWidgetData();
+  for (const w of targets) {
+    try {
+      const templateResponse = await fetch(w.template);
+      if (!templateResponse.ok) throw new Error('Template not found: ' + w.template);
+      const template = await templateResponse.text();
+      await self.widgets.updateByTag(w.tag, { template, data: JSON.stringify(data) });
+    } catch (error) {
+      console.error('[SW] Widget update failed:', w.tag, error);
     }
-  } catch (error) {
-    console.error('[SW] Widget update failed:', error);
   }
 }
 
@@ -58,7 +68,7 @@ self.addEventListener('message', (event) => {
       console.log('[SW] Received widget update payload:', data);
       
       try {
-        const cache = await caches.open('widget-data');
+        const cache = await caches.open(WIDGET_CACHE);
         await cache.put('/widget-summary', new Response(JSON.stringify(data)));
         
         // Update widget immediately
@@ -85,8 +95,15 @@ self.addEventListener('widgetresume', (event) => {
 // Widget action clicked
 self.addEventListener('widgetclick', (event) => {
   console.log('[SW] widgetclick event received:', event.action);
-  if (event.action === 'open-app' || event.action === 'complete-next' || event.action === 'skip-next') {
-    const url = event.action === 'skip-next' ? '/?action=skip-next' : '/';
+  // Complete/skip land on the Focus view, which performs the action (App.tsx)
+  const urls = {
+    'complete-next': '/?action=complete-next#Focus',
+    'skip-next': '/?action=skip-next#Focus',
+    'open-counters': '/#SmokeTemptation',
+    'open-app': '/',
+  };
+  const url = urls[event.action];
+  if (url) {
     event.waitUntil(
       clients.openWindow(url).then(() => updateWidget(event.widget))
     );
@@ -118,7 +135,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
+          .filter((name) => name !== CACHE_NAME && name !== WIDGET_CACHE)
           .map((name) => caches.delete(name))
       );
     })

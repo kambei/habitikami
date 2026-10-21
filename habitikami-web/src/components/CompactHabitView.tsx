@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, SkipForward, RefreshCw, Trophy, Calendar } from 'lucide-react';
 import type { HabitCellValue, SheetType } from '../types';
@@ -16,10 +17,13 @@ import { currentSlot, slotLabelKey } from '../utils/slots';
 import type { HabitSlot } from '../types';
 
 interface CompactHabitViewProps {
+    /** Action requested by the Windows widget, executed once habits are loaded. */
+    pendingAction?: 'complete-next' | 'skip-next' | null;
+    onActionHandled?: () => void;
     refreshKey?: number;
 }
 
-export function CompactHabitView({ }: CompactHabitViewProps) {
+export function CompactHabitView({ pendingAction = null, onActionHandled }: CompactHabitViewProps) {
     const { t } = useTranslation();
     const [currentIndex, setCurrentIndex] = useState(0);
     const { streaks } = useHabitStreaks();
@@ -115,6 +119,25 @@ export function CompactHabitView({ }: CompactHabitViewProps) {
             habitName: currentHabit,
         });
     };
+
+    // Widget action: complete or skip the first pending habit, then clean the URL
+    useEffect(() => {
+        if (!pendingAction || loading || !meta) return;
+        window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+        if (habits.length > 0) {
+            const habit = habits[0];
+            if (pendingAction === 'complete-next') {
+                toast.success(t('widgetActionDone').replace('{habit}', habit));
+                handleComplete();
+            } else {
+                toast.info(t('habitTableSkipping').replace('{habit}', habit));
+                handleSkip();
+            }
+        }
+        onActionHandled?.();
+        // Runs once per action when data is ready
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pendingAction, loading, meta]);
 
     const handleSkip = async () => {
         if (!meta || habits.length === 0) return;

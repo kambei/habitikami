@@ -549,6 +549,17 @@ export const en = {
   settingsTemplatesTitle: 'Habit templates',
   settingsTemplatesDesc: 'Add ready-made packs: fitness, productivity, wellbeing, quit smoking.',
   settingsTemplatesOpen: 'Browse templates',
+  widgetLabelCompleted: 'Completed',
+  widgetLabelStreak: '🔥 Streak',
+  widgetLabelNextUp: 'Next up',
+  widgetLabelDays: 'days',
+  widgetLabelCounters: 'Today\'s counters',
+  widgetLabelUpdated: 'Updated at',
+  widgetLabelNoCounters: 'No counters yet',
+  widgetActionComplete: '✅ Complete next',
+  widgetActionSkip: '⏭️ Skip',
+  widgetActionOpen: '🏠 Open app',
+  widgetActionDone: 'Completed from the widget: {habit}',
 } as const;
 
 export type TranslationKey = keyof typeof en;

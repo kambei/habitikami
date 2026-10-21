@@ -536,6 +536,19 @@ export const en = {
   habitNotesSearchPlaceholder: 'Search habit notes…',
   habitNotesEmpty: 'No note matches.',
   toastNoteSaveFailed: 'Failed to save the note: {error}',
+  templatesTitle: 'Habit templates',
+  templatesSubtitle: 'Start from a ready-made pack and adjust it afterwards.',
+  templatesBack: 'All packs',
+  templatesSheet: 'Add to',
+  templatesBoth: 'Both',
+  templatesApply: 'Add {count} habits',
+  templatesApplied: '{added} habits added ({skipped} already present).',
+  templatesFailed: 'Could not add the habits: {error}',
+  templatesHint: 'Names, colours, goals and time slots can be changed later from the habit info.',
+  habitTableTemplates: 'Add from a template',
+  settingsTemplatesTitle: 'Habit templates',
+  settingsTemplatesDesc: 'Add ready-made packs: fitness, productivity, wellbeing, quit smoking.',
+  settingsTemplatesOpen: 'Browse templates',
 } as const;
 
 export type TranslationKey = keyof typeof en;

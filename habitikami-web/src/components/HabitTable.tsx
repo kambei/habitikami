@@ -5,7 +5,7 @@ import { CheckboxGridView } from "./CheckboxGridView";
 import type { HabitCellValue, HabitData } from "../types";
 import { Checkbox } from "./ui/Checkbox";
 import { motion, AnimatePresence } from "framer-motion";
-import { Grid3X3, Table, Pencil, Info, Check, X } from "lucide-react";
+import { Grid3X3, Table, Pencil, Info, Check, X, LayoutTemplate } from "lucide-react";
 import { toast } from 'sonner';
 
 import { useSheetData } from "../hooks/useSheetData";
@@ -16,6 +16,7 @@ import { SlotTag } from "./ui/SlotTag";
 import { NumericCell } from "./ui/NumericCell";
 import { HabitMetaEditor, HabitMetaSummary } from "./HabitMetaEditor";
 import { HabitNoteEditor } from "./HabitNoteEditor";
+import { HabitTemplatesPicker } from "./HabitTemplatesPicker";
 import { useHabitNotes } from "../hooks/useHabitNotes";
 import { noteKey } from "../utils/habitNotes";
 import { StickyNote } from "lucide-react";
@@ -42,6 +43,7 @@ interface ContextMenuState {
 export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     const { t, tArray, locale } = useTranslation();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [templatesOpen, setTemplatesOpen] = useState(false);
 
     const [pickerState, setPickerState] = useState<{
         isOpen: boolean;
@@ -529,6 +531,14 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                 >
                                     +
                                 </button>
+                                <button
+                                    onClick={() => setTemplatesOpen(true)}
+                                    className="w-8 h-8 mt-1 rounded-full bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors"
+                                    title={t('habitTableTemplates')}
+                                    aria-label={t('habitTableTemplates')}
+                                >
+                                    <LayoutTemplate className="w-4 h-4" />
+                                </button>
                             </th>
                         </tr>
                     </thead>
@@ -624,6 +634,13 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                         </button>
                     </div>
                 )}
+
+                <HabitTemplatesPicker
+                    isOpen={templatesOpen}
+                    onClose={() => setTemplatesOpen(false)}
+                    existing={{ [sheetName]: headers }}
+                    defaultSheet={sheetName === 'Weekend' ? 'Weekend' : 'Weekdays'}
+                />
 
                 <AddHabitModal
                     isOpen={isModalOpen}

@@ -26,7 +26,7 @@ A React + Vite + TypeScript web application for habit tracking, using Google She
 
    `GOOGLE_CLIENT_SECRET` is server-only: it is used by `server.js` for the OAuth code exchange / token refresh and to derive the key that encrypts widget refresh tokens at rest. It must **not** carry the `VITE_` prefix (Vite would expose it to the browser). The legacy `VITE_GOOGLE_CLIENT_SECRET` name is still read as a fallback with a deprecation warning; when renaming, keep the same value so existing encrypted data stays readable.
 
-   **Private mode (optional):** set `ALLOWED_EMAILS=you@gmail.com,friend@gmail.com` to restrict sign-in, session refresh and widget API keys to those Google accounts only. Everyone else gets a 403 with a maintenance message. Leave it empty (or unset) for open access. Restart the server after changing it.
+   **Private mode (optional):** set `ALLOWED_EMAILS=you@gmail.com,friend@gmail.com` to restrict sign-in, session refresh and widget API keys to those Google accounts only. Everyone else gets a 403 with a maintenance message. On every startup in private mode the server also deletes what it stores about accounts outside the list (`users.json`, `apikeys.json`, `risc-revoked.json`, legacy `preferences.json`); their Google Sheets and Drive files are not touched. Leave it empty (or unset) for open access. Restart the server after changing it.
    
    *To get these credentials:*
    - Go to [Google Cloud Console](https://console.cloud.google.com).

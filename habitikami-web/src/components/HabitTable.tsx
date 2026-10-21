@@ -12,6 +12,9 @@ import { useSheetData } from "../hooks/useSheetData";
 import { descriptionsOf } from "../utils/habitMeta";
 import { useHabitStreaks } from "../hooks/useStreaks";
 import { StreakBadge } from "./ui/StreakBadge";
+import { SlotTag } from "./ui/SlotTag";
+import { NumericCell } from "./ui/NumericCell";
+import { HabitMetaEditor, HabitMetaSummary } from "./HabitMetaEditor";
 import { MilestoneCelebration } from "./MilestoneCelebration";
 import { useHabitColors } from "../hooks/useHabitColors";
 import { useUpdateCell, useAddHabit, useAddDay, useMoveColumn, useDeleteColumn, useSetHabitColor, useRenameHabit, useHabitMeta, useSetHabitMeta } from "../hooks/useHabitMutations";
@@ -99,7 +102,6 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     const [editingValue, setEditingValue] = useState('');
     const [infoHabit, setInfoHabit] = useState<string | null>(null);
     const [infoEditing, setInfoEditing] = useState(false);
-    const [infoDraft, setInfoDraft] = useState('');
 
     const startRename = (habit: string) => {
         setEditingHabit(habit);
@@ -120,14 +122,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
 
     const openInfo = (habit: string) => {
         setInfoHabit(habit);
-        setInfoDraft(metaMap[habit] || '');
-        setInfoEditing(false);
-    };
-
-    const saveInfo = () => {
-        if (!infoHabit) return;
-        mutations.setHabitMeta.mutate({ habitName: infoHabit, description: infoDraft });
-        setInfoEditing(false);
+                setInfoEditing(false);
     };
 
     const loading = isSheetLoading || isColorsLoading;
@@ -235,6 +230,19 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
         setCurrentDate(newDate);
     };
 
+    const handleSetValue = useCallback((rowIndex: number, habit: string, value: number) => {
+        if (!meta) return;
+        mutations.updateCell.mutate({
+            sheetName,
+            rowIndex: dataStartRow + rowIndex,
+            colIndex: meta.startCol + headers.indexOf(habit),
+            value,
+            year,
+            month,
+            habitName: habit,
+        });
+    }, [meta, dataStartRow, headers, sheetName, mutations.updateCell, year, month]);
+
     const handleToggle = useCallback((rowIndex: number, habit: string, currentValue: HabitCellValue) => {
         if (!meta) return;
         // Quantitative cells are edited with a value input (coming with #14), not toggled
@@ -263,7 +271,12 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
 
     const handleAddHabitSubmit = (habitName: string) => {
         mutations.addHabit.mutate({ sheetName, habitName }, {
-            onSuccess: () => setIsModalOpen(false),
+            onSuccess: () => {
+                setIsModalOpen(false);
+                // Offer type, goal and time slot right away
+                setInfoHabit(habitName);
+                setInfoEditing(true);
+            },
         });
     };
 
@@ -373,6 +386,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                 {viewMode === 'grid' ? (
                     <>
                         <CheckboxGridView
+                            onSetValue={handleSetValue}
                             headers={headers}
                             data={queryData}
                             colors={colors}
@@ -416,6 +430,9 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                     <div className="flex flex-col items-center gap-1">
                                         {!isEditing && streaks[h]?.currentStreak > 0 && (
                                             <StreakBadge streak={streaks[h].currentStreak} best={streaks[h].bestStreak} className="absolute top-1 right-1" />
+                                        )}
+                                        {!isEditing && habitMeta?.[h] && (
+                                            <SlotTag slot={habitMeta[h].slot} time={habitMeta[h].time} className="absolute top-1 left-1" />
                                         )}
                                         {isEditing ? (
                                             <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
@@ -526,12 +543,23 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                          return (
                                              <td key={h} className="p-4 text-center" title={tooltip}>
                                                  <div className="flex justify-center">
+                                                     {habitMeta?.[h]?.type === 'number' ? (
+                                                         <NumericCell
+                                                             value={typeof checked === 'number' ? checked : 0}
+                                                             target={habitMeta[h].target}
+                                                             unit={habitMeta[h].unit}
+                                                             color={colors[h]}
+                                                             disabled={isPending}
+                                                             onChange={(v) => handleSetValue(rIndex, h, v)}
+                                                         />
+                                                     ) : (
                                                      <Checkbox
                                                          checked={checked === 'half' ? 'half' : (checked === true)}
                                                          disabled={isPending}
                                                          onCheckedChange={() => handleToggle(rIndex, h, checked)}
                                                          className={checked === 'skipped' ? "opacity-50 ring-2 ring-amber-500/30" : ""}
                                                      />
+                                                     )}
                                                  </div>
                                              </td>
                                          );
@@ -621,43 +649,28 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                     <h3 className="text-base font-semibold break-words flex-1">{infoHabit}</h3>
                                 </div>
 
-                                <p className="text-xs text-muted-foreground mb-2">{t('habitInfoDescriptionLabel')}</p>
+                                {!infoEditing && <p className="text-xs text-muted-foreground mb-2">{t('habitInfoDescriptionLabel')}</p>}
 
                                 {infoEditing ? (
-                                    <textarea
-                                        autoFocus
-                                        value={infoDraft}
-                                        onChange={(e) => setInfoDraft(e.target.value)}
-                                        placeholder={t('habitInfoDescriptionPlaceholder')}
-                                        rows={5}
-                                        className="w-full bg-background border border-border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+                                    <HabitMetaEditor
+                                        meta={habitMeta?.[infoHabit]}
+                                        saving={mutations.setHabitMeta.isPending}
+                                        onCancel={() => setInfoEditing(false)}
+                                        onSave={(patch) => mutations.setHabitMeta.mutate({ habitName: infoHabit, ...patch }, { onSuccess: () => setInfoEditing(false) })}
                                     />
                                 ) : (
+                                    <div className="space-y-2">
                                     <div className="min-h-[80px] text-sm whitespace-pre-wrap break-words text-foreground/90 bg-secondary/30 rounded-md p-3 border border-border/50">
                                         {metaMap[infoHabit]?.trim() || (
                                             <span className="text-muted-foreground italic">{t('habitInfoEmpty')}</span>
                                         )}
                                     </div>
+                                    <HabitMetaSummary meta={habitMeta?.[infoHabit]} />
+                                    </div>
                                 )}
 
                                 <div className="flex justify-end gap-2 mt-4">
-                                    {infoEditing ? (
-                                        <>
-                                            <button
-                                                onClick={() => { setInfoEditing(false); setInfoDraft(metaMap[infoHabit] || ''); }}
-                                                className="px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-sm font-medium transition-colors"
-                                            >
-                                                {t('habitInfoCancel')}
-                                            </button>
-                                            <button
-                                                onClick={saveInfo}
-                                                disabled={mutations.setHabitMeta.isPending}
-                                                className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors disabled:opacity-60"
-                                            >
-                                                {t('habitInfoSave')}
-                                            </button>
-                                        </>
-                                    ) : (
+                                    {infoEditing ? null : (
                                         <>
                                             <button
                                                 onClick={() => { setInfoHabit(null); setInfoEditing(false); }}
@@ -666,7 +679,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                                 {t('close')}
                                             </button>
                                             <button
-                                                onClick={() => { setInfoDraft(metaMap[infoHabit] || ''); setInfoEditing(true); }}
+                                                onClick={() => setInfoEditing(true)}
                                                 className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors inline-flex items-center gap-1"
                                             >
                                                 <Pencil className="w-3.5 h-3.5" /> {t('habitInfoEdit')}

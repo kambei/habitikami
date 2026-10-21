@@ -10,6 +10,9 @@ import { habitStreakStats } from '../utils/streaks';
 import { descriptionsOf } from '../utils/habitMeta';
 import { useHabitStreaks } from '../hooks/useStreaks';
 import { StreakBadge } from './ui/StreakBadge';
+import { SlotTag } from './ui/SlotTag';
+import { NumericCell } from './ui/NumericCell';
+import { HabitMetaEditor, HabitMetaSummary } from './HabitMetaEditor';
 
 interface CheckboxGridViewProps {
     headers: string[];
@@ -18,6 +21,7 @@ interface CheckboxGridViewProps {
     meta: { startCol: number; headerRowIndex: number; dataStartRow: number } | null;
     dataStartRow: number;
     onToggle: (rowIndex: number, habit: string, currentValue: HabitCellValue) => void;
+    onSetValue: (rowIndex: number, habit: string, value: number) => void;
     isPending: boolean;
     sheetName: string;
     year: number;
@@ -29,6 +33,7 @@ export function CheckboxGridView({
     data,
     colors,
     onToggle,
+    onSetValue,
     isPending,
     sheetName,
     year,
@@ -47,14 +52,12 @@ export function CheckboxGridView({
     const [editingName, setEditingName] = useState(false);
     const [nameDraft, setNameDraft] = useState('');
     const [editingDesc, setEditingDesc] = useState(false);
-    const [descDraft, setDescDraft] = useState('');
 
     const openHabit = (habit: string) => {
         setSelectedHabit(habit);
         setEditingName(false);
         setNameDraft(habit);
         setEditingDesc(false);
-        setDescDraft(metaMap[habit] || '');
     };
 
     const closePopup = () => {
@@ -78,12 +81,6 @@ export function CheckboxGridView({
     const cancelRename = () => {
         setEditingName(false);
         setNameDraft(selectedHabit || '');
-    };
-
-    const saveDesc = () => {
-        if (!selectedHabit) return;
-        setMeta.mutate({ habitName: selectedHabit, description: descDraft });
-        setEditingDesc(false);
     };
 
     // Fetch the other sheet (Weekdays↔Weekend) for merged stats
@@ -153,6 +150,7 @@ export function CheckboxGridView({
                                         style={{ backgroundColor: color }}
                                     />
                                     <span className="text-xs font-medium truncate">{habit}</span>
+                                    {habitMeta?.[habit] && <SlotTag slot={habitMeta[habit].slot} className="shrink-0" />}
                                     {streaks[habit]?.currentStreak > 0 && (
                                         <StreakBadge streak={streaks[habit].currentStreak} best={streaks[habit].bestStreak} className="ml-auto shrink-0" />
                                     )}
@@ -198,6 +196,21 @@ export function CheckboxGridView({
 
                                     const desc = metaMap[habit]?.trim();
                                     const checkTooltip = `${row.date}: ${checked === true ? '✓' : checked === 'skipped' ? '⏭' : '✗'}${desc ? ` — ${desc}` : ''}`;
+                                    if (habitMeta?.[habit]?.type === 'number') {
+                                        return (
+                                            <div key={row.date + rIndex} className={`shrink-0 w-[calc((100%-24px)/7)] md:w-[calc((100%-48px)/7)] h-6 md:h-8 ${today ? 'ring-1 ring-primary ring-offset-1 ring-offset-background rounded-sm' : ''}`}>
+                                                <NumericCell
+                                                    compact
+                                                    value={typeof checked === 'number' ? checked : 0}
+                                                    target={habitMeta[habit].target}
+                                                    unit={habitMeta[habit].unit}
+                                                    color={color}
+                                                    disabled={isPending}
+                                                    onChange={(v) => onSetValue(rIndex, habit, v)}
+                                                />
+                                            </div>
+                                        );
+                                    }
                                     return (
                                         <button
                                             key={row.date + rIndex}
@@ -338,7 +351,7 @@ export function CheckboxGridView({
                                     <p className="text-xs text-muted-foreground">{t('habitInfoDescriptionLabel')}</p>
                                     {!editingDesc && (
                                         <button
-                                            onClick={() => { setDescDraft(metaMap[selectedHabit] || ''); setEditingDesc(true); }}
+                                            onClick={() => setEditingDesc(true)}
                                             className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                                         >
                                             <Pencil className="w-3 h-3" /> {t('habitInfoEdit')}
@@ -346,36 +359,20 @@ export function CheckboxGridView({
                                     )}
                                 </div>
                                 {editingDesc ? (
-                                    <>
-                                        <textarea
-                                            autoFocus
-                                            value={descDraft}
-                                            onChange={(e) => setDescDraft(e.target.value)}
-                                            placeholder={t('habitInfoDescriptionPlaceholder')}
-                                            rows={4}
-                                            className="w-full bg-background border border-border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
-                                        />
-                                        <div className="flex justify-end gap-2 mt-2">
-                                            <button
-                                                onClick={() => { setEditingDesc(false); setDescDraft(metaMap[selectedHabit] || ''); }}
-                                                className="px-3 py-1 rounded-md bg-secondary hover:bg-secondary/80 text-xs font-medium transition-colors"
-                                            >
-                                                {t('habitInfoCancel')}
-                                            </button>
-                                            <button
-                                                onClick={saveDesc}
-                                                disabled={setMeta.isPending}
-                                                className="px-3 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium transition-colors disabled:opacity-60"
-                                            >
-                                                {t('habitInfoSave')}
-                                            </button>
-                                        </div>
-                                    </>
+                                    <HabitMetaEditor
+                                        meta={habitMeta?.[selectedHabit]}
+                                        saving={setMeta.isPending}
+                                        onCancel={() => setEditingDesc(false)}
+                                        onSave={(patch) => setMeta.mutate({ habitName: selectedHabit, ...patch }, { onSuccess: () => setEditingDesc(false) })}
+                                    />
                                 ) : (
-                                    <div className="text-sm whitespace-pre-wrap break-words text-foreground/90 bg-secondary/30 rounded-md p-3 border border-border/50 min-h-[60px]">
-                                        {metaMap[selectedHabit]?.trim() || (
-                                            <span className="text-muted-foreground italic text-xs">{t('habitInfoEmpty')}</span>
-                                        )}
+                                    <div className="space-y-2">
+                                        <div className="text-sm whitespace-pre-wrap break-words text-foreground/90 bg-secondary/30 rounded-md p-3 border border-border/50 min-h-[60px]">
+                                            {metaMap[selectedHabit]?.trim() || (
+                                                <span className="text-muted-foreground italic text-xs">{t('habitInfoEmpty')}</span>
+                                            )}
+                                        </div>
+                                        <HabitMetaSummary meta={habitMeta?.[selectedHabit]} />
                                     </div>
                                 )}
                             </div>

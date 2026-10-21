@@ -26,6 +26,21 @@ When `ALLOWED_EMAILS` is set (private mode), API keys of accounts outside the
 allowlist receive `403 access_restricted`, and their records are deleted from
 `apikeys.json` at the next server startup.
 
+### Habit metadata in the export
+
+`GET /api/export` also returns `habitMeta`, one entry per habit that has a row
+in the `HabitMeta` sheet:
+
+```json
+"habitMeta": {
+  "Water": { "type": "number", "target": 8, "unit": "glasses", "slot": "morning", "time": "07:30" },
+  "Read":  { "type": "check",  "target": null, "unit": null, "slot": "evening", "time": null }
+}
+```
+
+Cells of a `number` habit hold the raw daily value; it counts as done when it
+reaches `target`. `slot` is `morning`, `afternoon`, `evening` or `any`.
+
 ## 2. Endpoints
 
 All endpoints accept either authentication method above.

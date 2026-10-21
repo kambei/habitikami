@@ -40,8 +40,10 @@ object HabitApiClient {
             val body = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
             val json = JSONObject(body)
 
-            val weekdays = parseDayEntries(json.optJSONArray("weekdays"))
-            val weekend = parseDayEntries(json.optJSONArray("weekend"))
+            // Goals of quantitative habits: a numeric cell is done when it reaches its goal
+            val targets = parseTargets(json.optJSONObject("habitMeta"))
+            val weekdays = parseDayEntries(json.optJSONArray("weekdays"), targets)
+            val weekend = parseDayEntries(json.optJSONArray("weekend"), targets)
             val counters = parseCounterEntries(json.optJSONArray("counters"))
 
             // Parse colors from the new API response
@@ -56,7 +58,22 @@ object HabitApiClient {
     // Columns that are metadata, not habits
     private val SKIP_COLUMNS = setOf("date", "data", "giorno", "day", "jour", "fecha")
 
-    private fun parseDayEntries(arr: org.json.JSONArray?): List<DayEntry> {
+    /** habitMeta → habit name to goal (null = numeric without goal, absent = checkbox habit). */
+    private fun parseTargets(meta: JSONObject?): Map<String, Double?> {
+        if (meta == null) return emptyMap()
+        val out = mutableMapOf<String, Double?>()
+        val keys = meta.keys()
+        while (keys.hasNext()) {
+            val habit = keys.next()
+            val entry = meta.optJSONObject(habit) ?: continue
+            if (entry.optString("type", "check") != "number") continue
+            val target = entry.optDouble("target", Double.NaN)
+            out[habit] = if (target.isNaN() || target <= 0) null else target
+        }
+        return out
+    }
+
+    private fun parseDayEntries(arr: org.json.JSONArray?, targets: Map<String, Double?> = emptyMap()): List<DayEntry> {
         if (arr == null) return emptyList()
         val result = mutableListOf<DayEntry>()
         for (i in 0 until arr.length()) {
@@ -75,8 +92,14 @@ object HabitApiClient {
                     }
                 } else {
                     val value = obj.optString(key, "").trim()
-                    // Cells are "TRUE"/"FALSE" (checkbox), "HALF" or "SKIP"
-                    habits[key] = value.equals("TRUE", ignoreCase = true)
+                    // Cells are "TRUE"/"FALSE" (checkbox), "HALF", "SKIP" or a number (quantitative habit)
+                    val numeric = value.replace(',', '.').toDoubleOrNull()
+                    habits[key] = if (numeric != null && targets.containsKey(key)) {
+                        val goal = targets[key]
+                        if (goal != null) numeric >= goal else numeric > 0
+                    } else {
+                        value.equals("TRUE", ignoreCase = true)
+                    }
                     when {
                         value.equals("HALF", ignoreCase = true) -> half.add(key)
                         value.equals("SKIP", ignoreCase = true) -> skipped.add(key)

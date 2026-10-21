@@ -560,6 +560,11 @@ export const en = {
   widgetActionSkip: '⏭️ Skip',
   widgetActionOpen: '🏠 Open app',
   widgetActionDone: 'Completed from the widget: {habit}',
+  widgetPairTitle: 'Android widgets',
+  widgetPairPhoneHint: 'Tap to send the server address and this key to the Habitikami app: every widget gets configured at once, nothing to type.',
+  widgetPairButton: 'Configure the widgets on this phone',
+  widgetPairQrHint: 'On the phone, scan this QR with the camera: it opens Habitikami and configures every widget with this key. The QR disappears when you hide the key.',
+  widgetPairQrAlt: 'QR code to configure the Android widgets',
 } as const;
 
 export type TranslationKey = keyof typeof en;

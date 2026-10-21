@@ -561,4 +561,9 @@ export const it: Record<TranslationKey, string | string[]> = {
   widgetActionSkip: '⏭️ Salta',
   widgetActionOpen: '🏠 Apri l\'app',
   widgetActionDone: 'Completata dal widget: {habit}',
+  widgetPairTitle: 'Widget Android',
+  widgetPairPhoneHint: 'Tocca per inviare indirizzo del server e chiave all\'app Habitikami: tutti i widget vengono configurati in un colpo, senza scrivere nulla.',
+  widgetPairButton: 'Configura i widget su questo telefono',
+  widgetPairQrHint: 'Dal telefono inquadra questo QR con la fotocamera: apre Habitikami e configura tutti i widget con questa chiave. Il QR sparisce quando nascondi la chiave.',
+  widgetPairQrAlt: 'QR code per configurare i widget Android',
 } as const;

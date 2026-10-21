@@ -4,6 +4,7 @@ import App from './App.tsx'
 import './index.css'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LanguageProvider } from './i18n'
+import { redirectPairingLink } from './utils/widgetPairing'
 
 const PrivacyPolicy = React.lazy(() => import('./components/PrivacyPolicy').then(module => ({ default: module.PrivacyPolicy })))
 const TermsOfService = React.lazy(() => import('./components/TermsOfService').then(module => ({ default: module.TermsOfService })))
@@ -16,6 +17,9 @@ const queryClient = new QueryClient({
     },
   },
 })
+
+// A pairing QR opens /widget-config#…: hand it over to the Android app before rendering
+redirectPairingLink();
 
 const path = window.location.pathname;
 

@@ -57,6 +57,7 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     const [apiKeyLoading, setApiKeyLoading] = useState(false);
     const [apiKeyCopied, setApiKeyCopied] = useState(false);
     const [showApiKey, setShowApiKey] = useState(false);
+    const [apiKeyRegenerated, setApiKeyRegenerated] = useState(false);
     const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
     // Spreadsheet ID state
@@ -97,6 +98,9 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     };
 
     const handleGenerateApiKey = async () => {
+        // Regenerating invalidates the key the Android widgets hold: ask first
+        const isRegeneration = !!apiKeyInfo?.has_key;
+        if (isRegeneration && !window.confirm(t('settingsApiKeyRegenerateConfirm'))) return;
         setApiKeyLoading(true);
         setApiKeyError(null);
         setNewApiKey(null);
@@ -106,6 +110,7 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
         } else {
             setNewApiKey(result.api_key);
             setShowApiKey(true);
+            setApiKeyRegenerated(isRegeneration);
             await loadApiKeyInfo();
         }
         setApiKeyLoading(false);
@@ -120,6 +125,7 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
         } else {
             setApiKeyInfo({ has_key: false });
             setNewApiKey(null);
+            setApiKeyRegenerated(false);
         }
         setApiKeyLoading(false);
     };
@@ -605,6 +611,9 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                                 )}>
                                     {newApiKey && (
                                         <p className="text-xs text-emerald-300 font-medium">{t('settingsApiKeyNewWarning')}</p>
+                                    )}
+                                    {newApiKey && apiKeyRegenerated && (
+                                        <p className="text-xs text-amber-300">{t('settingsApiKeyRegeneratedNote')}</p>
                                     )}
                                     <div className="flex items-center gap-2">
                                         <code className="flex-1 text-xs bg-background/70 px-3 py-2 rounded font-mono break-all select-all">

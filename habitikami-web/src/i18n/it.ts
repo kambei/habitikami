@@ -478,4 +478,6 @@ export const it: Record<TranslationKey, string | string[]> = {
   tourReplay: 'Guida App',
   logoutClearAiKeys: 'Rimuovere anche le chiavi AI (Gemini/Anthropic) salvate su questo dispositivo?',
   onboardingSpreadsheetInvalid: 'Incolla l\'ID del foglio o il link completo di Google Sheets.',
+  settingsApiKeyRegenerateConfirm: 'Rigenerare la API key? I widget Android configurati con la chiave attuale smetteranno di funzionare finché non inserisci quella nuova.',
+  settingsApiKeyRegeneratedNote: 'I widget Android usano ancora la vecchia chiave: apri le impostazioni del widget sul telefono e incolla la nuova.',
 } as const;

@@ -477,6 +477,8 @@ export const en = {
   tourReplay: 'App Guide',
   logoutClearAiKeys: 'Also remove the AI keys (Gemini/Anthropic) saved on this device?',
   onboardingSpreadsheetInvalid: 'Paste the Spreadsheet ID or the full Google Sheets link.',
+  settingsApiKeyRegenerateConfirm: 'Regenerate the API key? The Android widgets configured with the current key will stop working until you enter the new one.',
+  settingsApiKeyRegeneratedNote: 'Your Android widgets still use the old key: open the widget settings on the phone and paste the new key.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

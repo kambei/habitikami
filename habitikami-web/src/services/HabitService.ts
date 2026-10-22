@@ -656,6 +656,18 @@ class HabitServiceImpl {
         return letter;
     }
 
+    /** Raw value of one cell (used by the offline replay to detect conflicts). */
+    async getCellValue(sheetName: string, rowIndex: number, colIndex: number): Promise<{ value: string } | { error: string }> {
+        try {
+            await this.ensureClient();
+            const range = `${sheetName}!${this.getColumnLetter(colIndex)}${rowIndex}`;
+            const res = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: this.getSpreadsheetId(), range });
+            return { value: String(res.result.values?.[0]?.[0] ?? '') };
+        } catch (e: any) {
+            return { error: e.result?.error?.message || e.message };
+        }
+    }
+
     async updateCell(sheetName: string, rowIndex: number, colIndex: number, value: boolean | 'SKIP' | 'HALF' | number) {
         try {
             await this.ensureClient();

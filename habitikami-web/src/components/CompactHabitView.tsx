@@ -8,6 +8,7 @@ import { useSheetData } from '../hooks/useSheetData';
 import { useUpdateCell } from '../hooks/useHabitMutations';
 import { useHabitStreaks } from '../hooks/useStreaks';
 import { StreakBadge } from './ui/StreakBadge';
+import { LoadError } from './ui/LoadError';
 import { MilestoneCelebration } from './MilestoneCelebration';
 import { useHabitMeta } from '../hooks/useHabitMutations';
 import { countsAsDone } from '../utils/streaks';
@@ -41,7 +42,7 @@ export function CompactHabitView({ pendingAction = null, onActionHandled }: Comp
     const pad = (n: number) => n < 10 ? '0' + n : n;
     const todayStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
 
-    const { data: sheetData, isLoading: loading, refetch } = useSheetData(sheetName, year, month);
+    const { data: sheetData, isLoading: loading, refetch, error: sheetError, fetchStatus } = useSheetData(sheetName, year, month);
     const updateCellMutation = useUpdateCell();
 
     const { habits, completedCount, meta, todayValues, hiddenBySlot, hasSlots } = useMemo(() => {
@@ -102,7 +103,8 @@ export function CompactHabitView({ pendingAction = null, onActionHandled }: Comp
             value: numericMeta ? (numericMeta.target ?? 1) : true,
             year,
             month,
-            habitName: currentHabit
+            habitName: currentHabit,
+            date: todayStr,
         });
     };
 
@@ -117,6 +119,7 @@ export function CompactHabitView({ pendingAction = null, onActionHandled }: Comp
             year,
             month,
             habitName: currentHabit,
+            date: todayStr,
         });
     };
 
@@ -159,12 +162,16 @@ export function CompactHabitView({ pendingAction = null, onActionHandled }: Comp
             value: 'SKIP',
             year,
             month,
-            habitName: currentHabit
+            habitName: currentHabit,
+            date: todayStr,
         });
     };
 
     if (loading) {
         return <div className="flex h-full items-center justify-center p-8 animate-pulse text-muted-foreground">{t('focusLoading')}</div>;
+    }
+    if (!sheetData && (sheetError || fetchStatus === 'paused')) {
+        return <LoadError error={sheetError ? (sheetError as Error).message : null} onRetry={() => refetch()} />;
     }
 
     if (!meta) {

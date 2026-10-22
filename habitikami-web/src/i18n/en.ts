@@ -619,6 +619,18 @@ export const en = {
   pushWeekly: 'Weekly report on Sundays, at',
   pushMuteHint: 'Habits with a reminder (untick to silence one):',
   pushNoHabitTimes: 'No habit has a time or a slot yet: set them from the habit info popup.',
+  offlineBadge: 'Offline',
+  offlineQueued: '{n} to sync',
+  offlineQueuedHint: '{n} change(s) saved on this device, waiting for the network. Tap to retry now.',
+  offlineQueuedChange: 'No network: change saved on this device, it will sync when you are back online.',
+  offlineSynced: '{n} offline change(s) synced',
+  offlineConflict: '{habit} on {date} had changed on the server; your offline value replaced it.',
+  offlineDropped: 'An offline change could not be saved: {error}',
+  offlineLoadTitle: 'You are offline',
+  offlineLoadHint: 'No saved copy of this data on this device. Reconnect and retry.',
+  offlineErrorTitle: 'Google Sheets did not answer',
+  offlineErrorHint: 'The server could not be reached. Check the connection and retry.',
+  retry: 'Retry',
 } as const;
 
 export type TranslationKey = keyof typeof en;

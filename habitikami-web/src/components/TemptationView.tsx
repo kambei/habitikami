@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, CheckCircle2, XCircle, Settings, Flame, ShieldCheck, ThumbsDown } from 'lucide-react';
 import { habitService } from '../services/HabitService';
+import { incrementCounterOfflineAware } from '../utils/offlineSync';
 import { cn } from '../lib/utils';
 import { useTranslation } from '../i18n';
 
@@ -52,7 +53,7 @@ export const TemptationView = () => {
         setTodayCounts(prev => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
 
         try {
-            const result = await habitService.incrementCounter(action.id);
+            const result = await incrementCounterOfflineAware(action.id);
             if (result && result.error) {
                 // Revert optimistic bump
                 setTodayCounts(prev => ({ ...prev, [key]: Math.max(0, (prev[key] || 1) - 1) }));

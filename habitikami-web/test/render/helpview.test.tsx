@@ -24,7 +24,7 @@ Object.defineProperty(navigator, 'serviceWorker', { value: { ready: Promise.reso
 (globalThis as any).Notification = { permission: 'granted', requestPermission: async () => 'granted' };
 
 import { LanguageProvider } from '../../src/i18n';
-import { HelpView } from '../../src/components/HelpView';
+import { HelpView, SettingsView } from '../../src/components/HelpView';
 
 async function render(ui: React.ReactElement) {
     const errors: unknown[] = [];
@@ -43,8 +43,12 @@ describe('HelpView renders', () => {
         expect(errors).toEqual([]);
         expect(container.textContent?.length).toBeGreaterThan(50);
     });
+    it('help menu has no settings panel', async () => {
+        const { container } = await render(<LanguageProvider><QueryClientProvider client={qc}><HelpView /></QueryClientProvider></LanguageProvider>);
+        expect(container.textContent).not.toContain('API Key');
+    });
     it('settings', async () => {
-        const { container, errors } = await render(<LanguageProvider><QueryClientProvider client={qc}><HelpView openSettings /></QueryClientProvider></LanguageProvider>);
+        const { container, errors } = await render(<LanguageProvider><QueryClientProvider client={qc}><SettingsView onBack={() => {}} /></QueryClientProvider></LanguageProvider>);
         expect(errors).toEqual([]);
         expect(container.textContent).toContain('API');
         expect(container.textContent).toContain('07:30');

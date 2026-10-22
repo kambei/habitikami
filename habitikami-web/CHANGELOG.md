@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.15.0 - 2026-10-22
+### 🏆 Achievements (#3)
+- **Sixteen trophies** judged on the data already loaded: streaks of 7/30/100, perfect day/week/month, 30 days tracked, 5 habits, 100/500/1000 completions, 50/200 temptations resisted, 10 notes, mood on 30 days.
+- **Trophies** view from the hamburger menu: unlocked and locked with progress bars, grouped by category.
+- The unlock state lives in a new `Achievements` sheet (`Id | UnlockedAt`), so every device shows the same trophies; a celebration card pops up when one is unlocked.
+
+### 📸 Shareable cards (#10)
+- **Share as image** from the streak leaderboard (per habit), from the weekly/monthly report (completion ring) and from every unlocked trophy: a 1080×1080 PNG goes to the share sheet on Android (Web Share API) or downloads on desktop. No public page, only the image leaves the device.
+
 ## 🌐 Web 5.14.3 - 2026-10-22
 ### 🔧 Fixes
 - **Missing chunk after a deploy**: when a tab's file is gone from the server (an old page served by a browser or CDN cache), the app reloads itself with a cache-busting `?v=` so a fresh page arrives even through caches that ignore headers; after two failed attempts the error is shown with the explanation.

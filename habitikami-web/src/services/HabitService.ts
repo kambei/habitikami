@@ -4,6 +4,7 @@ import { gapi } from 'gapi-script';
 import { hexToSheetColor, sheetColorToHex } from '../utils/colors';
 import { findHeaderRowIndex } from '../utils/parser';
 import type { HabitMeta, HabitNote, MoodEntry, PushPrefs, PushSettings } from '../types';
+import { ACHIEVEMENTS_SHEET, ACHIEVEMENTS_COLUMNS, ACHIEVEMENTS_RANGE, rowsToUnlocked } from '../utils/achievements';
 import { HABIT_NOTES_COLUMNS, HABIT_NOTES_RANGE, HABIT_NOTES_SHEET, noteKey, rowsToHabitNotes } from '../utils/habitNotes';
 import { MOOD_COLUMNS, MOOD_RANGE, MOOD_SHEET, moodEntryToRow, rowsToMoodEntries } from '../utils/mood';
 import { HABIT_META_COLUMNS, HABIT_META_RANGE, mergeHabitMeta, rowToHabitMeta, habitMetaToRow } from '../utils/habitMeta';
@@ -1416,6 +1417,56 @@ class HabitServiceImpl {
             return await response.json();
         } catch (e: any) {
             return { error: e.message };
+        }
+    }
+
+    // ─── Achievements sheet (Id | UnlockedAt) ────────────────────────────────
+
+    private async ensureAchievementsSheet(): Promise<void> {
+        const spreadsheetId = this.getSpreadsheetId();
+        const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId, fields: 'sheets(properties(title))' });
+        if (meta.result.sheets?.some((s: any) => s.properties?.title === ACHIEVEMENTS_SHEET)) return;
+        await gapi.client.sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: { requests: [{ addSheet: { properties: { title: ACHIEVEMENTS_SHEET, gridProperties: { frozenRowCount: 1 } } } }] }
+        });
+        await gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `${ACHIEVEMENTS_SHEET}!A1:B1`,
+            valueInputOption: 'USER_ENTERED',
+            resource: { values: [[...ACHIEVEMENTS_COLUMNS]] }
+        });
+    }
+
+    /** Unlocked achievements (id → ISO date). A missing sheet reads as {}. */
+    async getAchievements(): Promise<{ unlocked: Record<string, string> } | { error: string }> {
+        try {
+            await this.ensureClient();
+            const res = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: this.getSpreadsheetId(), range: ACHIEVEMENTS_RANGE });
+            return { unlocked: rowsToUnlocked(res.result.values || []) };
+        } catch (e: any) {
+            const msg: string = e.result?.error?.message || e.message || '';
+            if (e.status === 400 || /Unable to parse range/i.test(msg)) return { unlocked: {} };
+            return { error: msg };
+        }
+    }
+
+    /** Appends the given ids with the current time (creating the sheet on first use). */
+    async unlockAchievements(ids: string[]): Promise<{ success: boolean } | { error: string }> {
+        if (ids.length === 0) return { success: true };
+        try {
+            await this.ensureClient();
+            await this.ensureAchievementsSheet();
+            const now = new Date().toISOString();
+            await gapi.client.sheets.spreadsheets.values.append({
+                spreadsheetId: this.getSpreadsheetId(),
+                range: ACHIEVEMENTS_RANGE,
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: ids.map(id => [id, now]) }
+            });
+            return { success: true };
+        } catch (e: any) {
+            return { error: e.result?.error?.message || e.message };
         }
     }
 

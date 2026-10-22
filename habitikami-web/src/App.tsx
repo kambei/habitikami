@@ -11,7 +11,7 @@ import { startOfflineSync } from './utils/offlineSync'
 import { useQueryClient } from '@tanstack/react-query'
 import { Toaster, toast } from 'sonner'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LayoutDashboard, Settings, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone, RefreshCw, Dumbbell } from 'lucide-react'
+import { LayoutDashboard, Settings, Trophy, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone, RefreshCw, Dumbbell } from 'lucide-react'
 import { GithubIcon } from './components/ui/GithubIcon'
 import { useTranslation, type TranslationKey } from './i18n'
 
@@ -26,6 +26,8 @@ const OnboardingPage = React.lazy(lazyImport(() => import('./components/Onboardi
 const TabSelectionPage = React.lazy(lazyImport(() => import('./components/TabSelectionPage').then(m => ({ default: m.TabSelectionPage }))))
 const HelpView = React.lazy(lazyImport(() => import('./components/HelpView').then(m => ({ default: m.HelpView }))))
 const SettingsView = React.lazy(lazyImport(() => import('./components/HelpView').then(m => ({ default: m.SettingsView }))))
+const TrophiesView = React.lazy(lazyImport(() => import('./components/TrophiesView').then(m => ({ default: m.TrophiesView }))))
+const AchievementWatcher = React.lazy(lazyImport(() => import('./components/AchievementWatcher').then(m => ({ default: m.AchievementWatcher }))))
 const TrainingView = React.lazy(lazyImport(() => import('./components/TrainingView').then(m => ({ default: m.TrainingView }))))
 const UpdatesView = React.lazy(lazyImport(() => import('./components/UpdatesView').then(m => ({ default: m.UpdatesView }))))
 const AppTour = React.lazy(lazyImport(() => import('./components/AppTour').then(m => ({ default: m.AppTour }))))
@@ -156,6 +158,7 @@ const TAB_LABEL_KEYS: Record<ViewType, TranslationKey> = {
   Training: 'tabTraining',
   Help: 'tabHelp',
   Settings: 'tooltipSettings',
+  Trophies: 'trophiesTitle',
 };
 
 const TAB_ICONS: Record<ViewType, React.ElementType> = {
@@ -170,6 +173,7 @@ const TAB_ICONS: Record<ViewType, React.ElementType> = {
   Training: Dumbbell,
   Help: HeartHandshake,
   Settings: Settings,
+  Trophies: Trophy,
 };
 
 function App() {
@@ -570,6 +574,13 @@ function App() {
                           </div>
 
                           <button
+                            onClick={() => { if (activeSheet !== 'Trophies') prevTabBeforeSettings.current = activeSheet; setActiveSheet('Trophies'); setMenuOpen(false); }}
+                            className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
+                          >
+                            <Trophy className="w-4 h-4 shrink-0" />
+                            {t('trophiesTitle')}
+                          </button>
+                          <button
                             onClick={() => { if (activeSheet !== 'Settings') prevTabBeforeSettings.current = activeSheet; setActiveSheet('Settings'); setMenuOpen(false); }}
                             className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
                           >
@@ -696,6 +707,12 @@ function App() {
                   <TrainingView />
                 ) : activeSheet === 'Help' ? (
                   <HelpView />
+                ) : activeSheet === 'Trophies' ? (
+                  <TrophiesView onBack={() => {
+                    const goTo = prevTabBeforeSettings.current || defaultTab || 'Weekdays';
+                    prevTabBeforeSettings.current = null;
+                    setActiveSheet(goTo);
+                  }} />
                 ) : activeSheet === 'Settings' ? (
                   <SettingsView onBack={() => {
                     const goTo = prevTabBeforeSettings.current || defaultTab || 'Weekdays';
@@ -777,6 +794,10 @@ function App() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          <Suspense fallback={null}>
+            <AchievementWatcher onOpenTrophies={() => { prevTabBeforeSettings.current = activeSheet; setActiveSheet('Trophies'); }} />
+          </Suspense>
 
           {/* Updates Overlay */}
           <AnimatePresence>

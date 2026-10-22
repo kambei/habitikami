@@ -9,6 +9,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { createPushService } from './push.js';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const PREFS_FILE = path.join(DATA_DIR, 'preferences.json');
 const APIKEYS_FILE = path.join(DATA_DIR, 'apikeys.json');
 const RISC_REVOKED_FILE = path.join(DATA_DIR, 'risc-revoked.json');
+const PUSH_FILE = path.join(DATA_DIR, 'push.json');
 
 // Ensure data directory exists
 fs.mkdirSync(path.dirname(USERS_FILE), { recursive: true });
@@ -560,13 +562,14 @@ function isAllowedEmail(email) {
 async function purgeDisallowedAccounts() {
     if (allowedEmails.length === 0) return;
 
-    const purged = { users: 0, preferences: 0, apikeys: 0, risc: 0 };
+    const purged = { users: 0, preferences: 0, apikeys: 0, risc: 0, push: 0 };
 
     // Files keyed by email
     const emailKeyedFiles = [
         [USERS_FILE, 'users'],
         [PREFS_FILE, 'preferences'],
         [RISC_REVOKED_FILE, 'risc'],
+        [PUSH_FILE, 'push'],
     ];
     for (const [file, label] of emailKeyedFiles) {
         if (!fs.existsSync(file)) continue;
@@ -596,7 +599,7 @@ async function purgeDisallowedAccounts() {
 
     const total = Object.values(purged).reduce((a, b) => a + b, 0);
     console.log(total > 0
-        ? `Private mode: purged data of other accounts (users=${purged.users}, preferences=${purged.preferences}, apikeys=${purged.apikeys}, risc=${purged.risc})`
+        ? `Private mode: purged data of other accounts (users=${purged.users}, preferences=${purged.preferences}, apikeys=${purged.apikeys}, risc=${purged.risc}, push=${purged.push})`
         : 'Private mode: no data of other accounts found.');
 }
 
@@ -746,6 +749,7 @@ app.post('/api/auth/exchange', authLimiter, validateOrigin, async (req, res) => 
             } catch (e) {
                 console.error('Failed to update refresh token in API key:', e);
             }
+            pushService.updateRefreshToken(email, tokenData.refresh_token).catch(e => console.error('Failed to update push refresh token:', e));
         }
 
         res.json({
@@ -1551,6 +1555,91 @@ async function readHabitMeta(sheets, spreadsheetId) {
     }
 }
 
+// ─── Web push reminders (push.js) ────────────────────────────────────────────
+
+const pushService = createPushService({
+    dataDir: DATA_DIR, encryptToken, decryptToken, refreshAccessToken, getUserSheetsClient,
+    rowsToObjects, readHabitMeta, isAllowedEmail, logId, withJsonFile,
+});
+
+// Bearer-only auth for the push endpoints (the browser is the subscriber)
+async function pushUser(req, res) {
+    const bearer = extractBearer(req);
+    if (!bearer) { res.status(401).json({ error: 'Missing access token' }); return null; }
+    return requireAllowedEmail(bearer, res);
+}
+
+app.get('/api/push/public-key', apiLimiter, (req, res) => {
+    try {
+        res.json({ key: pushService.publicKey });
+    } catch (e) {
+        console.error('Push public key error:', e);
+        res.status(500).json({ error: 'Push not configured' });
+    }
+});
+
+app.get('/api/push/settings', apiLimiter, async (req, res) => {
+    try {
+        const email = await pushUser(req, res);
+        if (!email) return;
+        res.json(pushService.settings(email));
+    } catch (e) {
+        console.error('Push settings error:', e);
+        res.status(500).json({ error: 'Failed to read push settings' });
+    }
+});
+
+app.post('/api/push/subscribe', apiLimiter, validateOrigin, async (req, res) => {
+    try {
+        const email = await pushUser(req, res);
+        if (!email) return;
+        const { subscription, refresh_token, tz, lang } = req.body || {};
+        const spreadsheetId = getUserSpreadsheetId(loadUsers(), email);
+        if (!spreadsheetId) return res.status(400).json({ error: 'No spreadsheet associated with this user' });
+        const view = await pushService.subscribe(email, { subscription, refreshToken: typeof refresh_token === 'string' ? refresh_token : null, tz, lang, spreadsheetId });
+        console.log(`Push: subscribed user=${logId(email)} (${view.devices} device(s), refresh_token=${view.hasRefreshToken})`);
+        res.json(view);
+    } catch (e) {
+        if (/Invalid subscription/.test(e.message)) return res.status(400).json({ error: e.message });
+        console.error('Push subscribe error:', e);
+        res.status(500).json({ error: 'Failed to subscribe' });
+    }
+});
+
+app.post('/api/push/unsubscribe', apiLimiter, validateOrigin, async (req, res) => {
+    try {
+        const email = await pushUser(req, res);
+        if (!email) return;
+        const endpoint = typeof req.body?.endpoint === 'string' ? req.body.endpoint : null;
+        res.json(await pushService.unsubscribe(email, endpoint));
+    } catch (e) {
+        console.error('Push unsubscribe error:', e);
+        res.status(500).json({ error: 'Failed to unsubscribe' });
+    }
+});
+
+app.post('/api/push/settings', apiLimiter, validateOrigin, async (req, res) => {
+    try {
+        const email = await pushUser(req, res);
+        if (!email) return;
+        res.json(await pushService.updatePrefs(email, req.body?.prefs || req.body || {}));
+    } catch (e) {
+        console.error('Push prefs error:', e);
+        res.status(500).json({ error: 'Failed to save push settings' });
+    }
+});
+
+app.post('/api/push/test', apiLimiter, validateOrigin, async (req, res) => {
+    try {
+        const email = await pushUser(req, res);
+        if (!email) return;
+        res.json(await pushService.sendTest(email));
+    } catch (e) {
+        console.error('Push test error:', e);
+        res.status(500).json({ error: 'Failed to send test notification' });
+    }
+});
+
 app.get('/api/export', authenticate, async (req, res) => {
     try {
         const spreadsheetId = await resolveSpreadsheetId(req);
@@ -2057,6 +2146,7 @@ if (isMainModule) {
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
     });
+    if (process.env.PUSH_SCHEDULER !== 'off') pushService.start();
 }
 
 export default app;

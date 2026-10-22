@@ -4,16 +4,39 @@ import { toast } from 'sonner';
 import { translate } from '../i18n';
 import type { HabitMeta } from '../types';
 import { mergeHabitMeta } from '../utils/habitMeta';
+import { enqueue, isNetworkError } from '../utils/offlineQueue';
+
+/** Raw cell value before an optimistic update, keyed by the mutation variables (for offline conflicts). */
+const previousCellValues = new WeakMap<object, string | undefined>();
+
+function rawCell(v: unknown): string | undefined {
+    if (v === undefined) return undefined;
+    if (v === 'skipped') return 'SKIP';
+    if (v === 'half') return 'HALF';
+    return v === true ? 'TRUE' : v === false ? 'FALSE' : String(v);
+}
 
 export function useUpdateCell() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ sheetName, rowIndex, colIndex, value }: {
+        mutationFn: async (variables: {
             sheetName: string, rowIndex: number, colIndex: number, value: boolean | 'SKIP' | 'HALF' | number,
-            year?: number, month?: number, habitName?: string
+            year?: number, month?: number, habitName?: string, date?: string
         }) => {
-            return habitService.updateCell(sheetName, rowIndex, colIndex, value);
+            const { sheetName, rowIndex, colIndex, value } = variables;
+            const queue = () => {
+                enqueue({ kind: 'cell', sheetName, rowIndex, colIndex, value, habitName: variables.habitName, date: variables.date, previousValue: previousCellValues.get(variables) });
+                toast.info(translate('offlineQueuedChange'));
+                return { success: true, queued: true };
+            };
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) return queue();
+            const res = await habitService.updateCell(sheetName, rowIndex, colIndex, value);
+            if ('error' in res) {
+                if (isNetworkError(res)) return queue();
+                throw new Error(res.error);
+            }
+            return res;
         },
         onMutate: async (variables) => {
             const { sheetName, year, month, habitName, value } = variables;
@@ -26,6 +49,11 @@ export function useUpdateCell() {
 
             // Snapshot the previous value
             const previousData = queryClient.getQueryData(queryKey);
+            try {
+                const old = previousData as { data?: { habits: Record<string, unknown> }[]; meta?: { dataStartRow: number } } | undefined;
+                const row = old?.data?.[variables.rowIndex - (old?.meta?.dataStartRow ?? 0)];
+                previousCellValues.set(variables, rawCell(row?.habits?.[habitName]));
+            } catch { /* no snapshot: the replay skips the conflict check */ }
 
             // Optimistically update to the new value
             queryClient.setQueryData(queryKey, (old: any) => {

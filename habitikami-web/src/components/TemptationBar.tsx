@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import * as Icons from 'lucide-react';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { habitService } from '../services/HabitService';
+import { incrementCounterOfflineAware } from '../utils/offlineSync';
 import { cn } from '../lib/utils';
 import { useTranslation } from '../i18n';
 import { toast } from 'sonner';
@@ -29,7 +30,7 @@ export const TemptationBar = () => {
     setActionId(action.id);
     setStatus('loading');
     try {
-      const result = await habitService.incrementCounter(action.id);
+      const result = await incrementCounterOfflineAware(action.id);
       if (result && result.error) {
         setStatus('error');
         toast.error(result.error);

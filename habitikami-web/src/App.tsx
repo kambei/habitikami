@@ -4,6 +4,9 @@ import { cn } from './lib/utils'
 import { habitService } from './services/HabitService'
 import { hasAnyProvider, clearAllKeys } from './utils/aiProvider'
 import { useWidgetSync } from './hooks/useWidgetSync'
+import { OnlineIndicator } from './components/ui/OnlineIndicator'
+import { startOfflineSync } from './utils/offlineSync'
+import { useQueryClient } from '@tanstack/react-query'
 import { Toaster, toast } from 'sonner'
 import { AnimatePresence, motion } from 'framer-motion'
 import { LayoutDashboard, Settings, Menu, LogOut, Languages, Home, Coffee, CheckSquare, BarChart2, StickyNote, Flame, Hash, HeartHandshake, HelpCircle, Info, Globe, Smartphone, RefreshCw, Dumbbell } from 'lucide-react'
@@ -215,6 +218,11 @@ function App() {
     return action === 'complete-next' || action === 'skip-next' ? action : null;
   });
   useWidgetSync(isLoggedIn && !!spreadsheetId);
+  const queryClientForSync = useQueryClient();
+  useEffect(() => {
+    if (!isLoggedIn || !spreadsheetId) return;
+    return startOfflineSync(queryClientForSync);
+  }, [isLoggedIn, spreadsheetId, queryClientForSync]);
   const [openSettings, setOpenSettings] = useState(false);
   const prevTabBeforeSettings = useRef<ViewType | null>(null);
   const [showTour, setShowTour] = useState(false);
@@ -633,6 +641,7 @@ function App() {
                     >
                       <img src="https://storage.ko-fi.com/cdn/logomarkLogo.png" alt="Ko-fi" width={20} height={20} className="object-contain" />
                     </a>
+                    <OnlineIndicator />
                     <GitHubDropdown />
                     <VersionDropdown />
                   </div>

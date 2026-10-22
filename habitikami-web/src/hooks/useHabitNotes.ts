@@ -4,6 +4,7 @@ import { habitService } from '../services/HabitService';
 import type { HabitNote } from '../types';
 import { noteKey } from '../utils/habitNotes';
 import { translate } from '../i18n';
+import { enqueue, isNetworkError } from '../utils/offlineQueue';
 
 export const HABIT_NOTES_KEY = ['habitNotes'] as const;
 
@@ -25,8 +26,13 @@ export function useSetHabitNote() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({ date, habit, note }: HabitNote) => {
+            const queue = () => { enqueue({ kind: 'note', date, habit, note }); toast.info(translate('offlineQueuedChange')); };
+            if (typeof navigator !== 'undefined' && navigator.onLine === false) return queue();
             const result = await habitService.setHabitNote(date, habit, note);
-            if ('error' in result) throw new Error(result.error);
+            if ('error' in result) {
+                if (isNetworkError(result)) return queue();
+                throw new Error(result.error);
+            }
         },
         onMutate: async (variables) => {
             await queryClient.cancelQueries({ queryKey: HABIT_NOTES_KEY });

@@ -11,6 +11,7 @@ import { useSheetData } from "../hooks/useSheetData";
 import { descriptionsOf } from "../utils/habitMeta";
 import { useHabitStreaks } from "../hooks/useStreaks";
 import { StreakBadge } from "./ui/StreakBadge";
+import { LoadError } from "./ui/LoadError";
 import { ScrollingText } from "./ui/ScrollingText";
 import { SlotTag } from "./ui/SlotTag";
 import { NumericCell } from "./ui/NumericCell";
@@ -71,7 +72,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    const { data: sheetData, isLoading: isSheetLoading, error: sheetError } = useSheetData(sheetName, year, month);
+    const { data: sheetData, isLoading: isSheetLoading, error: sheetError, fetchStatus: sheetFetchStatus, refetch: refetchSheet } = useSheetData(sheetName, year, month);
     const { data: habitColors, isLoading: isColorsLoading } = useHabitColors(sheetName);
     const { data: habitMeta } = useHabitMeta();
     const metaMap: Record<string, string> = useMemo(() => descriptionsOf(habitMeta), [habitMeta]);
@@ -184,8 +185,9 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
             year,
             month,
             habitName: habit,
+            date: sheetData?.data[rowIndex]?.date,
         });
-    }, [meta, dataStartRow, headers, sheetName, mutations.updateCell, year, month]);
+    }, [meta, dataStartRow, headers, sheetName, mutations.updateCell, year, month, sheetData]);
 
     const handleToggle = useCallback((rowIndex: number, habit: string, currentValue: HabitCellValue) => {
         if (!meta) return;
@@ -208,10 +210,11 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                 value: newValue,
                 year,
                 month,
-                habitName: habit
+                habitName: habit,
+                date: sheetData?.data[rowIndex]?.date,
             }
         );
-    }, [meta, dataStartRow, headers, sheetName, mutations.updateCell, year, month]);
+    }, [meta, dataStartRow, headers, sheetName, mutations.updateCell, year, month, sheetData]);
 
     const handleAddHabitSubmit = (habitName: string) => {
         mutations.addHabit.mutate({ sheetName, habitName }, {
@@ -307,7 +310,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
             </div>
         );
     }
-    if (error) return <div className="p-8 text-center text-red-500">{t('error')}: {error}</div>;
+    if (error || (!sheetData && sheetFetchStatus === 'paused')) return <LoadError error={error} onRetry={() => refetchSheet()} />;
 
     return (
         <div className="overflow-x-auto pb-4 relative min-h-[500px] h-full flex flex-col">

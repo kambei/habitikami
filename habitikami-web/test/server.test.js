@@ -152,3 +152,37 @@ describe('id_token edge cases', () => {
         expect(res.body.error).toBe('Invalid id_token');
     });
 });
+
+describe('push endpoints', () => {
+    it('serves the VAPID public key', async () => {
+        const res = await request(app).get('/api/push/public-key');
+        expect(res.status).toBe(200);
+        expect(res.body.key.length).toBeGreaterThan(60);
+    });
+
+    it('subscribes the signed-in user and reports the settings', async () => {
+        const subscription = { endpoint: 'https://push.example/dev1', keys: { p256dh: 'k', auth: 'a' } };
+        const res = await request(app)
+            .post('/api/push/subscribe')
+            .set('Authorization', 'Bearer own-token')
+            .set('Origin', 'https://habitikami.test')
+            .send({ subscription, refresh_token: 'rt', tz: 'Europe/Rome', lang: 'it' });
+        expect(res.status).toBe(200);
+        expect(res.body).toMatchObject({ enabled: true, devices: 1, hasRefreshToken: true });
+
+        const settings = await request(app).get('/api/push/settings').set('Authorization', 'Bearer own-token');
+        expect(settings.body.prefs.eveningTime).toBe('21:00');
+
+        const off = await request(app)
+            .post('/api/push/unsubscribe')
+            .set('Authorization', 'Bearer own-token')
+            .set('Origin', 'https://habitikami.test')
+            .send({ endpoint: subscription.endpoint });
+        expect(off.body.enabled).toBe(false);
+    });
+
+    it('rejects an anonymous subscribe', async () => {
+        const res = await request(app).post('/api/push/subscribe').set('Origin', 'https://habitikami.test').send({});
+        expect(res.status).toBe(401);
+    });
+});

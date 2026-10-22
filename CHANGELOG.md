@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.14.0 - 2026-10-22
+### 🔔 Push Reminders (#11)
+- **Push notifications** from Help → Settings: enable on this device, send a test, choose the evening and weekly times, silence single habits. Works in the Android app too (Chrome push shows as a native notification).
+- **Per-habit reminders** at the habit time or its slot's default (morning 08:00, afternoon 14:00, evening 19:00), sent only if the habit is still pending; **evening nudge** "N habits left"; **weekly report** on Sunday with completion vs the week before, best and weakest habit.
+- Server side: `web-push` with VAPID keys (from the environment or generated once into `data/vapid.json`), subscriptions in `data/push.json` with the refresh token encrypted, a `node-cron` tick every minute in the user's time zone. The private-mode purge covers push data too.
+
+### 📴 Offline (#16, #72)
+- **Cached reads**: habits, metadata, colours, notes, mood and counters survive a reload and are shown while offline (persisted react-query cache, one week).
+- **Queued writes**: ticking cells, counter taps and notes made without network wait on the device and are replayed when back online, in order, with retries. Last write wins per cell; a toast tells when the server value had changed meanwhile.
+- **Header pill** with the offline state and the number of changes waiting (tap to retry).
+- **No endless spinner**: table, grid and Focus show "You are offline" or "Google Sheets did not answer" with a Retry button when nothing is cached.
+
 ## 🌐 Web 5.13.0 - 2026-10-21
 ### 📊 Analytics (Graphs)
 - **Habit correlations (#4)**: phi coefficient per pair over 1, 3 or 6 months, shown as a habit × habit heatmap plus plain sentences ("when you do X you tend to do Y too / to skip Y") for |φ| ≥ 0.3 on at least 20 shared days. Skips and empty cells are excluded.

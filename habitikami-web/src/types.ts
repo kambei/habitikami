@@ -100,3 +100,21 @@ export interface HabitNote {
     habit: string;
     note: string;
 }
+
+/** Push reminder preferences stored per user on the server (push.js). */
+export interface PushPrefs {
+    habitReminders: boolean;
+    eveningReminder: boolean;
+    eveningTime: string;   // "HH:MM" local
+    weeklyReport: boolean;
+    weeklyTime: string;    // "HH:MM" local, Sundays
+    muted: string[];       // habit names without reminders
+}
+
+export interface PushSettings {
+    enabled: boolean;
+    devices: number;
+    prefs: PushPrefs;
+    tz: string | null;
+    hasRefreshToken: boolean;
+}

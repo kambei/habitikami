@@ -1,5 +1,5 @@
 // Habitikami Service Worker — Cache-first for static assets, network-first for API calls
-const CACHE_NAME = 'habitikami-v5';
+const CACHE_NAME = 'habitikami-v6';
 const WIDGET_CACHE = 'widget-data';
 
 // Every Windows widget shares the same data payload (see hooks/useWidgetSync.ts)
@@ -187,6 +187,21 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/api/') || 
       url.hostname.includes('googleapis.com') ||
       url.hostname.includes('accounts.google.com')) {
+    return;
+  }
+
+  // Pages: network-first, so a deploy is picked up right away and the page
+  // never asks for chunks that no longer exist; cached shell when offline
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy));
+        }
+        return response;
+      }).catch(() => caches.match('/index.html'))
+    );
     return;
   }
 

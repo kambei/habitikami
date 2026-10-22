@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.14.1 - 2026-10-22
+### 🔧 Fixes
+- **Tabs broken after a deploy** (Help/Settings showed an error): the service worker served the cached page, which asked for chunks whose hashed names no longer existed. Pages are now network-first (cached shell only when offline) and a missing chunk reloads the page once by itself.
+- **Docker**: the runtime image copies `push.js`, so the container starts.
+
 ## 🌐 Web 5.14.0 - 2026-10-22
 ### 🔔 Push Reminders (#11)
 - **Push notifications** from Help → Settings: enable on this device, send a test, choose the evening and weekly times, silence single habits. Works in the Android app too (Chrome push shows as a native notification).

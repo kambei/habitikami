@@ -34,7 +34,7 @@ export interface HabitMeta {
 }
 
 export type SheetType = 'Weekdays' | 'Weekend' | 'Notes' | 'Counters'; // Added Notes, Counters
-export type ViewType = SheetType | 'Graphs' | 'Focus' | 'MobNotes' | 'SmokeTemptation' | 'Training' | 'Help' | 'Settings'; // Added MobNotes, SmokeTemptation, Training, Help
+export type ViewType = SheetType | 'Graphs' | 'Focus' | 'MobNotes' | 'SmokeTemptation' | 'Training' | 'Help' | 'Settings' | 'Trophies'; // Added MobNotes, SmokeTemptation, Training, Help
 
 export interface TrainingLogEntry {
     date: string;       // DD/MM/YYYY

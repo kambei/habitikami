@@ -38,10 +38,17 @@ type HelpMode = 'menu' | 'chat' | 'scheda' | 'settings' | 'mood' | 'updates' | '
 
 interface HelpViewProps {
     openSettings?: boolean;
+    /** Render only the settings panel: the back arrow leaves the view instead of showing the Help menu. */
+    settingsOnly?: boolean;
     onSettingsClosed?: () => void;
 }
 
-export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {}) {
+/** The settings panel as its own view (hamburger → Settings); Help keeps only CBT/ACT. */
+export function SettingsView({ onBack }: { onBack: () => void }) {
+    return <HelpView settingsOnly onSettingsClosed={onBack} />;
+}
+
+export function HelpView({ openSettings, onSettingsClosed, settingsOnly }: HelpViewProps = {}) {
     const { t } = useTranslation();
 
     // Provider state
@@ -70,7 +77,7 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
     const [spreadsheetError, setSpreadsheetError] = useState<string | null>(null);
     const [spreadsheetCreating, setSpreadsheetCreating] = useState(false);
 
-    const [mode, setMode] = useState<HelpMode>('menu');
+    const [mode, setMode] = useState<HelpMode>(settingsOnly ? 'settings' : 'menu');
     const [selectedScheda, setSelectedScheda] = useState<SchedaTemplate | null>(null);
 
     const [history, setHistory] = useState<Message[]>([]);
@@ -210,12 +217,12 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
         setMode('settings');
     };
 
-    // Open settings when triggered from parent (navbar gear icon)
+    // Open settings when triggered from parent (legacy prop) or as the Settings view
     useEffect(() => {
-        if (openSettings) {
+        if (openSettings || settingsOnly) {
             handleOpenSettings();
         }
-    }, [openSettings]);
+    }, [openSettings, settingsOnly]);
 
     const handleSaveSettings = (e: React.FormEvent) => {
         e.preventDefault();
@@ -536,7 +543,7 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                 <div className="max-w-lg w-full bg-card/60 backdrop-blur-md rounded-2xl border border-border/50 p-6 md:p-8 shadow-xl space-y-6 my-auto">
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={() => { setMode('menu'); onSettingsClosed?.(); }}
+                            onClick={() => { if (!settingsOnly) setMode('menu'); onSettingsClosed?.(); }}
                             className="text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-foreground/5 transition-colors"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>

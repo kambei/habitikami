@@ -1232,7 +1232,16 @@ app.use('/.well-known', express.static(path.join(__dirname, 'dist', '.well-known
     index: false,
 }));
 
-app.use(express.static(path.join(__dirname, 'dist')));
+// Hashed assets can be cached for a year; the shell, the service worker and the
+// manifests must always be revalidated or a stale page asks for chunks that no
+// longer exist after a deploy.
+const REVALIDATE = /(^\/$|\.html$|^\/sw\.js$|^\/manifest(\.it)?\.json$|^\/widgets\/)/;
+app.use(express.static(path.join(__dirname, 'dist'), {
+    setHeaders(res, filePath) {
+        if (/[\\/]assets[\\/]/.test(filePath)) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        else if (REVALIDATE.test(res.req.path)) res.setHeader('Cache-Control', 'no-cache');
+    },
+}));
 
 // ─── API token middleware (for export / counter endpoints) ────────────────────
 // Supports two auth methods (checked in order):
@@ -2127,6 +2136,7 @@ app.get('/{*splat}', (req, res) => {
         req.path.startsWith('/widgets/')) {
         return res.status(404).send('Not Found');
     }
+    res.setHeader('Cache-Control', 'no-cache');
     res.sendFile('index.html', { root: path.join(__dirname, 'dist') });
 });
 

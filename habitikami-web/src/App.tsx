@@ -25,6 +25,7 @@ const LandingPage = React.lazy(lazyImport(() => import('./components/LandingPage
 const OnboardingPage = React.lazy(lazyImport(() => import('./components/OnboardingPage').then(m => ({ default: m.OnboardingPage }))))
 const TabSelectionPage = React.lazy(lazyImport(() => import('./components/TabSelectionPage').then(m => ({ default: m.TabSelectionPage }))))
 const HelpView = React.lazy(lazyImport(() => import('./components/HelpView').then(m => ({ default: m.HelpView }))))
+const SettingsView = React.lazy(lazyImport(() => import('./components/HelpView').then(m => ({ default: m.SettingsView }))))
 const TrainingView = React.lazy(lazyImport(() => import('./components/TrainingView').then(m => ({ default: m.TrainingView }))))
 const UpdatesView = React.lazy(lazyImport(() => import('./components/UpdatesView').then(m => ({ default: m.UpdatesView }))))
 const AppTour = React.lazy(lazyImport(() => import('./components/AppTour').then(m => ({ default: m.AppTour }))))
@@ -154,6 +155,7 @@ const TAB_LABEL_KEYS: Record<ViewType, TranslationKey> = {
   SmokeTemptation: 'tabSmokeTemptation',
   Training: 'tabTraining',
   Help: 'tabHelp',
+  Settings: 'tooltipSettings',
 };
 
 const TAB_ICONS: Record<ViewType, React.ElementType> = {
@@ -167,6 +169,7 @@ const TAB_ICONS: Record<ViewType, React.ElementType> = {
   Counters: Hash,
   Training: Dumbbell,
   Help: HeartHandshake,
+  Settings: Settings,
 };
 
 function App() {
@@ -225,7 +228,6 @@ function App() {
     if (!isLoggedIn || !spreadsheetId) return;
     return startOfflineSync(queryClientForSync);
   }, [isLoggedIn, spreadsheetId, queryClientForSync]);
-  const [openSettings, setOpenSettings] = useState(false);
   const prevTabBeforeSettings = useRef<ViewType | null>(null);
   const [showTour, setShowTour] = useState(false);
   const [tourHighlight, setTourHighlight] = useState<ViewType | null>(null);
@@ -286,11 +288,6 @@ function App() {
     if (!isLoggedIn) return;
 
     localStorage.setItem('habitikami_active_view', activeSheet);
-
-    // Clear settings flag when navigating away from Help
-    if (activeSheet !== 'Help') {
-      setOpenSettings(false);
-    }
 
     if (!isMovingHistory.current) {
       if (history.state?.tab !== activeSheet) {
@@ -573,7 +570,7 @@ function App() {
                           </div>
 
                           <button
-                            onClick={() => { prevTabBeforeSettings.current = activeSheet; setOpenSettings(true); setActiveSheet('Help'); setMenuOpen(false); }}
+                            onClick={() => { if (activeSheet !== 'Settings') prevTabBeforeSettings.current = activeSheet; setActiveSheet('Settings'); setMenuOpen(false); }}
                             className="flex items-center gap-3 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded hover:bg-secondary/50 transition-colors w-full text-left"
                           >
                             <Settings className="w-4 h-4 shrink-0" />
@@ -698,8 +695,9 @@ function App() {
                 ) : activeSheet === 'Training' && canSeeTraining ? (
                   <TrainingView />
                 ) : activeSheet === 'Help' ? (
-                  <HelpView openSettings={openSettings} onSettingsClosed={() => {
-                    setOpenSettings(false);
+                  <HelpView />
+                ) : activeSheet === 'Settings' ? (
+                  <SettingsView onBack={() => {
                     const goTo = prevTabBeforeSettings.current || defaultTab || 'Weekdays';
                     prevTabBeforeSettings.current = null;
                     setActiveSheet(goTo);
@@ -790,9 +788,11 @@ function App() {
                 className="fixed inset-0 z-[100] p-4 flex items-center justify-center bg-background/80 backdrop-blur-sm"
               >
                 <div className="w-full max-w-2xl h-[80vh] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-                  <Suspense fallback={<LoaderFallback />}>
-                    <UpdatesView onBack={() => setShowUpdatesOverlay(false)} />
-                  </Suspense>
+                  <ViewErrorBoundary>
+                    <Suspense fallback={<LoaderFallback />}>
+                      <UpdatesView onBack={() => setShowUpdatesOverlay(false)} />
+                    </Suspense>
+                  </ViewErrorBoundary>
                 </div>
               </motion.div>
             )}

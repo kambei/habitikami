@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.14.2 - 2026-10-22
+### 🧭 Settings is its own view
+- **Settings** (hamburger menu) opens as a separate view with its own `#Settings` address and back arrow; **Help** keeps only the CBT/ACT tools. Before, Settings was a mode inside the Help tab.
+- A crashing tab (or the What's New overlay) now shows the error text with a Reload button instead of a black screen.
+- The page, the service worker and the manifests are served with `Cache-Control: no-cache`, hashed assets as immutable: a proxy can no longer serve a stale page that asks for chunks gone after a deploy.
+
 ## 🌐 Web 5.14.1 - 2026-10-22
 ### 🔧 Fixes
 - **Tabs broken after a deploy** (Help/Settings showed an error): the service worker served the cached page, which asked for chunks whose hashed names no longer existed. Pages are now network-first (cached shell only when offline) and a missing chunk reloads the page once by itself.

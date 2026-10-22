@@ -1896,21 +1896,129 @@ const geminiLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+// ─── Shared AI key (issue #25) ───────────────────────────────────────────────
+// SERVER_AI_PROVIDER=gemini|anthropic and SERVER_AI_KEY let people use the
+// assistant without a key of their own, up to SERVER_AI_DAILY_QUOTA calls a day
+// per account (default 20). Usage is kept in data/ai-quota.json.
+
+const AI_QUOTA_FILE = path.join(DATA_DIR, 'ai-quota.json');
+const AI_MODELS = { gemini: 'gemini-2.5-flash', anthropic: 'claude-sonnet-4-6' };
+
+function sharedAiConfig() {
+    const provider = (process.env.SERVER_AI_PROVIDER || '').trim().toLowerCase();
+    const key = (process.env.SERVER_AI_KEY || '').trim();
+    if (!key || !(provider in AI_MODELS)) return null;
+    const quota = parseInt(process.env.SERVER_AI_DAILY_QUOTA || '20', 10);
+    return { provider, key, quota: Number.isFinite(quota) && quota > 0 ? quota : 20 };
+}
+
+function todayKey() { return new Date().toISOString().slice(0, 10); }
+
+function sharedAiUsed(email) {
+    try {
+        const data = fs.existsSync(AI_QUOTA_FILE) ? JSON.parse(fs.readFileSync(AI_QUOTA_FILE, 'utf8')) : {};
+        const entry = data[email];
+        return entry && entry.day === todayKey() ? entry.used : 0;
+    } catch { return 0; }
+}
+
+/** Reserves one shared call; returns the calls left today or -1 when the quota is spent. */
+async function reserveSharedAiCall(email, quota) {
+    let left = -1;
+    await withJsonFile(AI_QUOTA_FILE, data => {
+        const day = todayKey();
+        for (const [k, v] of Object.entries(data)) if (!v || v.day !== day) delete data[k];
+        const entry = data[email] && data[email].day === day ? data[email] : { day, used: 0 };
+        if (entry.used >= quota) { left = -1; return data; }
+        entry.used += 1;
+        left = quota - entry.used;
+        data[email] = entry;
+        return data;
+    });
+    return left;
+}
+
+/** Resolves the key to use: the user's own, or the shared one within quota. */
+async function resolveAiKey(req, res, provider, email) {
+    const own = typeof req.body?.apiKey === 'string' ? req.body.apiKey.trim() : '';
+    if (own) return own;
+    const shared = sharedAiConfig();
+    if (!shared || shared.provider !== provider) {
+        res.status(400).json({ error: 'Missing apiKey', code: 'no_key' });
+        return null;
+    }
+    const left = await reserveSharedAiCall(email, shared.quota);
+    if (left < 0) {
+        res.status(429).json({ error: 'Daily quota of the shared AI key reached', code: 'quota_exceeded' });
+        return null;
+    }
+    res.setHeader('X-AI-Shared-Remaining', String(left));
+    return shared.key;
+}
+
+app.get('/api/ai/status', apiLimiter, async (req, res) => {
+    try {
+        const bearer = extractBearer(req);
+        if (!bearer) return res.status(401).json({ error: 'Missing access token' });
+        const email = await requireAllowedEmail(bearer, res);
+        if (!email) return;
+        const shared = sharedAiConfig();
+        res.json({ shared: shared ? { provider: shared.provider, quota: shared.quota, remaining: Math.max(0, shared.quota - sharedAiUsed(email)) } : null });
+    } catch (e) {
+        console.error('AI status error:', e);
+        res.status(500).json({ error: 'Failed to read AI status' });
+    }
+});
+
+// Tries the key once with a tiny request so the settings can say "valid" before saving it
+app.post('/api/ai/validate', geminiLimiter, validateOrigin, async (req, res) => {
+    try {
+        const bearer = extractBearer(req);
+        if (!bearer) return res.status(401).json({ error: 'Missing access token' });
+        if (!(await requireAllowedEmail(bearer, res))) return;
+        const { provider, apiKey } = req.body || {};
+        if (!(provider in AI_MODELS) || typeof apiKey !== 'string' || !apiKey.trim()) return res.status(400).json({ error: 'Missing provider or apiKey' });
+        const key = apiKey.trim();
+        let r;
+        if (provider === 'gemini') {
+            r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.gemini}:generateContent?key=${encodeURIComponent(key)}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'ping' }] }], generationConfig: { maxOutputTokens: 5 } }),
+            });
+        } else {
+            r = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+                body: JSON.stringify({ model: AI_MODELS.anthropic, max_tokens: 5, messages: [{ role: 'user', content: 'ping' }] }),
+            });
+        }
+        if (r.ok) return res.json({ valid: true });
+        const data = await r.json().catch(() => ({}));
+        const message = data?.error?.message || data?.message || `HTTP ${r.status}`;
+        res.json({ valid: false, status: r.status, error: message });
+    } catch (e) {
+        console.error('AI validate error:', e);
+        res.status(500).json({ error: 'Validation failed' });
+    }
+});
+
 app.post('/api/gemini/chat', geminiLimiter, validateOrigin, async (req, res) => {
     try {
         const accessToken = extractBearer(req);
         if (!accessToken) return res.status(401).json({ error: 'Missing access token' });
 
         // Verify the user is authenticated with Google
-        if (!(await requireAllowedEmail(accessToken, res))) return;
+        const email = await requireAllowedEmail(accessToken, res);
+        if (!email) return;
 
-        const { apiKey, contents, generationConfig } = req.body;
-        if (!apiKey || !contents) {
-            return res.status(400).json({ error: 'Missing apiKey or contents' });
+        const { contents, generationConfig } = req.body;
+        if (!contents) {
+            return res.status(400).json({ error: 'Missing contents' });
         }
+        const apiKey = await resolveAiKey(req, res, 'gemini', email);
+        if (!apiKey) return;
 
         const geminiRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODELS.gemini}:generateContent?key=${encodeURIComponent(apiKey)}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1938,12 +2046,15 @@ app.post('/api/anthropic/chat', geminiLimiter, validateOrigin, async (req, res) 
         if (!accessToken) return res.status(401).json({ error: 'Missing access token' });
 
         // Verify the user is authenticated with Google
-        if (!(await requireAllowedEmail(accessToken, res))) return;
+        const email = await requireAllowedEmail(accessToken, res);
+        if (!email) return;
 
-        const { apiKey, system, messages, max_tokens } = req.body;
-        if (!apiKey || !messages) {
-            return res.status(400).json({ error: 'Missing apiKey or messages' });
+        const { system, messages, max_tokens } = req.body;
+        if (!messages) {
+            return res.status(400).json({ error: 'Missing messages' });
         }
+        const apiKey = await resolveAiKey(req, res, 'anthropic', email);
+        if (!apiKey) return;
 
         console.log(`[Anthropic Proxy] Requesting chat: system length=${system?.length}, messages count=${messages?.length}`);
 
@@ -1955,7 +2066,7 @@ app.post('/api/anthropic/chat', geminiLimiter, validateOrigin, async (req, res) 
                 'anthropic-version': '2023-06-01',
             },
             body: JSON.stringify({
-                model: 'claude-sonnet-4-6',
+                model: AI_MODELS.anthropic,
                 max_tokens: max_tokens || 4096,
                 system,
                 messages,

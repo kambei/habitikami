@@ -186,3 +186,64 @@ describe('push endpoints', () => {
         expect(res.status).toBe(401);
     });
 });
+
+describe('AI shared key and validation', () => {
+    it('reports no shared key when the environment has none', async () => {
+        const res = await request(app).get('/api/ai/status').set('Authorization', 'Bearer own-token');
+        expect(res.status).toBe(200);
+        expect(res.body.shared).toBeNull();
+    });
+
+    it('refuses a chat without a key when no shared key exists', async () => {
+        const res = await request(app)
+            .post('/api/gemini/chat')
+            .set('Authorization', 'Bearer own-token')
+            .set('Origin', 'https://habitikami.test')
+            .send({ contents: [{ role: 'user', parts: [{ text: 'hi' }] }] });
+        expect(res.status).toBe(400);
+        expect(res.body.code).toBe('no_key');
+    });
+
+    it('uses the shared key within the daily quota, then says so', async () => {
+        process.env.SERVER_AI_PROVIDER = 'gemini';
+        process.env.SERVER_AI_KEY = 'shared-key';
+        process.env.SERVER_AI_DAILY_QUOTA = '2';
+        const seen = [];
+        fetchMock.mockImplementation(async (url) => {
+            const u = String(url);
+            if (u.startsWith('https://oauth2.googleapis.com/tokeninfo')) return jsonResponse(google.tokeninfo);
+            if (u.includes('generativelanguage.googleapis.com')) { seen.push(u); return jsonResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }); }
+            throw new Error(`Unexpected fetch in test: ${u}`);
+        });
+        const send = () => request(app).post('/api/gemini/chat').set('Authorization', 'Bearer own-token').set('Origin', 'https://habitikami.test').send({ contents: [{ role: 'user', parts: [{ text: 'hi' }] }] });
+        let res = await send();
+        expect(res.status).toBe(200);
+        expect(res.headers['x-ai-shared-remaining']).toBe('1');
+        expect(seen[0]).toContain('key=shared-key');
+        const status = await request(app).get('/api/ai/status').set('Authorization', 'Bearer own-token');
+        expect(status.body.shared).toEqual({ provider: 'gemini', quota: 2, remaining: 1 });
+        await send();
+        res = await send();
+        expect(res.status).toBe(429);
+        expect(res.body.code).toBe('quota_exceeded');
+        // an own key still works when the quota is spent
+        res = await request(app).post('/api/gemini/chat').set('Authorization', 'Bearer own-token').set('Origin', 'https://habitikami.test').send({ apiKey: 'mine', contents: [{ role: 'user', parts: [{ text: 'hi' }] }] });
+        expect(res.status).toBe(200);
+        expect(seen.at(-1)).toContain('key=mine');
+        delete process.env.SERVER_AI_PROVIDER; delete process.env.SERVER_AI_KEY; delete process.env.SERVER_AI_DAILY_QUOTA;
+    });
+
+    it('validates a key with one small call', async () => {
+        fetchMock.mockImplementation(async (url) => {
+            const u = String(url);
+            if (u.startsWith('https://oauth2.googleapis.com/tokeninfo')) return jsonResponse(google.tokeninfo);
+            if (u.includes('api.anthropic.com')) return jsonResponse({ type: 'error', error: { message: 'invalid x-api-key' } }, 401);
+            throw new Error(`Unexpected fetch in test: ${u}`);
+        });
+        const res = await request(app).post('/api/ai/validate').set('Authorization', 'Bearer own-token').set('Origin', 'https://habitikami.test').send({ provider: 'anthropic', apiKey: 'sk-ant-bad' });
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ valid: false, status: 401, error: 'invalid x-api-key' });
+        const bad = await request(app).post('/api/ai/validate').set('Authorization', 'Bearer own-token').set('Origin', 'https://habitikami.test').send({ provider: 'nope', apiKey: 'x' });
+        expect(bad.status).toBe(400);
+    });
+});

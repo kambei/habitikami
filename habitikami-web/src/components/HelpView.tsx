@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { HeartHandshake, Key, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Sparkles, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2, FilePlus2, Loader2, ScanLine, LayoutTemplate } from 'lucide-react';
+import { HeartHandshake, Key, RefreshCcw, HelpCircle, FileText, ClipboardList, Shield, Check, Settings, BarChart3, Copy, Trash2, Eye, EyeOff, Table2, FilePlus2, Loader2, ScanLine, LayoutTemplate } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import type { GuidedStep } from '../types';
@@ -13,17 +13,16 @@ import { TemptationSettings } from './TemptationSettings';
 import { HabitTemplatesPicker } from './HabitTemplatesPicker';
 import { WidgetPairing } from './WidgetPairing';
 import { PushSettings } from './PushSettings';
+import { AIKeyWizard } from './AIKeyWizard';
 import type { SchedaTemplate } from '../data/schedeTemplates';
 import {
-    type AIProvider,
     type AIProviderConfig,
     getActiveProvider,
     getGeminiKey,
     getAnthropicKey,
-    setGeminiKey,
-    setAnthropicKey,
     getProviderLabel,
     callAI,
+    fetchAiStatus,
 } from '../utils/aiProvider';
 import { MoodGraph } from './MoodGraph';
 import { saveMoodEntry } from '../hooks/useMood';
@@ -55,11 +54,18 @@ export function HelpView({ openSettings, onSettingsClosed, settingsOnly }: HelpV
     const [providerConfig, setProviderConfig] = useState<AIProviderConfig | null>(() => getActiveProvider());
     const [isKeySetup, setIsKeySetup] = useState(() => !!getActiveProvider());
 
+    // The server may offer a shared AI key (issue #25): learn it once, then re-read the config
+    useEffect(() => {
+        if (getActiveProvider()) return;
+        fetchAiStatus(habitService.getAccessToken()).then(() => {
+            const active = getActiveProvider();
+            if (active) { setProviderConfig(active); setIsKeySetup(true); }
+        });
+    }, []);
+
     // Key input state
     const [tempGeminiKey, setTempGeminiKey] = useState(() => getGeminiKey());
     const [tempAnthropicKey, setTempAnthropicKey] = useState(() => getAnthropicKey());
-    const [showGeminiHelp, setShowGeminiHelp] = useState(false);
-    const [showAnthropicHelp, setShowAnthropicHelp] = useState(false);
 
     // API key state
     const [apiKeyInfo, setApiKeyInfo] = useState<{ has_key: boolean; masked_key?: string; created_at?: string } | null>(null);
@@ -224,21 +230,6 @@ export function HelpView({ openSettings, onSettingsClosed, settingsOnly }: HelpV
         }
     }, [openSettings, settingsOnly]);
 
-    const handleSaveSettings = (e: React.FormEvent) => {
-        e.preventDefault();
-        const gemini = tempGeminiKey.trim();
-        const anthropic = tempAnthropicKey.trim();
-        setGeminiKey(gemini);
-        setAnthropicKey(anthropic);
-        const active = getActiveProvider();
-        setProviderConfig(active);
-        if (!active) {
-            setIsKeySetup(false);
-        } else {
-            setMode('menu');
-        }
-    };
-
     const callCurrentAI = async (messages: Message[]) => {
         if (!providerConfig) return;
         setIsLoading(true);
@@ -343,160 +334,6 @@ export function HelpView({ openSettings, onSettingsClosed, settingsOnly }: HelpV
     // Computed values
     const hasGemini = !!tempGeminiKey.trim();
     const hasAnthropic = !!tempAnthropicKey.trim();
-    const canSave = hasGemini || hasAnthropic;
-    const activeProviderType: AIProvider | null = hasAnthropic ? 'anthropic' : hasGemini ? 'gemini' : null;
-
-    // ── Reusable guide sections ──
-
-    const renderAnthropicGuide = () => (
-        <div className="mt-1 p-3 bg-secondary/50 rounded-lg text-xs space-y-3 text-muted-foreground text-left border border-border/50">
-            <p>1. {t('helpAnthropicStep1')} <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:underline font-medium">{t('helpAnthropicStep1Link')}</a> {t('helpAnthropicStep1Suffix')}</p>
-            <img src="/guides/anthropic-step1.svg" alt="Anthropic Console - API Keys sidebar" className="w-full rounded-lg border border-border/30" loading="lazy" />
-            <p dangerouslySetInnerHTML={{ __html: `2. ${t('helpAnthropicStep2')}` }} />
-            <p dangerouslySetInnerHTML={{ __html: `3. ${t('helpAnthropicStep3')}` }} />
-            <img src="/guides/anthropic-step2.svg" alt="Anthropic Console - Create Key" className="w-full rounded-lg border border-border/30" loading="lazy" />
-            <p>4. {t('helpAnthropicStep4')} <code className="bg-background px-1 py-0.5 rounded text-purple-400">sk-ant-...</code> {t('helpAnthropicStep4Suffix')}</p>
-            <img src="/guides/anthropic-step3.svg" alt="Anthropic Console - Copy Key" className="w-full rounded-lg border border-border/30" loading="lazy" />
-        </div>
-    );
-
-    const renderGeminiGuide = () => (
-        <div className="mt-1 p-3 bg-secondary/50 rounded-lg text-xs space-y-3 text-muted-foreground text-left border border-border/50">
-            <p>1. {t('helpApiKeyStep1')} <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium">{t('helpApiKeyStep1Link')}</a> {t('helpApiKeyStep1Suffix')}</p>
-            <p dangerouslySetInnerHTML={{ __html: `2. ${t('helpApiKeyStep2')}` }} />
-            <img src="/guides/gemini-step1.svg" alt="Google AI Studio - Create API Key" className="w-full rounded-lg border border-border/30" loading="lazy" />
-            <p>3. {t('helpApiKeyStep3')}</p>
-            <img src="/guides/gemini-step2.svg" alt="Google AI Studio - Select Project" className="w-full rounded-lg border border-border/30" loading="lazy" />
-            <p>4. {t('helpApiKeyStep4')} <code className="bg-background px-1 py-0.5 rounded text-primary">AIzaSy...</code> {t('helpApiKeyStep4Suffix')}</p>
-            <img src="/guides/gemini-step3.svg" alt="Google AI Studio - Copy Key" className="w-full rounded-lg border border-border/30" loading="lazy" />
-        </div>
-    );
-
-    const renderAnthropicCard = (idPrefix: string) => (
-        <div className={cn(
-            "rounded-xl border p-4 space-y-3 transition-all",
-            hasAnthropic
-                ? "border-purple-500/40 bg-purple-500/5"
-                : "border-border/50 bg-background/30"
-        )}>
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-purple-500/15 rounded-lg flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 text-purple-400" />
-                    </div>
-                    <div>
-                        <h3 className="font-semibold text-sm">{t('helpAnthropicSection')}</h3>
-                        <span className="text-[10px] text-muted-foreground">{t('helpProviderPaid')}</span>
-                    </div>
-                </div>
-                {hasAnthropic && activeProviderType === 'anthropic' && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">
-                        {t('helpProviderActive')}
-                    </span>
-                )}
-                {hasAnthropic && activeProviderType !== 'anthropic' && (
-                    <span className="text-[10px] font-medium text-emerald-400 flex items-center gap-1">
-                        <Check className="w-3 h-3" /> {t('helpProviderConfigured')}
-                    </span>
-                )}
-            </div>
-            <div className="space-y-2">
-                <label htmlFor={`${idPrefix}AnthropicKey`} className="text-xs font-medium text-muted-foreground">{t('helpAnthropicKeyLabel')}</label>
-                <input
-                    id={`${idPrefix}AnthropicKey`}
-                    type="password"
-                    value={tempAnthropicKey}
-                    onChange={(e) => setTempAnthropicKey(e.target.value)}
-                    placeholder="sk-ant-api03-..."
-                    className="w-full px-3 py-2.5 bg-background/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all text-sm"
-                />
-                <button
-                    type="button"
-                    onClick={() => setShowAnthropicHelp(!showAnthropicHelp)}
-                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    <HelpCircle className="w-3.5 h-3.5" />
-                    <span>{t('helpAnthropicKeyHelp')}</span>
-                </button>
-                <AnimatePresence>
-                    {showAnthropicHelp && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="overflow-hidden"
-                        >
-                            {renderAnthropicGuide()}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-        </div>
-    );
-
-    const renderGeminiCard = (idPrefix: string) => (
-        <div className={cn(
-            "rounded-xl border p-4 space-y-3 transition-all",
-            hasGemini && !hasAnthropic
-                ? "border-blue-500/40 bg-blue-500/5"
-                : hasGemini
-                    ? "border-emerald-500/30 bg-emerald-500/5"
-                    : "border-border/50 bg-background/30"
-        )}>
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-500/15 rounded-lg flex items-center justify-center">
-                        <Shield className="w-4 h-4 text-blue-400" />
-                    </div>
-                    <div>
-                        <h3 className="font-semibold text-sm">{t('helpGeminiSection')}</h3>
-                        <span className="text-[10px] text-muted-foreground">{t('helpProviderFree')}</span>
-                    </div>
-                </div>
-                {hasGemini && activeProviderType === 'gemini' && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full">
-                        {t('helpProviderActive')}
-                    </span>
-                )}
-                {hasGemini && activeProviderType !== 'gemini' && (
-                    <span className="text-[10px] font-medium text-emerald-400 flex items-center gap-1">
-                        <Check className="w-3 h-3" /> {t('helpProviderConfigured')}
-                    </span>
-                )}
-            </div>
-            <div className="space-y-2">
-                <label htmlFor={`${idPrefix}GeminiKey`} className="text-xs font-medium text-muted-foreground">{t('helpApiKeyLabel')}</label>
-                <input
-                    id={`${idPrefix}GeminiKey`}
-                    type="password"
-                    value={tempGeminiKey}
-                    onChange={(e) => setTempGeminiKey(e.target.value)}
-                    placeholder="AIzaSy..."
-                    className="w-full px-3 py-2.5 bg-background/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm"
-                />
-                <button
-                    type="button"
-                    onClick={() => setShowGeminiHelp(!showGeminiHelp)}
-                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    <HelpCircle className="w-3.5 h-3.5" />
-                    <span>{t('helpApiKeyHelp')}</span>
-                </button>
-                <AnimatePresence>
-                    {showGeminiHelp && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="overflow-hidden"
-                        >
-                            {renderGeminiGuide()}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-        </div>
-    );
 
     const renderPriorityNote = () => (
         hasGemini && hasAnthropic ? (
@@ -727,22 +564,16 @@ export function HelpView({ openSettings, onSettingsClosed, settingsOnly }: HelpV
                         <HabitTemplatesPicker isOpen={templatesOpen} onClose={() => setTemplatesOpen(false)} />
                     </div>
 
-                    {/* 4. AI API Keys */}
+                    {/* 4. AI assistant: guided key setup (issue #25) */}
                     <div className="border-t border-border/50 pt-5">
-                        <form onSubmit={handleSaveSettings} className="space-y-5">
-                            {renderAnthropicCard('settings')}
-                            {renderGeminiCard('settings')}
-                            {renderPriorityNote()}
-
-                            <button
-                                type="submit"
-                                disabled={!canSave}
-                                className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-medium px-4 py-3 rounded-xl hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                                <Check className="w-4 h-4" />
-                                {t('helpSaveSettings')}
-                            </button>
-                        </form>
+                        <AIKeyWizard onConfigured={() => {
+                            const active = getActiveProvider();
+                            setProviderConfig(active);
+                            setIsKeySetup(!!active);
+                            setTempGeminiKey(getGeminiKey());
+                            setTempAnthropicKey(getAnthropicKey());
+                        }} />
+                        {renderPriorityNote()}
                     </div>
                 </div>
             </div>

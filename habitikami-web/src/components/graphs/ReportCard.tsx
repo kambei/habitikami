@@ -12,6 +12,7 @@ import { habitService } from '../../services/HabitService';
 import { targetsOf } from '../../utils/habitMeta';
 import { buildReport, type ReportPeriod } from '../../utils/report';
 import { buildCsv, downloadText, exportFileName } from '../../utils/exportCsv';
+import { printElement } from '../../utils/printElement';
 import type { CounterData } from '../../types';
 import { Skeleton } from '../ui/Skeleton';
 import { ShareButton } from '../ui/ShareButton';
@@ -60,10 +61,15 @@ export function ReportCard({ colors = {} }: { colors?: Record<string, string> })
         downloadText(csv, exportFileName(report.from, report.to, 'csv'));
     };
 
+    const printPdf = () => {
+        const node = document.getElementById('report-print-area');
+        if (node) printElement(node, t(period === 'week' ? 'reportTitleWeek' : 'reportTitleMonth'));
+    };
+
     if (isLoading) return <Skeleton className="h-64 w-full rounded-xl" />;
 
     return (
-        <div className="print-area space-y-5">
+        <div id="report-print-area" className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
                 <div className="flex gap-1">
                     {(['week', 'month'] as ReportPeriod[]).map(p => (
@@ -71,6 +77,7 @@ export function ReportCard({ colors = {} }: { colors?: Record<string, string> })
                             key={p}
                             type="button"
                             onClick={() => setPeriod(p)}
+                            aria-pressed={period === p}
                             className={`px-3 py-1 rounded-md text-xs border transition-colors ${period === p ? 'bg-primary/15 border-primary text-foreground' : 'border-border text-muted-foreground hover:bg-secondary/50'}`}
                         >
                             {t(p === 'week' ? 'reportWeek' : 'reportMonth')}
@@ -81,7 +88,7 @@ export function ReportCard({ colors = {} }: { colors?: Record<string, string> })
                     <button type="button" onClick={exportCsv} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-xs font-medium">
                         <Download className="w-3.5 h-3.5" /> {t('reportExportCsv')}
                     </button>
-                    <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-xs font-medium">
+                    <button type="button" onClick={printPdf} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-xs font-medium">
                         <Printer className="w-3.5 h-3.5" /> {t('reportExportPdf')}
                     </button>
                     <ShareButton

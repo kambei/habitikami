@@ -160,7 +160,7 @@ export function TabSelectionPage({ onComplete, currentTabs, currentDefaultTab, o
                                             <div className="flex items-center gap-1">
                                                 <button
                                                     onClick={() => setDefaultTab(defaultTab === tab.id ? null : tab.id)}
-                                                    className={`p-1.5 rounded-md transition-colors ${defaultTab === tab.id ? 'text-yellow-400' : 'text-muted-foreground/40 hover:text-yellow-400/60'}`}
+                                                    className={`p-1.5 rounded-md transition-colors ${defaultTab === tab.id ? 'text-yellow-400' : 'text-muted-foreground/70 hover:text-yellow-400/60'}`}
                                                     title={t('tabSelectionDefaultTab')}
                                                 >
                                                     <Star className="w-4 h-4" fill={defaultTab === tab.id ? 'currentColor' : 'none'} />

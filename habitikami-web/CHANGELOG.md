@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.16.0 - 2026-10-22
+### 🤖 AI assistant setup (#25)
+- **Guided setup** in Settings: pick Gemini (free) or Claude (paid, with a cost note), open the provider console with one tap, paste the key, "Check and save" tries it with a real call before storing it. The old two-card form is gone.
+- **Shared server key** (optional): with `SERVER_AI_PROVIDER` and `SERVER_AI_KEY` in `.env`, the assistant works without a personal key, up to `SERVER_AI_DAILY_QUOTA` calls a day per account (default 20); the settings show the calls left.
+
+### ♿ Accessibility (#70, #71)
+- `aria-label` on icon-only buttons (menu, temptation arrows, sort, view toggle, share, online pill), `aria-pressed` on toggles (Now/All, week/month, 1/3/6 months, sort direction, grid/table), `aria-current` on the bottom nav.
+- One visible keyboard focus ring everywhere; low-opacity muted text raised to readable contrast.
+
+### 🔧 Fixes
+- **Report PDF cut to one page**: printing now opens the report alone in a print window, so many habits paginate correctly and charts print as vectors.
+
 ## 🌐 Web 5.15.0 - 2026-10-22
 ### 🏆 Achievements (#3)
 - **Sixteen trophies** judged on the data already loaded: streaks of 7/30/100, perfect day/week/month, 30 days tracked, 5 habits, 100/500/1000 completions, 50/200 temptations resisted, 10 notes, mood on 30 days.

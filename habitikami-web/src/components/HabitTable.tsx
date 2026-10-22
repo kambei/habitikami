@@ -328,6 +328,8 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                         onClick={toggleViewMode}
                         className="p-1.5 rounded bg-secondary hover:bg-secondary/80 transition-colors"
                         title={viewMode === 'table' ? t('habitTableGridView') : t('habitTableTableView')}
+                        aria-label={viewMode === 'table' ? t('habitTableGridView') : t('habitTableTableView')}
+                        aria-pressed={viewMode === 'grid'}
                     >
                         {viewMode === 'table' ? <Grid3X3 className="w-4 h-4" /> : <Table className="w-4 h-4" />}
                     </button>

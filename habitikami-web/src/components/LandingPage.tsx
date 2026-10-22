@@ -197,7 +197,7 @@ export function LandingPage({ onSignIn, isLoading }: LandingPageProps) {
                             Habitikami
                         </span>
                     </h1>
-                    <p className="text-xs md:text-sm text-muted-foreground/60 italic tracking-wide">
+                    <p className="text-xs md:text-sm text-muted-foreground/75 italic tracking-wide">
                         {t('landingNameCaption')}
                     </p>
                     <p className="text-muted-foreground text-base md:text-lg font-medium max-w-sm mx-auto leading-relaxed">
@@ -267,7 +267,7 @@ export function LandingPage({ onSignIn, isLoading }: LandingPageProps) {
                                 </span>
                             </motion.button>
 
-                            <p className="text-[11px] text-muted-foreground/50 text-center">
+                            <p className="text-[11px] text-muted-foreground/70 text-center">
                                 {t('landingDataNote')}
                             </p>
                         </div>

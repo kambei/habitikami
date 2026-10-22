@@ -80,7 +80,7 @@ export const TemptationView = () => {
     // No temptations configured
     if (temptations.length === 0) return (
         <div className="flex flex-col items-center justify-center h-full p-8 text-center gap-4">
-            <Flame className="w-16 h-16 text-muted-foreground/40" />
+            <Flame className="w-16 h-16 text-muted-foreground/70" />
             <h2 className="text-2xl font-bold text-foreground">{t('tabSmokeTemptation')}</h2>
             <p className="text-muted-foreground max-w-sm" dangerouslySetInnerHTML={{ __html: t('smokeNoTemptations') }} />
             <div className="flex items-center gap-2 text-primary">
@@ -256,7 +256,7 @@ export const TemptationView = () => {
                 </motion.div>
             )}
 
-            <p className="text-sm text-muted-foreground/60 italic text-center pb-4 px-4 shrink-0">
+            <p className="text-sm text-muted-foreground/75 italic text-center pb-4 px-4 shrink-0">
                 {t('smokeQuote')}
             </p>
         </div>

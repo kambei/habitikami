@@ -39,6 +39,7 @@ export function CorrelationMatrix({ colors = {} }: { colors?: Record<string, str
                             key={w}
                             type="button"
                             onClick={() => setMonths(w)}
+                            aria-pressed={months === w}
                             className={`px-2.5 py-1 rounded-md text-xs border transition-colors ${months === w ? 'bg-primary/15 border-primary text-foreground' : 'border-border text-muted-foreground hover:bg-secondary/50'}`}
                         >
                             {fmt(t('correlationsMonths'), { n: w })}

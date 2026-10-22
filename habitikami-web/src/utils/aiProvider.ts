@@ -2,15 +2,29 @@ export type AIProvider = 'gemini' | 'anthropic';
 
 export interface AIProviderConfig {
     provider: AIProvider;
+    /** Empty when the server's shared key is used (issue #25). */
     apiKey: string;
+    shared?: boolean;
 }
 
 const GEMINI_KEY = 'habitikami_gemini_key';
 const ANTHROPIC_KEY = 'habitikami_anthropic_key';
+const SHARED_PROVIDER_KEY = 'habitikami_ai_shared_provider';
+
+/** Remembers that the server offers a shared key for `provider` (null to forget). */
+export function setSharedProvider(provider: AIProvider | null) {
+    if (provider) localStorage.setItem(SHARED_PROVIDER_KEY, provider);
+    else localStorage.removeItem(SHARED_PROVIDER_KEY);
+}
+
+export function getSharedProvider(): AIProvider | null {
+    const v = localStorage.getItem(SHARED_PROVIDER_KEY);
+    return v === 'gemini' || v === 'anthropic' ? v : null;
+}
 
 /**
  * Returns the active AI provider config.
- * Priority: Anthropic > Gemini
+ * Priority: Anthropic > Gemini > the server's shared key
  */
 export function getActiveProvider(): AIProviderConfig | null {
     const anthropicKey = localStorage.getItem(ANTHROPIC_KEY);
@@ -18,7 +32,36 @@ export function getActiveProvider(): AIProviderConfig | null {
 
     if (anthropicKey) return { provider: 'anthropic', apiKey: anthropicKey };
     if (geminiKey) return { provider: 'gemini', apiKey: geminiKey };
+    const shared = getSharedProvider();
+    if (shared) return { provider: shared, apiKey: '', shared: true };
     return null;
+}
+
+export interface AIStatus { shared: { provider: AIProvider; quota: number; remaining: number } | null }
+
+/** Asks the server whether a shared key exists and remembers it. */
+export async function fetchAiStatus(accessToken: string | null): Promise<AIStatus | null> {
+    try {
+        const res = await fetch('/api/ai/status', { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} });
+        if (!res.ok) return null;
+        const data = (await res.json()) as AIStatus;
+        setSharedProvider(data.shared?.provider ?? null);
+        return data;
+    } catch {
+        return null;
+    }
+}
+
+/** Tries the key with a tiny request through the server. */
+export async function validateApiKey(provider: AIProvider, apiKey: string, accessToken: string | null): Promise<{ valid: boolean; error?: string }> {
+    const res = await fetch('/api/ai/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+        body: JSON.stringify({ provider, apiKey }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { valid: false, error: data.error || `HTTP ${res.status}` };
+    return data;
 }
 
 export function hasAnyProvider(): boolean {
@@ -51,6 +94,11 @@ export function clearAllKeys() {
 export function getProviderLabel(provider: AIProvider): string {
     return provider === 'anthropic' ? 'Claude (Anthropic)' : 'Gemini (Google)';
 }
+
+export const PROVIDER_CONSOLE_URL: Record<AIProvider, string> = {
+    gemini: 'https://aistudio.google.com/app/apikey',
+    anthropic: 'https://console.anthropic.com/settings/keys',
+};
 
 /**
  * A binary attachment (image or PDF) to send alongside a user message.
@@ -148,7 +196,7 @@ export async function callAI(
 
         if (!response.ok) {
             const errData = await response.json().catch(() => null);
-            throw new Error(errData?.error?.message || `Communication error with Anthropic (HTTP ${response.status})`);
+            throw new Error((typeof errData?.error === 'string' ? errData.error : errData?.error?.message) || `Communication error with Anthropic (HTTP ${response.status})`);
         }
 
         const data = await response.json();
@@ -189,7 +237,7 @@ export async function callAI(
 
         if (!response.ok) {
             const errData = await response.json().catch(() => null);
-            throw new Error(errData?.error?.message || `Communication error with Gemini (HTTP ${response.status})`);
+            throw new Error((typeof errData?.error === 'string' ? errData.error : errData?.error?.message) || `Communication error with Gemini (HTTP ${response.status})`);
         }
 
         const data = await response.json();

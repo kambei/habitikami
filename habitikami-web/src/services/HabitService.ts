@@ -3,7 +3,7 @@ import { gapi } from 'gapi-script';
 // and we need to initialize the client.
 import { hexToSheetColor, sheetColorToHex } from '../utils/colors';
 import { findHeaderRowIndex } from '../utils/parser';
-import type { HabitMeta, HabitNote, MoodEntry } from '../types';
+import type { HabitMeta, HabitNote, MoodEntry, PushPrefs, PushSettings } from '../types';
 import { HABIT_NOTES_COLUMNS, HABIT_NOTES_RANGE, HABIT_NOTES_SHEET, noteKey, rowsToHabitNotes } from '../utils/habitNotes';
 import { MOOD_COLUMNS, MOOD_RANGE, MOOD_SHEET, moodEntryToRow, rowsToMoodEntries } from '../utils/mood';
 import { HABIT_META_COLUMNS, HABIT_META_RANGE, mergeHabitMeta, rowToHabitMeta, habitMetaToRow } from '../utils/habitMeta';
@@ -1406,6 +1406,36 @@ class HabitServiceImpl {
             return { error: e.message };
         }
     }
+
+    // ─── Web push (server push.js) ───────────────────────────────────────────
+
+    private async pushRequest<T>(path: string, body?: unknown): Promise<T | { error: string }> {
+        try {
+            const response = await fetch(path, {
+                method: body === undefined ? 'GET' : 'POST',
+                headers: { Authorization: `Bearer ${this.accessToken}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+                body: body === undefined ? undefined : JSON.stringify(body),
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) return { error: data.error || `HTTP ${response.status}` };
+            return data as T;
+        } catch (e: any) {
+            return { error: e.message };
+        }
+    }
+
+    getPushPublicKey() { return this.pushRequest<{ key: string }>('/api/push/public-key'); }
+    getPushSettings() { return this.pushRequest<PushSettings>('/api/push/settings'); }
+    /** Registers this browser; the refresh token lets the server read the sheet for reminders. */
+    subscribePush(subscription: PushSubscriptionJSON, lang: string) {
+        return this.pushRequest<PushSettings>('/api/push/subscribe', {
+            subscription, refresh_token: this.refreshToken || undefined, lang,
+            tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        });
+    }
+    unsubscribePush(endpoint: string | null) { return this.pushRequest<PushSettings>('/api/push/unsubscribe', { endpoint }); }
+    savePushPrefs(prefs: Partial<PushPrefs>) { return this.pushRequest<PushSettings>('/api/push/settings', { prefs }); }
+    sendTestPush() { return this.pushRequest<{ sent: number; dropped: number }>('/api/push/test', {}); }
 
     async getChangelog(): Promise<{ content: string; hash: string }> {
         const response = await fetch(`/api/changelog?t=${Date.now()}`);

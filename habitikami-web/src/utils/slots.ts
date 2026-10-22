@@ -18,3 +18,6 @@ export function currentSlot(date: Date = new Date()): Exclude<HabitSlot, 'any'> 
     if (h < 18) return 'afternoon';
     return 'evening';
 }
+
+/** Default reminder time of each slot (mirrors SLOT_TIMES in server push.js). */
+export const SLOT_DEFAULT_TIMES: Record<HabitSlot, string> = { any: '', morning: '08:00', afternoon: '14:00', evening: '19:00' };

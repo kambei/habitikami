@@ -12,6 +12,7 @@ import { SchedaImporter } from './SchedaImporter';
 import { TemptationSettings } from './TemptationSettings';
 import { HabitTemplatesPicker } from './HabitTemplatesPicker';
 import { WidgetPairing } from './WidgetPairing';
+import { PushSettings } from './PushSettings';
 import type { SchedaTemplate } from '../data/schedeTemplates';
 import {
     type AIProvider,
@@ -686,6 +687,11 @@ export function HelpView({ openSettings, onSettingsClosed }: HelpViewProps = {})
                                 {t('settingsApiKeyUsage')}
                             </p>
                         </div>
+                    </div>
+
+                    {/* 2b. Push reminders */}
+                    <div className="border-t border-border/50 pt-5">
+                        <PushSettings />
                     </div>
 
                     {/* 3. Temptation Management */}

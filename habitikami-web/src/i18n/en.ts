@@ -604,6 +604,21 @@ export const en = {
   reportCounters: 'Counters',
   reportExportCsv: 'CSV',
   reportExportPdf: 'PDF',
+  pushTitle: 'Push notifications',
+  pushDesc: 'Reminders on this device, even with the app closed',
+  pushUnsupported: 'This browser does not support push notifications. On iPhone, add the app to the Home Screen first.',
+  pushEnable: 'Enable on this device',
+  pushDisable: 'Disable on this device',
+  pushTest: 'Send a test',
+  pushTestSent: 'Test sent to {n} device(s)',
+  pushDevices: '{n} device(s) subscribed',
+  pushPermissionDenied: 'Notifications are blocked for this site: allow them in the browser settings and try again.',
+  pushNoRefreshToken: 'The server has no long-lived access to your sheet yet: sign out and in again so reminders can check what is still pending.',
+  pushHabitReminders: 'Reminders per habit (at the habit time or its slot: morning 08:00, afternoon 14:00, evening 19:00)',
+  pushEvening: 'Evening nudge with what is left, at',
+  pushWeekly: 'Weekly report on Sundays, at',
+  pushMuteHint: 'Habits with a reminder (untick to silence one):',
+  pushNoHabitTimes: 'No habit has a time or a slot yet: set them from the habit info popup.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

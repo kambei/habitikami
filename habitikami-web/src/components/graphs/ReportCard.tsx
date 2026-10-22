@@ -14,6 +14,7 @@ import { buildReport, type ReportPeriod } from '../../utils/report';
 import { buildCsv, downloadText, exportFileName } from '../../utils/exportCsv';
 import type { CounterData } from '../../types';
 import { Skeleton } from '../ui/Skeleton';
+import { ShareButton } from '../ui/ShareButton';
 
 function Delta({ value, suffix = '' }: { value: number | null; suffix?: string }) {
     if (value === null) return <span className="text-xs text-muted-foreground">—</span>;
@@ -83,6 +84,11 @@ export function ReportCard({ colors = {} }: { colors?: Record<string, string> })
                     <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 text-xs font-medium">
                         <Printer className="w-3.5 h-3.5" /> {t('reportExportPdf')}
                     </button>
+                    <ShareButton
+                        label
+                        fileName={`habitikami-${period}.png`}
+                        spec={() => ({ template: 'rate', title: t('shareRateTitle'), rate: report.rate, periodLabel: t(period === 'week' ? 'shareRateWeek' : 'shareRateMonth'), subtitle: t('shareRateSubtitle').replace('{n}', String(report.habits.length)), footer: `${fmtDate(report.from)} – ${fmtDate(report.to)}` })}
+                    />
                 </div>
             </div>
 

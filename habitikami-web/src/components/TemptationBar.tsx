@@ -72,6 +72,7 @@ export const TemptationBar = () => {
                     <button 
                         onClick={() => setSelectedIndex(prev => (prev - 1 + temptations.length) % temptations.length)}
                         className="p-1 hover:bg-white/5 rounded-full transition-colors"
+                        aria-label={t('prev')}
                     >
                         <ChevronLeft size={16} className="text-muted-foreground" />
                     </button>
@@ -81,6 +82,7 @@ export const TemptationBar = () => {
                     <button 
                          onClick={() => setSelectedIndex(prev => (prev + 1) % temptations.length)}
                          className="p-1 hover:bg-white/5 rounded-full transition-colors"
+                         aria-label={t('next')}
                     >
                         <ChevronRight size={16} className="text-muted-foreground" />
                     </button>

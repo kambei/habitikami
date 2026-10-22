@@ -35,6 +35,7 @@ export function BottomNav({ activeTab, onTabChange, enabledTabs }: BottomNavProp
                 <button
                     key={item.id}
                     onClick={() => onTabChange(item.id)}
+                    aria-current={activeTab === item.id ? 'page' : undefined}
                     className={cn(
                         "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors min-w-[64px] flex-shrink-0",
                         activeTab === item.id

@@ -129,11 +129,12 @@ body {
   .scroll-text > span { animation: none; }
 }
 
-/* Print only the report card (ReportCard → "PDF" button) */
-@media print {
-  body * { visibility: hidden; }
-  .print-area, .print-area * { visibility: visible; }
-  .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 16px; color: #000; }
-  .print-area .text-muted-foreground { color: #555 !important; }
-  .print-area .bg-background\/30 { background: #fff !important; }
+
+
+/* Keyboard focus: one visible ring everywhere (issue #71) */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 4px;
 }
+:focus:not(:focus-visible) { outline: none; }

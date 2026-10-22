@@ -18,6 +18,7 @@ export function OnlineIndicator() {
             type="button"
             onClick={() => { if (online) replayQueue(queryClient).catch(() => {}); }}
             title={pending > 0 ? t('offlineQueuedHint').replace('{n}', String(pending)) : label}
+            aria-label={pending > 0 ? t('offlineQueuedHint').replace('{n}', String(pending)) : label}
             className={`h-8 px-2.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 shrink-0 ${online ? 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/25' : 'bg-rose-500/15 text-rose-300'}`}
         >
             {online ? <CloudUpload className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}

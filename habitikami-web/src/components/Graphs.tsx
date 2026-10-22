@@ -271,6 +271,8 @@ export function Graphs() {
                         <button
                             onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
                             className="bg-card text-card-foreground p-2 rounded-md border border-border hover:bg-accent px-3 shrink-0"
+                            aria-label={t(sortDirection === 'asc' ? 'graphsSortAsc' : 'graphsSortDesc')}
+                            aria-pressed={sortDirection === 'asc'}
                         >
                             {sortDirection === 'asc' ? '↑' : '↓'}
                         </button>

@@ -242,12 +242,14 @@ export function CompactHabitView({ pendingAction = null, onActionHandled }: Comp
                 <div className="flex items-center justify-center gap-2 -mt-8 mb-6 text-xs">
                     <button
                         onClick={() => setSlotFilter('now')}
+                        aria-pressed={slotFilter === 'now'}
                         className={`px-3 py-1 rounded-full border transition-colors ${slotFilter === 'now' ? 'border-primary bg-primary/15 text-foreground' : 'border-border text-muted-foreground'}`}
                     >
                         {t('focusSlotNow')} · {t(slotLabelKey(currentSlot()))}
                     </button>
                     <button
                         onClick={() => setSlotFilter('all')}
+                        aria-pressed={slotFilter === 'all'}
                         className={`px-3 py-1 rounded-full border transition-colors ${slotFilter === 'all' ? 'border-primary bg-primary/15 text-foreground' : 'border-border text-muted-foreground'}`}
                     >
                         {t('focusSlotAll')}{hiddenBySlot > 0 ? ` (+${hiddenBySlot})` : ''}

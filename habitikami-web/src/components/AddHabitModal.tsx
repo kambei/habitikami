@@ -53,7 +53,7 @@ export function AddHabitModal({ isOpen, onClose, onSubmit }: AddHabitModalProps)
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full px-3 py-2 bg-secondary/20 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground/50"
+                            className="w-full px-3 py-2 bg-secondary/20 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground/70"
                             placeholder={t('addHabitPlaceholder')}
                             autoComplete="off"
                         />

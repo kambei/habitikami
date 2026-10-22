@@ -535,6 +535,9 @@ function App() {
                         onClick={() => setMenuOpen(o => !o)}
                         className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 flex items-center justify-center transition-colors shadow-sm shrink-0"
                         title="Menu"
+                        aria-label="Menu"
+                        aria-expanded={menuOpen}
+                        aria-haspopup="menu"
                       >
                         <Menu width={16} height={16} />
                         {hasNewUpdates && (
@@ -636,7 +639,7 @@ function App() {
                     <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
                       Habitikami
                     </h1>
-                    <p className="text-[10px] text-muted-foreground/50 italic leading-tight">
+                    <p className="text-[10px] text-muted-foreground/70 italic leading-tight">
                       {t('landingNameCaption')}
                     </p>
                   </div>

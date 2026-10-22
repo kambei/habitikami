@@ -323,7 +323,7 @@ export function SchedaImporter({ providerConfig, onBack }: Props) {
                             </AnimatePresence>
 
                             {/* Privacy note */}
-                            <p className="text-[11px] text-muted-foreground/60 leading-relaxed pt-2">{t('helpImportNote')}</p>
+                            <p className="text-[11px] text-muted-foreground/75 leading-relaxed pt-2">{t('helpImportNote')}</p>
                         </>
                     )}
                 </div>

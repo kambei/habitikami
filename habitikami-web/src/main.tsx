@@ -1,3 +1,4 @@
+import { lazyImport } from './utils/lazyImport'
 import React, { Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
@@ -8,8 +9,8 @@ import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persist
 import { LanguageProvider } from './i18n'
 import { redirectPairingLink } from './utils/widgetPairing'
 
-const PrivacyPolicy = React.lazy(() => import('./components/PrivacyPolicy').then(module => ({ default: module.PrivacyPolicy })))
-const TermsOfService = React.lazy(() => import('./components/TermsOfService').then(module => ({ default: module.TermsOfService })))
+const PrivacyPolicy = React.lazy(lazyImport(() => import('./components/PrivacyPolicy').then(module => ({ default: module.PrivacyPolicy }))))
+const TermsOfService = React.lazy(lazyImport(() => import('./components/TermsOfService').then(module => ({ default: module.TermsOfService }))))
 
 const CACHE_MAX_AGE = 1000 * 60 * 60 * 24 * 7; // a week of offline reads
 

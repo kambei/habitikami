@@ -1,3 +1,4 @@
+import { lazyImport } from './utils/lazyImport'
 import React, { useState, useEffect, useRef, Suspense } from 'react'
 import type { SheetType, ViewType } from './types'
 import { cn } from './lib/utils'
@@ -13,19 +14,19 @@ import { LayoutDashboard, Settings, Menu, LogOut, Languages, Home, Coffee, Check
 import { GithubIcon } from './components/ui/GithubIcon'
 import { useTranslation, type TranslationKey } from './i18n'
 
-const HabitTable = React.lazy(() => import('./components/HabitTable').then(m => ({ default: m.HabitTable })))
-const Graphs = React.lazy(() => import('./components/Graphs').then(m => ({ default: m.Graphs })))
-const CompactHabitView = React.lazy(() => import('./components/CompactHabitView').then(m => ({ default: m.CompactHabitView })))
-const MobiusNotes = React.lazy(() => import('./components/MobiusNotes').then(m => ({ default: m.MobiusNotes })))
-const TemptationView = React.lazy(() => import('./components/TemptationView').then(m => ({ default: m.TemptationView })))
-const CountersView = React.lazy(() => import('./components/CountersView').then(m => ({ default: m.CountersView })))
-const LandingPage = React.lazy(() => import('./components/LandingPage').then(m => ({ default: m.LandingPage })))
-const OnboardingPage = React.lazy(() => import('./components/OnboardingPage').then(m => ({ default: m.OnboardingPage })))
-const TabSelectionPage = React.lazy(() => import('./components/TabSelectionPage').then(m => ({ default: m.TabSelectionPage })))
-const HelpView = React.lazy(() => import('./components/HelpView').then(m => ({ default: m.HelpView })))
-const TrainingView = React.lazy(() => import('./components/TrainingView').then(m => ({ default: m.TrainingView })))
-const UpdatesView = React.lazy(() => import('./components/UpdatesView').then(m => ({ default: m.UpdatesView })))
-const AppTour = React.lazy(() => import('./components/AppTour').then(m => ({ default: m.AppTour })))
+const HabitTable = React.lazy(lazyImport(() => import('./components/HabitTable').then(m => ({ default: m.HabitTable }))))
+const Graphs = React.lazy(lazyImport(() => import('./components/Graphs').then(m => ({ default: m.Graphs }))))
+const CompactHabitView = React.lazy(lazyImport(() => import('./components/CompactHabitView').then(m => ({ default: m.CompactHabitView }))))
+const MobiusNotes = React.lazy(lazyImport(() => import('./components/MobiusNotes').then(m => ({ default: m.MobiusNotes }))))
+const TemptationView = React.lazy(lazyImport(() => import('./components/TemptationView').then(m => ({ default: m.TemptationView }))))
+const CountersView = React.lazy(lazyImport(() => import('./components/CountersView').then(m => ({ default: m.CountersView }))))
+const LandingPage = React.lazy(lazyImport(() => import('./components/LandingPage').then(m => ({ default: m.LandingPage }))))
+const OnboardingPage = React.lazy(lazyImport(() => import('./components/OnboardingPage').then(m => ({ default: m.OnboardingPage }))))
+const TabSelectionPage = React.lazy(lazyImport(() => import('./components/TabSelectionPage').then(m => ({ default: m.TabSelectionPage }))))
+const HelpView = React.lazy(lazyImport(() => import('./components/HelpView').then(m => ({ default: m.HelpView }))))
+const TrainingView = React.lazy(lazyImport(() => import('./components/TrainingView').then(m => ({ default: m.TrainingView }))))
+const UpdatesView = React.lazy(lazyImport(() => import('./components/UpdatesView').then(m => ({ default: m.UpdatesView }))))
+const AppTour = React.lazy(lazyImport(() => import('./components/AppTour').then(m => ({ default: m.AppTour }))))
 
 const LoaderFallback = () => (
   <div className="absolute inset-0 flex items-center justify-center">

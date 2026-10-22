@@ -631,6 +631,10 @@ export const en = {
   offlineErrorTitle: 'Google Sheets did not answer',
   offlineErrorHint: 'The server could not be reached. Check the connection and retry.',
   retry: 'Retry',
+  viewCrashTitle: 'This tab hit an error',
+  viewCrashHint: 'The rest of the app keeps working. Reload the page; if it happens again, send this message along.',
+  viewCrashChunk: 'The app was updated while this page was open. Reload to get the new version.',
+  viewCrashReload: 'Reload',
 } as const;
 
 export type TranslationKey = keyof typeof en;

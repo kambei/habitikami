@@ -632,4 +632,8 @@ export const it: Record<TranslationKey, string | string[]> = {
   offlineErrorTitle: 'Google Sheets non ha risposto',
   offlineErrorHint: 'Il server non è raggiungibile. Controlla la connessione e riprova.',
   retry: 'Riprova',
+  viewCrashTitle: 'Questa scheda ha avuto un errore',
+  viewCrashHint: 'Il resto dell\'app continua a funzionare. Ricarica la pagina; se succede ancora, invia questo messaggio.',
+  viewCrashChunk: 'L\'app è stata aggiornata mentre questa pagina era aperta. Ricarica per avere la nuova versione.',
+  viewCrashReload: 'Ricarica',
 } as const;

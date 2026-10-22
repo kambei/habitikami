@@ -6,6 +6,7 @@ import { habitService } from './services/HabitService'
 import { hasAnyProvider, clearAllKeys } from './utils/aiProvider'
 import { useWidgetSync } from './hooks/useWidgetSync'
 import { OnlineIndicator } from './components/ui/OnlineIndicator'
+import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary'
 import { startOfflineSync } from './utils/offlineSync'
 import { useQueryClient } from '@tanstack/react-query'
 import { Toaster, toast } from 'sonner'
@@ -682,6 +683,7 @@ function App() {
             {/* Content Rendering */}
 
             <div className="bg-card rounded-xl border border-border shadow-2xl overflow-hidden flex-1 flex flex-col relative">
+              <ViewErrorBoundary key={activeSheet}>
               <Suspense fallback={<LoaderFallback />}>
                 {activeSheet === 'Graphs' ? (
                   <Graphs />
@@ -706,6 +708,7 @@ function App() {
                   <HabitTable sheetName={activeSheet as SheetType} key={activeSheet} refreshKey={refreshKey} />
                 )}
               </Suspense>
+              </ViewErrorBoundary>
             </div>
           </main>
 

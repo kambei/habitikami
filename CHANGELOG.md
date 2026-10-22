@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.14.3 - 2026-10-22
+### 🔧 Fixes
+- **Missing chunk after a deploy**: when a tab's file is gone from the server (an old page served by a browser or CDN cache), the app reloads itself with a cache-busting `?v=` so a fresh page arrives even through caches that ignore headers; after two failed attempts the error is shown with the explanation.
+
 ## 🌐 Web 5.14.2 - 2026-10-22
 ### 🧭 Settings is its own view
 - **Settings** (hamburger menu) opens as a separate view with its own `#Settings` address and back arrow; **Help** keeps only the CBT/ACT tools. Before, Settings was a mode inside the Help tab.

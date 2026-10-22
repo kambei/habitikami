@@ -26,7 +26,7 @@ export class ViewErrorBoundary extends React.Component<{ children: React.ReactNo
                 <h2 className="text-lg font-semibold">{translate('viewCrashTitle')}</h2>
                 <p className="text-sm text-muted-foreground max-w-md">{chunk ? translate('viewCrashChunk') : translate('viewCrashHint')}</p>
                 <pre className="text-[11px] text-left bg-secondary/40 border border-border rounded-lg p-3 max-w-full overflow-auto whitespace-pre-wrap">{this.state.error.message}</pre>
-                <button type="button" onClick={() => window.location.reload()} className="px-5 py-2 rounded-full bg-secondary hover:bg-secondary/80 text-sm font-medium">
+                <button type="button" onClick={() => { const u = new URL(window.location.href); u.searchParams.set('v', Date.now().toString(36)); window.location.replace(u.toString()); }} className="px-5 py-2 rounded-full bg-secondary hover:bg-secondary/80 text-sm font-medium">
                     {translate('viewCrashReload')}
                 </button>
             </div>

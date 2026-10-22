@@ -634,6 +634,6 @@ export const it: Record<TranslationKey, string | string[]> = {
   retry: 'Riprova',
   viewCrashTitle: 'Questa scheda ha avuto un errore',
   viewCrashHint: 'Il resto dell\'app continua a funzionare. Ricarica la pagina; se succede ancora, invia questo messaggio.',
-  viewCrashChunk: 'L\'app è stata aggiornata mentre questa pagina era aperta. Ricarica per avere la nuova versione.',
+  viewCrashChunk: 'Questa pagina è una versione vecchia dell\'app e un file che le serve non c\'è più sul server. Ricarica; se continua, qualcosa davanti al server (cache del browser o CDN) serve ancora la pagina vecchia: cancella i dati del sito o svuota la cache della CDN.',
   viewCrashReload: 'Ricarica',
 } as const;

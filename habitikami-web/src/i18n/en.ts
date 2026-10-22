@@ -633,7 +633,7 @@ export const en = {
   retry: 'Retry',
   viewCrashTitle: 'This tab hit an error',
   viewCrashHint: 'The rest of the app keeps working. Reload the page; if it happens again, send this message along.',
-  viewCrashChunk: 'The app was updated while this page was open. Reload to get the new version.',
+  viewCrashChunk: 'This page is an old version of the app and a file it needs is gone from the server. Reload; if it keeps happening, something in front of the server (browser or CDN cache) is serving the old page: clear the site data or purge the CDN cache.',
   viewCrashReload: 'Reload',
 } as const;
 

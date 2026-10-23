@@ -24,7 +24,8 @@ Object.defineProperty(navigator, 'serviceWorker', { value: { ready: Promise.reso
 (globalThis as Record<string, unknown>).Notification = { permission: 'granted', requestPermission: async () => 'granted' };
 
 import { LanguageProvider } from '../../src/i18n';
-import { HelpView, SettingsView } from '../../src/components/HelpView';
+import { HelpView } from '../../src/components/HelpView';
+import { SettingsView } from '../../src/components/SettingsView';
 
 async function render(ui: React.ReactElement) {
     const errors: unknown[] = [];

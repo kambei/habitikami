@@ -5,6 +5,7 @@ import { habitService } from '../services/HabitService';
 import { incrementCounterOfflineAware } from '../utils/offlineSync';
 import { cn } from '../lib/utils';
 import { useTranslation } from '../i18n';
+import { useQueryClient } from '@tanstack/react-query';
 import { errorMessage as describeError } from '../utils/errors';
 import type { TemptationConfig, TemptationAction } from '../types';
 
@@ -13,6 +14,7 @@ const getRandomPhrase = (phrases: string[]) => phrases[Math.floor(Math.random() 
 export const TemptationView = () => {
     const { t, tArray } = useTranslation();
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const queryClient = useQueryClient();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [actionId, setActionId] = useState<string | null>(null);
     const [temptations, setTemptations] = useState<TemptationConfig[] | null>(null);
@@ -63,7 +65,13 @@ export const TemptationView = () => {
                 setErrorMessage(result.error);
             } else {
                 setStatus('success');
-                setTimeout(() => window.location.reload(), 3000);
+                setTimeout(() => {
+                    setStatus('idle');
+                    refreshTodayCounts();
+                    queryClient.invalidateQueries({ queryKey: ['counters'] });
+                    queryClient.invalidateQueries({ queryKey: ['widgetCounters'] });
+                    window.dispatchEvent(new CustomEvent('habitDataChanged'));
+                }, 3000);
             }
         } catch (e: unknown) {
             setTodayCounts(prev => ({ ...prev, [key]: Math.max(0, (prev[key] || 1) - 1) }));

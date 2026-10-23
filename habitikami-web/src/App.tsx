@@ -25,7 +25,7 @@ const LandingPage = React.lazy(lazyImport(() => import('./components/LandingPage
 const OnboardingPage = React.lazy(lazyImport(() => import('./components/OnboardingPage').then(m => ({ default: m.OnboardingPage }))))
 const TabSelectionPage = React.lazy(lazyImport(() => import('./components/TabSelectionPage').then(m => ({ default: m.TabSelectionPage }))))
 const HelpView = React.lazy(lazyImport(() => import('./components/HelpView').then(m => ({ default: m.HelpView }))))
-const SettingsView = React.lazy(lazyImport(() => import('./components/HelpView').then(m => ({ default: m.SettingsView }))))
+const SettingsView = React.lazy(lazyImport(() => import('./components/SettingsView').then(m => ({ default: m.SettingsView }))))
 const TrophiesView = React.lazy(lazyImport(() => import('./components/TrophiesView').then(m => ({ default: m.TrophiesView }))))
 const AchievementWatcher = React.lazy(lazyImport(() => import('./components/AchievementWatcher').then(m => ({ default: m.AchievementWatcher }))))
 const TrainingView = React.lazy(lazyImport(() => import('./components/TrainingView').then(m => ({ default: m.TrainingView }))))
@@ -709,7 +709,7 @@ function App() {
                 ) : activeSheet === 'Training' && canSeeTraining ? (
                   <TrainingView />
                 ) : activeSheet === 'Help' ? (
-                  <HelpView />
+                  <HelpView onOpenSettings={() => { prevTabBeforeSettings.current = 'Help'; setActiveSheet('Settings'); }} />
                 ) : activeSheet === 'Trophies' ? (
                   <TrophiesView onBack={() => {
                     const goTo = prevTabBeforeSettings.current || defaultTab || 'Weekdays';

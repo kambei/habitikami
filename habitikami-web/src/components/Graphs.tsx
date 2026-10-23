@@ -1,12 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
-import { calculateCompletionRates, calculateDailyTrends, calculateDayOfWeekStats, calculateTrainingStats, type HabitStats, type DailyTrend, type DayPerformance, type TrainingStats } from '../utils/analytics';
+import { calculateCompletionRates, calculateDailyTrends, calculateDayOfWeekStats, calculateTrainingStats, type TrainingStats } from '../utils/analytics';
 import { CompletionTrends } from './graphs/CompletionTrends';
 import { DayOfWeekPerformance } from './graphs/DayOfWeekPerformance';
 import { HabitHeatmap } from './graphs/HabitHeatmap';
 import { habitService } from "../services/HabitService";
 import type { TrainingLogEntry } from '../types';
-import { parseSheetData } from "../utils/parser";
 import { type HabitData } from '../types';
 import { parseDate } from '../utils/dateParsing';
 import { Skeleton } from './ui/Skeleton';
@@ -15,12 +14,14 @@ import { ExpandableGraph } from './graphs/ExpandableGraph';
 import { StreakLeaderboard } from './graphs/StreakLeaderboard';
 import { useHabitStreaks } from '../hooks/useStreaks';
 import { useHabitMeta } from '../hooks/useHabitMutations';
+import { useSheetData } from '../hooks/useSheetData';
+import { useHabitColors } from '../hooks/useHabitColors';
+import { useQuery } from '@tanstack/react-query';
 import { NumericHabitChart } from './graphs/NumericHabitChart';
 import { CorrelationMatrix } from './graphs/CorrelationMatrix';
 import { MoodHabitCorrelation } from './graphs/MoodHabitCorrelation';
 import { ReportCard } from './graphs/ReportCard';
 import { nextMilestones } from '../utils/projections';
-import { errorMessage } from '../utils/errors';
 
 // Deterministic color generation
 const COLORS = [
@@ -32,108 +33,61 @@ const COLORS = [
 
 export function Graphs() {
     const { t, tArray, locale } = useTranslation();
-    const [stats, setStats] = useState<HabitStats[]>([]);
-    const [dailyTrends, setDailyTrends] = useState<DailyTrend[]>([]);
-    const [dayOfWeekStats, setDayOfWeekStats] = useState<DayPerformance[]>([]);
-    const [allData, setAllData] = useState<HabitData[]>([]);
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    // Month rows and colours through react-query: cached, persisted and shared with the table
+    const weekdaysQ = useSheetData('Weekdays', year, month);
+    const weekendQ = useSheetData('Weekend', year, month);
+    const colorsWeekdays = useHabitColors('Weekdays');
+    const colorsWeekend = useHabitColors('Weekend');
+    const trainingQ = useQuery({
+        queryKey: ['trainingLog', year, month],
+        queryFn: () => habitService.getTrainingLog(year, month),
+        staleTime: 1000 * 60 * 5,
+    });
     const { streaks } = useHabitStreaks();
     const { data: habitMeta } = useHabitMeta();
     const numericHabits = Object.entries(habitMeta ?? {}).filter(([, m]) => m.type === 'number');
-    const [trainingStats, setTrainingStats] = useState<TrainingStats | null>(null);
 
-    const [currentDate, setCurrentDate] = useState(new Date());
-
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const loading = weekdaysQ.isLoading || weekendQ.isLoading;
+    const error = ((weekdaysQ.error ?? weekendQ.error) as Error | null)?.message ?? null;
     const [selectedHabit, setSelectedHabit] = useState<string>('ALL');
     const [sortMethod, setSortMethod] = useState<'default' | 'alphabetical' | 'completion'>('default');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-    const [habitColors, setHabitColors] = useState<Record<string, string>>({});
 
-    useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                const year = currentDate.getFullYear();
-                const month = currentDate.getMonth();
+    const habitColors = useMemo<Record<string, string>>(() => ({ ...(colorsWeekdays.data ?? {}), ...(colorsWeekend.data ?? {}) }), [colorsWeekdays.data, colorsWeekend.data]);
 
-                const [weekdaysRes, weekendRes, colorsResWeekdays, colorsResWeekend] = await Promise.all([
-                    habitService.getDataSubset('Weekdays', year, month),
-                    habitService.getDataSubset('Weekend', year, month),
-                    habitService.getHabitColors('Weekdays'),
-                    habitService.getHabitColors('Weekend')
-                ]);
-
-                if ('error' in weekdaysRes) throw new Error(weekdaysRes.error);
-                if ('error' in weekendRes) throw new Error(weekendRes.error);
-
-                const cleanWeekdays = parseSheetData(weekdaysRes.values);
-                const cleanWeekend = parseSheetData(weekendRes.values);
-
-                // Merge Colors
-                const mergedColors: Record<string, string> = {};
-                if (!('error' in colorsResWeekdays)) Object.assign(mergedColors, colorsResWeekdays);
-                if (!('error' in colorsResWeekend)) Object.assign(mergedColors, colorsResWeekend);
-
-                setHabitColors(mergedColors);
-
-                const combinedData = [...cleanWeekdays.data, ...cleanWeekend.data];
-
-                // sort by date ascending
-                combinedData.sort((a, b) => {
-                    return (parseDate(a.date)?.getTime() ?? 0) - (parseDate(b.date)?.getTime() ?? 0);
-                });
-
-                // Filter out future dates
-                const now = new Date();
-                now.setHours(23, 59, 59, 999);
-
-                const filteredData = combinedData.filter(d => {
-                    const date = parseDate(d.date);
-                    return date !== null && date.getTime() <= now.getTime();
-                });
-
-                setAllData(filteredData);
-
-                // 1. Overall Stats
-                const allHabits = Array.from(new Set([...cleanWeekdays.headers, ...cleanWeekend.headers]));
-                const calculatedStats = calculateCompletionRates(filteredData, allHabits);
-                setStats(calculatedStats);
-
-                // 2. Daily Trends
-                const computedTrends = calculateDailyTrends(filteredData, 30);
-                setDailyTrends(computedTrends);
-
-                // 3. Week Day Performance - pass translated day names for display
-                const dayNames = tArray('days');
-                const computedWeekStats = calculateDayOfWeekStats(filteredData, dayNames as string[]);
-                setDayOfWeekStats(computedWeekStats);
-
-                // Training stats
-                try {
-                    const trainingRes = await habitService.getTrainingLog(year, month);
-                    if (!('error' in trainingRes) && trainingRes.entries.length > 0) {
-                        const entries: TrainingLogEntry[] = trainingRes.entries.map(row => ({
-                            date: row[0] || '', section: row[1] || '', exercise: row[2] || '',
-                            session: row[3] || '', duration: row[4] || '',
-                        }));
-                        setTrainingStats(calculateTrainingStats(entries));
-                    } else {
-                        setTrainingStats(null);
-                    }
-                } catch {
-                    setTrainingStats(null);
-                }
-
-            } catch (err: unknown) {
-                setError(errorMessage(err));
-            } finally {
-                setLoading(false);
-            }
+    const { allData, stats, dailyTrends, dayOfWeekStats } = useMemo(() => {
+        const cleanWeekdays = weekdaysQ.data ?? { headers: [] as string[], data: [] as HabitData[] };
+        const cleanWeekend = weekendQ.data ?? { headers: [] as string[], data: [] as HabitData[] };
+        const combinedData = [...cleanWeekdays.data, ...cleanWeekend.data]
+            .sort((a, b) => (parseDate(a.date)?.getTime() ?? 0) - (parseDate(b.date)?.getTime() ?? 0));
+        const now = new Date();
+        now.setHours(23, 59, 59, 999);
+        const filteredData = combinedData.filter(d => {
+            const date = parseDate(d.date);
+            return date !== null && date.getTime() <= now.getTime();
+        });
+        const allHabits = Array.from(new Set([...cleanWeekdays.headers, ...cleanWeekend.headers]));
+        return {
+            allData: filteredData,
+            stats: calculateCompletionRates(filteredData, allHabits),
+            dailyTrends: calculateDailyTrends(filteredData, 30),
+            dayOfWeekStats: calculateDayOfWeekStats(filteredData, tArray('days') as string[]),
         };
+    }, [weekdaysQ.data, weekendQ.data, tArray]);
 
-        loadData();
-    }, [currentDate, locale]);
+    const trainingStats = useMemo<TrainingStats | null>(() => {
+        const res = trainingQ.data;
+        if (!res || 'error' in res || res.entries.length === 0) return null;
+        const entries: TrainingLogEntry[] = res.entries.map(row => ({
+            date: row[0] || '', section: row[1] || '', exercise: row[2] || '',
+            session: row[3] || '', duration: row[4] || '',
+        }));
+        return calculateTrainingStats(entries);
+    }, [trainingQ.data]);
 
     const getColor = (name: string) => {
         if (habitColors[name]) return habitColors[name];

@@ -119,8 +119,10 @@ export function useAddHabit() {
 export function useAddDay() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ sheetName }: { sheetName: string }) => {
-            return habitService.addDay(sheetName);
+        mutationFn: async ({ sheetName, date }: { sheetName: string; date?: Date }) => {
+            const res = await habitService.addDay(sheetName, date);
+            if ('error' in res) throw new Error(res.error);
+            return res;
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['sheetData', variables.sheetName] });

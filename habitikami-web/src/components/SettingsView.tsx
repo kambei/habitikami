@@ -9,6 +9,8 @@ import { HabitTemplatesPicker } from './HabitTemplatesPicker';
 import { WidgetPairing } from './WidgetPairing';
 import { PushSettings } from './PushSettings';
 import { AIKeyWizard } from './AIKeyWizard';
+import { getThemePref, setThemePref, type ThemePref } from '../utils/theme';
+import { Palette } from 'lucide-react';
 import { getAnthropicKey, getGeminiKey } from '../utils/aiProvider';
 import { errorMessage } from '../utils/errors';
 
@@ -34,6 +36,9 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
     const [spreadsheetSaved, setSpreadsheetSaved] = useState(false);
     const [spreadsheetError, setSpreadsheetError] = useState<string | null>(null);
     const [spreadsheetCreating, setSpreadsheetCreating] = useState(false);
+
+    const [themePref, setThemePrefState] = useState<ThemePref>(() => getThemePref());
+    const chooseTheme = (p: ThemePref) => { setThemePref(p); setThemePrefState(p); };
 
     // Re-render after the AI wizard saved or removed a key
     const [keysVersion, setKeysVersion] = useState(0);
@@ -304,6 +309,32 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
                             <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
                                 {t('settingsApiKeyUsage')}
                             </p>
+                        </div>
+                    </div>
+
+                    {/* 2a. Theme */}
+                    <div className="border-t border-border/50 pt-5">
+                        <div className="rounded-xl border border-border/50 bg-background/30 p-4 space-y-3">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 bg-pink-500/15 rounded-lg flex items-center justify-center"><Palette className="w-4 h-4 text-pink-400" /></div>
+                                <div>
+                                    <h3 className="font-semibold text-sm">{t('themeTitle')}</h3>
+                                    <span className="text-[10px] text-muted-foreground">{t('themeDesc')}</span>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                                {(['system', 'dark', 'light'] as ThemePref[]).map(p => (
+                                    <button
+                                        key={p}
+                                        type="button"
+                                        onClick={() => chooseTheme(p)}
+                                        aria-pressed={themePref === p}
+                                        className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${themePref === p ? 'border-primary bg-primary/15' : 'border-border text-muted-foreground hover:bg-secondary/50'}`}
+                                    >
+                                        {t(p === 'system' ? 'themeSystem' : p === 'dark' ? 'themeDark' : 'themeLight')}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
 

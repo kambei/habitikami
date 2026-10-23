@@ -727,7 +727,8 @@ class HabitServiceImpl {
         }
     }
 
-    async addDay(sheetName: string) {
+    /** Appends the next day's row, or `target`'s row when given (e.g. today when it is missing). */
+    async addDay(sheetName: string, target?: Date) {
         try {
             await this.ensureClient();
             const spreadsheetId = this.getSpreadsheetId();
@@ -786,6 +787,8 @@ class HabitServiceImpl {
             } else {
                 nextDate = new Date();
             }
+
+            if (target) nextDate = new Date(target.getFullYear(), target.getMonth(), target.getDate());
 
             // 4. Skip to next valid day for this sheet type
             const isWeekendDay = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
@@ -1291,7 +1294,8 @@ class HabitServiceImpl {
         }
     }
 
-    async incrementCounter(counterName: string) {
+    /** Adds `delta` (default 1, never below 0) to today's value of a counter. */
+    async incrementCounter(counterName: string, delta = 1) {
         console.log("Incrementing counter:", counterName);
         try {
             await this.ensureClient();
@@ -1318,7 +1322,7 @@ class HabitServiceImpl {
                     spreadsheetId: this.getSpreadsheetId(),
                     range: sheetName,
                     valueInputOption: 'USER_ENTERED',
-                    resource: { values: [[dateStr, 1]] }
+                    resource: { values: [[dateStr, Math.max(0, delta)]] }
                 });
                 return { success: true };
             }
@@ -1348,12 +1352,12 @@ class HabitServiceImpl {
                     spreadsheetId: this.getSpreadsheetId(),
                     range: `${sheetName}!${colLetter}${todayRowIndex + 1}`,
                     valueInputOption: 'USER_ENTERED',
-                    resource: { values: [[currentVal + 1]] }
+                    resource: { values: [[Math.max(0, currentVal + delta)]] }
                 });
             } else {
                 const newRow = new Array(headers.length).fill(0);
                 newRow[dateIdx] = dateStr;
-                newRow[counterIdx] = 1;
+                newRow[counterIdx] = Math.max(0, delta);
                 await gapi.client.sheets.spreadsheets.values.append({
                     spreadsheetId: this.getSpreadsheetId(),
                     range: sheetName,

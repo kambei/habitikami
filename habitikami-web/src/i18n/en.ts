@@ -674,6 +674,18 @@ export const en = {
   aiRemoveKey: 'Remove the saved key',
   aiCostNote: 'The key stays in this browser and is sent to the provider only through this server. You pay the provider directly; Habitikami adds nothing.',
   aiQuotaExceeded: 'The shared key reached its daily quota: add your own key in Settings or try tomorrow.',
+  addToday: 'Add today',
+  todayMissing: 'There is no row for today yet.',
+  undo: 'Undo',
+  counterUndone: 'Tap undone',
+  counterLoggedGood: 'Great job!',
+  counterLoggedBad: 'Logged. Tomorrow is another day.',
+  gridDragHint: 'Drag to reorder',
+  themeTitle: 'Theme',
+  themeDesc: 'Follows the system, or pick one',
+  themeSystem: 'System',
+  themeDark: 'Dark',
+  themeLight: 'Light',
 } as const;
 
 export type TranslationKey = keyof typeof en;

@@ -1570,6 +1570,7 @@ async function readHabitMeta(sheets, spreadsheetId) {
 const pushService = createPushService({
     dataDir: DATA_DIR, encryptToken, decryptToken, refreshAccessToken, getUserSheetsClient,
     rowsToObjects, readHabitMeta, isAllowedEmail, logId, withJsonFile,
+    locateCell, columnLetter: cellColumnLetter,
 });
 
 // Bearer-only auth for the push endpoints (the browser is the subscriber)
@@ -1636,6 +1637,18 @@ app.post('/api/push/settings', apiLimiter, validateOrigin, async (req, res) => {
     } catch (e) {
         console.error('Push prefs error:', e);
         res.status(500).json({ error: 'Failed to save push settings' });
+    }
+});
+
+// Notification buttons: the signed token in the payload is the only credential
+app.post('/api/push/action', apiLimiter, async (req, res) => {
+    try {
+        const { token, action } = req.body || {};
+        const out = await pushService.applyAction(token, action);
+        res.status(out.status).json(out.ok ? { success: true, habit: out.habit, action: out.action, message: out.message } : { error: out.error });
+    } catch (e) {
+        console.error('Push action error:', e);
+        res.status(500).json({ error: 'Failed to apply the action' });
     }
 });
 

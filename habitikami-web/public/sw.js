@@ -127,14 +127,13 @@ self.addEventListener('push', (event) => {
     badge: '/habitikami.png',
     tag: data.tag || 'habitikami',
     renotify: true,
-    data: { url: data.url || '/' },
+    actions: Array.isArray(data.actions) ? data.actions : [],
+    data: { url: data.url || '/', token: data.token || null, habit: data.habit || null },
   }));
 });
 
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/';
-  event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+function openApp(url) {
+  return clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
     for (const client of list) {
       if ('focus' in client) {
         client.navigate(url).catch(() => {});
@@ -142,7 +141,34 @@ self.addEventListener('notificationclick', (event) => {
       }
     }
     return clients.openWindow(url);
-  }));
+  });
+}
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const data = event.notification.data || {};
+  const url = data.url || '/';
+  // "Done" / "Skip" buttons write the cell without opening the app (issue #122)
+  if ((event.action === 'done' || event.action === 'skip') && data.token) {
+    event.waitUntil(
+      fetch('/api/push/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: data.token, action: event.action }),
+      }).then(async (res) => {
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.error || 'failed');
+        return self.registration.showNotification('Habitikami', {
+          body: body.message || (data.habit || ''),
+          icon: '/habitikami.png',
+          tag: 'action-' + (data.habit || ''),
+          silent: true,
+        });
+      }).catch(() => openApp(url))
+    );
+    return;
+  }
+  event.waitUntil(openApp(url));
 });
 
 const STATIC_ASSETS = [

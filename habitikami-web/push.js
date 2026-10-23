@@ -6,6 +6,7 @@ import webpush from 'web-push';
 import cron from 'node-cron';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 
 export const SLOT_TIMES = { morning: '08:00', afternoon: '14:00', evening: '19:00' };
 export const DEFAULT_PREFS = {
@@ -17,6 +18,7 @@ export const DEFAULT_PREFS = {
     muted: [],
 };
 const META_CACHE_MS = 15 * 60 * 1000;
+const ACTION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
 /** Local "YYYY-MM-DD", "HH:MM" and weekday (0 = Sunday) of `date` in `tz`. */
@@ -102,18 +104,45 @@ export function weeklyFigures(rows, today, habitMeta = {}) {
     return { rate: rate(stats.cur), prevRate: rate(stats.prev), best: ranked[0]?.name ?? null, worst: ranked.length > 1 ? ranked[ranked.length - 1].name : null };
 }
 
+/** Signs { email, habit, day, exp } so a notification button can write one cell without a session. */
+export function signActionToken(payload, secret, now = Date.now()) {
+    const body = Buffer.from(JSON.stringify({ ...payload, exp: now + ACTION_TOKEN_TTL_MS })).toString('base64url');
+    const sig = crypto.createHmac('sha256', secret).update(body).digest('base64url');
+    return `${body}.${sig}`;
+}
+
+/** The payload of a valid, unexpired token, or null. */
+export function verifyActionToken(token, secret, now = Date.now()) {
+    if (typeof token !== 'string') return null;
+    const [body, sig] = token.split('.');
+    if (!body || !sig) return null;
+    const expected = crypto.createHmac('sha256', secret).update(body).digest('base64url');
+    if (expected.length !== sig.length || !crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig))) return null;
+    try {
+        const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+        if (!payload.exp || payload.exp < now || !payload.email || !payload.habit || !payload.day) return null;
+        return payload;
+    } catch {
+        return null;
+    }
+}
+
 const TEXTS = {
     it: {
         habit: h => ({ title: `⏰ ${h}`, body: 'È il momento di farla. Tocca per aprire Focus.' }),
         evening: n => ({ title: n === 1 ? 'Ti manca 1 abitudine' : `Ti mancano ${n} abitudini`, body: 'Chiudi la giornata: tocca per vedere cosa resta.' }),
         weekly: f => ({ title: `📊 Settimana: ${f.rate}% completato`, body: `${f.prevRate === null ? '' : `Settimana prima: ${f.prevRate}%. `}${f.best ? `Migliore: ${f.best}.` : ''}${f.worst ? ` Da curare: ${f.worst}.` : ''}`.trim() }),
         test: () => ({ title: 'Habitikami', body: 'Le notifiche funzionano 🎉' }),
+        actions: { done: '✅ Fatto', skip: '⏭ Salta' },
+        confirmed: { done: h => `${h}: segnata come fatta`, skip: h => `${h}: saltata per oggi` },
     },
     en: {
         habit: h => ({ title: `⏰ ${h}`, body: 'Time to do it. Tap to open Focus.' }),
         evening: n => ({ title: n === 1 ? '1 habit left today' : `${n} habits left today`, body: 'Close the day: tap to see what is left.' }),
         weekly: f => ({ title: `📊 Week: ${f.rate}% done`, body: `${f.prevRate === null ? '' : `Week before: ${f.prevRate}%. `}${f.best ? `Best: ${f.best}.` : ''}${f.worst ? ` Needs care: ${f.worst}.` : ''}`.trim() }),
         test: () => ({ title: 'Habitikami', body: 'Notifications work 🎉' }),
+        actions: { done: '✅ Done', skip: '⏭ Skip' },
+        confirmed: { done: h => `${h}: marked done`, skip: h => `${h}: skipped for today` },
     },
 };
 
@@ -223,8 +252,17 @@ export function createPushService(deps) {
         const gone = [];
         let ok = 0;
         for (const sub of entry.subscriptions) {
-            const text = TEXTS[sub.lang === 'it' ? 'it' : 'en'][payload.kind](payload.arg);
-            const body = JSON.stringify({ ...text, tag: payload.tag, url: payload.url });
+            const lang = sub.lang === 'it' ? 'it' : 'en';
+            const text = TEXTS[lang][payload.kind](payload.arg);
+            const extra = {};
+            if (payload.kind === 'habit' && payload.day) {
+                // Buttons on the reminder write the cell through /api/push/action (issue #122)
+                extra.habit = payload.arg;
+                extra.day = payload.day;
+                extra.token = signActionToken({ email, habit: payload.arg, day: payload.day }, loadVapid().privateKey);
+                extra.actions = [{ action: 'done', title: TEXTS[lang].actions.done }, { action: 'skip', title: TEXTS[lang].actions.skip }];
+            }
+            const body = JSON.stringify({ ...text, tag: payload.tag, url: payload.url, ...extra });
             try {
                 await (deps.sendNotification || webpush.sendNotification.bind(webpush))({ endpoint: sub.endpoint, keys: sub.keys }, body, { TTL: 3600 });
                 ok++;
@@ -294,7 +332,7 @@ export function createPushService(deps) {
                         for (const habit of due) {
                             if (pending && !pending.includes(habit)) continue;
                             if (!once(email, `habit|${habit}|${clock.day}`)) continue;
-                            const r = await sendToUser(email, { kind: 'habit', arg: habit, tag: `habit-${habit}`, url: '/#Focus' }, entry);
+                            const r = await sendToUser(email, { kind: 'habit', arg: habit, tag: `habit-${habit}`, url: '/#Focus', day: clock.day }, entry);
                             report.push({ email, kind: 'habit', habit, ...r });
                         }
                     }
@@ -327,6 +365,39 @@ export function createPushService(deps) {
         return report;
     }
 
+    /**
+     * Handles a notification button: verifies the token, writes TRUE (done) or
+     * SKIP (skip) in the habit's cell of that day. Returns { ok, status, error }.
+     */
+    async function applyAction(token, action) {
+        const payload = verifyActionToken(token, loadVapid().privateKey);
+        if (!payload) return { ok: false, status: 401, error: 'invalid or expired token' };
+        if (action !== 'done' && action !== 'skip') return { ok: false, status: 400, error: 'unknown action' };
+        const entry = load()[payload.email];
+        if (!entry || !entry.refreshToken || !entry.spreadsheetId || !deps.isAllowedEmail(payload.email)) return { ok: false, status: 403, error: 'not subscribed' };
+        const [y, m, d] = payload.day.split('-');
+        const sheetDate = `${d}/${m}/${y}`;
+        const weekday = new Date(Date.UTC(+y, +m - 1, +d)).getUTCDay();
+        const sheetName = weekday === 0 || weekday === 6 ? 'Weekend' : 'Weekdays';
+        try {
+            const sheets = await sheetsFor(entry);
+            const res = await sheets.spreadsheets.values.get({ spreadsheetId: entry.spreadsheetId, range: `${sheetName}!A:Z` });
+            const pos = deps.locateCell(res.data.values || [], sheetDate, payload.habit);
+            if (pos.error) return { ok: false, status: 404, error: pos.error };
+            await sheets.spreadsheets.values.update({
+                spreadsheetId: entry.spreadsheetId,
+                range: `${sheetName}!${deps.columnLetter(pos.colIndex)}${pos.rowIndex + 1}`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [[action === 'done' ? 'TRUE' : 'SKIP']] },
+            });
+            const lang = (entry.subscriptions || []).some(s => s.lang === 'it') ? 'it' : 'en';
+            return { ok: true, status: 200, habit: payload.habit, action, message: TEXTS[lang].confirmed[action](payload.habit) };
+        } catch (e) {
+            log.warn(`Push: action failed for user=${deps.logId(payload.email)}: ${e && e.message}`);
+            return { ok: false, status: 502, error: 'sheet write failed' };
+        }
+    }
+
     let task = null;
     function start() {
         if (task) return task;
@@ -342,6 +413,6 @@ export function createPushService(deps) {
         settings: email => publicView(load()[email]),
         subscribe, unsubscribe, updatePrefs, updateRefreshToken, purgeDisallowed,
         sendTest: email => sendToUser(email, { kind: 'test', arg: null, tag: 'test', url: '/' }),
-        tick, start,
+        applyAction, tick, start,
     };
 }

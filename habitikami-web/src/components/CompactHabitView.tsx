@@ -5,7 +5,7 @@ import { Check, SkipForward, RefreshCw, Trophy, Calendar } from 'lucide-react';
 import type { HabitCellValue, SheetType } from '../types';
 import { useTranslation } from '../i18n';
 import { useSheetData } from '../hooks/useSheetData';
-import { useUpdateCell } from '../hooks/useHabitMutations';
+import { useUpdateCell, useAddDay } from '../hooks/useHabitMutations';
 import { useHabitStreaks } from '../hooks/useStreaks';
 import { StreakBadge } from './ui/StreakBadge';
 import { LoadError } from './ui/LoadError';
@@ -44,6 +44,7 @@ export function CompactHabitView({ pendingAction = null, onActionHandled }: Comp
 
     const { data: sheetData, isLoading: loading, refetch, error: sheetError, fetchStatus } = useSheetData(sheetName, year, month);
     const updateCellMutation = useUpdateCell();
+    const addDay = useAddDay();
 
     const { habits, completedCount, meta, todayValues, hiddenBySlot, hasSlots } = useMemo(() => {
         const empty = { habits: [] as string[], completedCount: 0, meta: null, todayValues: {} as Record<string, HabitCellValue>, hiddenBySlot: 0, hasSlots: false };
@@ -187,12 +188,21 @@ export function CompactHabitView({ pendingAction = null, onActionHandled }: Comp
                     <h2 className="text-2xl font-bold text-foreground">{t('focusNoData')}</h2>
                     <p className="text-muted-foreground mt-2 max-w-sm">{t('focusNoDataHint')}</p>
                 </div>
-                <button
-                    onClick={() => refetch()}
-                    className="flex items-center gap-2 px-6 py-3 bg-secondary hover:bg-secondary/80 rounded-full transition-all"
-                >
-                    <RefreshCw size={20} /> {t('refresh')}
-                </button>
+                <div className="flex flex-wrap gap-3 justify-center">
+                    <button
+                        onClick={() => addDay.mutate({ sheetName, date: new Date() })}
+                        disabled={addDay.isPending}
+                        className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full transition-all disabled:opacity-50"
+                    >
+                        + {t('addToday')}
+                    </button>
+                    <button
+                        onClick={() => refetch()}
+                        className="flex items-center gap-2 px-6 py-3 bg-secondary hover:bg-secondary/80 rounded-full transition-all"
+                    >
+                        <RefreshCw size={20} /> {t('refresh')}
+                    </button>
+                </div>
             </div>
         );
     }

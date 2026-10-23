@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tv_today_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_today_title"
+            android:textColor="@color/m3_on_primary_container"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:id="@+id/tv_today_date"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/m3_on_surface_variant"
+            android:textSize="12sp"
+            android:singleLine="true" />
+
+        <TextView
+            android:id="@+id/tv_today_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:textColor="@color/m3_on_surface"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium" />
+
+        <ImageButton
+            android:id="@+id/btn_refresh_today"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/widget_icon_button"
+            android:src="@android:drawable/ic_popup_sync"
+            android:scaleType="centerInside"
+            android:contentDescription="@string/btn_refresh"
+            android:padding="5dp" />
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/lv_today"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="6dp"
+        android:divider="@color/m3_outline_variant"
+        android:dividerHeight="1dp"
+        android:listSelector="@android:color/transparent" />
+
+    <TextView
+        android:id="@+id/tv_today_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingTop="4dp"
+        android:textColor="@color/m3_on_surface_variant"
+        android:textSize="11sp" />
+
+</LinearLayout>

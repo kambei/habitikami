@@ -14,5 +14,6 @@ object WidgetRefresher {
         HabitStatsWidgetProvider.refreshAll(context)
         MiniHeatmapWidgetProvider.refreshAll(context)
         StatsWidgetProvider.refreshAll(context)
+        TodayWidgetProvider.refreshAll(context)
     }
 }

@@ -69,4 +69,11 @@
     <string name="label_ai_help">Aiuto AI</string>
     <string name="btn_refresh">Aggiorna</string>
     <string name="config_title">Widget Habitikami</string>
+    <string name="widget_today_description">Le abitudini di oggi: tocca per spuntarle dalla home</string>
+    <string name="widget_today_title">Oggi</string>
+    <string name="widget_today_progress">%1$d/%2$d</string>
+    <string name="widget_today_no_row">Nessuna riga per oggi: apri l\'app</string>
+    <string name="widget_slot_morning">mattina</string>
+    <string name="widget_slot_afternoon">pomeriggio</string>
+    <string name="widget_slot_evening">sera</string>
 </resources>

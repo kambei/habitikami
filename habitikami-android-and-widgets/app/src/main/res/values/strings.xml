@@ -93,4 +93,11 @@
     <string name="update_now">Update</string>
     <string name="update_later">Later</string>
     <string name="update_skip">Skip this version</string>
+    <string name="widget_today_description">Today\'s habits: tap to tick them from the home screen</string>
+    <string name="widget_today_title">Today</string>
+    <string name="widget_today_progress">%1$d/%2$d</string>
+    <string name="widget_today_no_row">No row for today yet: open the app</string>
+    <string name="widget_slot_morning">morning</string>
+    <string name="widget_slot_afternoon">afternoon</string>
+    <string name="widget_slot_evening">evening</string>
 </resources>

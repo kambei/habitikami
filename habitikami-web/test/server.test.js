@@ -247,3 +247,19 @@ describe('AI shared key and validation', () => {
         expect(bad.status).toBe(400);
     });
 });
+
+describe('today and cell endpoints', () => {
+    it('validates the cell payload before touching the sheet', async () => {
+        const base = () => request(app).post('/api/cell').set('X-API-Token', VALID_API_KEY);
+        expect((await base().send({})).status).toBe(400);
+        expect((await base().send({ habit: 'Run', value: 'maybe' })).status).toBe(400);
+        const bad = await base().send({ habit: 'Run', value: 'TRUE', date: 'yesterday' });
+        expect(bad.status).toBe(400);
+        expect(bad.body.error).toMatch(/date/i);
+    });
+
+    it('rejects an anonymous today request', async () => {
+        expect((await request(app).get('/api/today')).status).toBe(401);
+        expect((await request(app).get('/api/today?date=bad').set('X-API-Token', VALID_API_KEY)).status).toBe(400);
+    });
+});

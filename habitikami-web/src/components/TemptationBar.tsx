@@ -41,7 +41,15 @@ export const TemptationBar = () => {
       } else {
         setStatus('success');
         toast.success(action.label || action.id, {
-            description: action.type === 'negative' ? "you are the worste!" : "Great job!"
+            description: action.type === 'negative' || action.type === 'succumb' ? t('counterLoggedBad') : t('counterLoggedGood'),
+            action: {
+                label: t('undo'),
+                onClick: async () => {
+                    await habitService.incrementCounter(action.id, -1);
+                    toast.info(t('counterUndone'));
+                    window.dispatchEvent(new CustomEvent('habitDataChanged'));
+                },
+            },
         });
         setTimeout(() => {
             setStatus('idle');

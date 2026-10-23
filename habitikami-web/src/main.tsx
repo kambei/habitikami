@@ -8,6 +8,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import { LanguageProvider } from './i18n'
 import { redirectPairingLink } from './utils/widgetPairing'
+import { applyTheme, watchSystemTheme } from './utils/theme'
 
 const PrivacyPolicy = React.lazy(lazyImport(() => import('./components/PrivacyPolicy').then(module => ({ default: module.PrivacyPolicy }))))
 const TermsOfService = React.lazy(lazyImport(() => import('./components/TermsOfService').then(module => ({ default: module.TermsOfService }))))
@@ -40,6 +41,8 @@ const persistOptions = {
 
 // A pairing QR opens /widget-config#…: hand it over to the Android app before rendering
 redirectPairingLink();
+applyTheme();
+watchSystemTheme();
 
 const path = window.location.pathname;
 

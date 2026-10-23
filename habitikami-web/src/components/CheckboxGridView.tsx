@@ -25,6 +25,8 @@ interface CheckboxGridViewProps {
     onToggle: (rowIndex: number, habit: string, currentValue: HabitCellValue) => void;
     onSetValue: (rowIndex: number, habit: string, value: number) => void;
     onOpenNote: (date: string, habit: string) => void;
+    /** Reorders habits: header indexes (from → to). */
+    onMoveColumn?: (from: number, to: number) => void;
     notes: Record<string, HabitNote>;
     isPending: boolean;
     sheetName: string;
@@ -44,10 +46,13 @@ export function CheckboxGridView({
     sheetName,
     year,
     month,
+    onMoveColumn,
 }: CheckboxGridViewProps) {
     const { t, tArray } = useTranslation();
     const todayColRef = useRef<HTMLDivElement>(null);
     const [selectedHabit, setSelectedHabit] = useState<string | null>(null);
+    const [dragIndex, setDragIndex] = useState<number | null>(null);
+    const [dragOver, setDragOver] = useState<number | null>(null);
 
     const { data: habitMeta } = useHabitMeta();
     const { streaks } = useHabitStreaks();
@@ -139,12 +144,16 @@ export function CheckboxGridView({
                     {headers.map((habit, hIndex) => {
                         const color = colors[habit] || defaultColor;
                         return (
-                            <motion.div
+                            <div
                                 key={habit}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: hIndex * 0.03 }}
-                                className="flex items-center gap-2 h-6 md:h-8"
+                                className={`flex items-center gap-2 h-6 md:h-8 ${dragIndex === hIndex ? 'opacity-50' : ''} ${dragOver === hIndex && dragIndex !== null && dragIndex !== hIndex ? 'ring-1 ring-primary/60 rounded' : ''}`}
+                                draggable={!!onMoveColumn}
+                                onDragStart={(e) => { setDragIndex(hIndex); e.dataTransfer.effectAllowed = 'move'; }}
+                                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (dragOver !== hIndex) setDragOver(hIndex); }}
+                                onDragLeave={() => { if (dragOver === hIndex) setDragOver(null); }}
+                                onDrop={(e) => { e.preventDefault(); if (dragIndex !== null && dragIndex !== hIndex) onMoveColumn?.(dragIndex, hIndex); setDragIndex(null); setDragOver(null); }}
+                                onDragEnd={() => { setDragIndex(null); setDragOver(null); }}
+                                title={onMoveColumn ? t('gridDragHint') : undefined}
                             >
                                 <button
                                     onClick={() => openHabit(habit)}
@@ -161,7 +170,7 @@ export function CheckboxGridView({
                                         <StreakBadge streak={streaks[habit].currentStreak} best={streaks[habit].bestStreak} className="ml-auto shrink-0" />
                                     )}
                                 </button>
-                            </motion.div>
+                            </div>
                         );
                     })}
                 </div>

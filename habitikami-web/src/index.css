@@ -59,6 +59,21 @@
   --input: 0 0% 20%;
   --ring: 265 80% 60%;
   --radius: 0.5rem;
+  color-scheme: dark;
+}
+
+/* Light theme (utils/theme.ts toggles the class on <html>) */
+:root.light {
+  --background: 0 0% 97%;
+  --foreground: 0 0% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 12%;
+  --primary: 265 70% 50%;
+  --primary-foreground: 0 0% 100%;
+  --border: 0 0% 84%;
+  --input: 0 0% 91%;
+  --ring: 265 70% 50%;
+  color-scheme: light;
 }
 
 @theme {

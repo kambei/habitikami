@@ -6,6 +6,7 @@ import { incrementCounterOfflineAware } from '../utils/offlineSync';
 import { cn } from '../lib/utils';
 import { useTranslation } from '../i18n';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { errorMessage as describeError } from '../utils/errors';
 import type { TemptationConfig, TemptationAction } from '../types';
 
@@ -65,6 +66,17 @@ export const TemptationView = () => {
                 setErrorMessage(result.error);
             } else {
                 setStatus('success');
+                toast.success(action.label || action.id, {
+                    action: {
+                        label: t('undo'),
+                        onClick: async () => {
+                            await habitService.incrementCounter(action.id, -1);
+                            setTodayCounts(prev => ({ ...prev, [key]: Math.max(0, (prev[key] || 1) - 1) }));
+                            toast.info(t('counterUndone'));
+                            queryClient.invalidateQueries({ queryKey: ['counters'] });
+                        },
+                    },
+                });
                 setTimeout(() => {
                     setStatus('idle');
                     refreshTodayCounts();

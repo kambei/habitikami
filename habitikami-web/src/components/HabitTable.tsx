@@ -142,6 +142,16 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
 
     const [scrollDone, setScrollDone] = useState(false);
     const todayRef = useRef<HTMLTableRowElement>(null);
+    // Today's row is expected in this sheet (weekday vs weekend) for the current month
+    const todayMissing = useMemo(() => {
+        const now = new Date();
+        if (now.getFullYear() !== year || now.getMonth() !== month || !sheetData) return false;
+        const weekend = now.getDay() === 0 || now.getDay() === 6;
+        if ((sheetName === 'Weekend') !== weekend) return false;
+        const pad = (n: number) => (n < 10 ? '0' + n : String(n));
+        const todayStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+        return !sheetData.data.some(r => r.date === todayStr);
+    }, [sheetData, sheetName, year, month]);
 
     const parseDate = useCallback((dateStr: string) => {
         const parts = dateStr.split(/[-/]/);
@@ -242,18 +252,20 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
         e.dataTransfer.dropEffect = "move";
     };
 
-    const handleDrop = (e: React.DragEvent, targetIndex: number) => {
-        e.preventDefault();
-        if (draggedColumnIndex === null || draggedColumnIndex === targetIndex || !meta) return;
-
-        const fromIndex = meta.startCol + draggedColumnIndex;
-        const destinationIndex = draggedColumnIndex < targetIndex
-            ? meta.startCol + targetIndex + 1
-            : meta.startCol + targetIndex;
-
+    /** Moves the habit at header index `from` to header index `to` (used by the table header and the grid). */
+    const moveHabit = (from: number, to: number) => {
+        if (from === to || !meta) return;
+        const fromIndex = meta.startCol + from;
+        const destinationIndex = from < to ? meta.startCol + to + 1 : meta.startCol + to;
         mutations.moveColumn.mutate({ sheetName, fromIndex, toIndex: destinationIndex }, {
             onSuccess: () => setDraggedColumnIndex(null),
         });
+    };
+
+    const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+        e.preventDefault();
+        if (draggedColumnIndex === null) return;
+        moveHabit(draggedColumnIndex, targetIndex);
     };
 
     const handleContextMenu = (e: React.MouseEvent, index: number, name: string) => {
@@ -314,7 +326,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     if (error || (!sheetData && sheetFetchStatus === 'paused')) return <LoadError error={error} onRetry={() => refetchSheet()} />;
 
     return (
-        <div className="overflow-x-auto pb-4 relative min-h-[500px] h-full flex flex-col">
+        <div className="overflow-x-auto pb-4 relative min-h-[500px] h-full flex flex-col scroll-smooth">
             <MilestoneCelebration streaks={streaks} />
             <HabitNoteEditor
                 target={noteTarget}
@@ -339,6 +351,19 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                 </div>
             </div>
             <div className="flex-1 overflow-auto relative">
+                {todayMissing && (
+                    <div className="mx-3 md:mx-0 mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 flex flex-wrap items-center gap-2 text-sm">
+                        <span className="flex-1 min-w-0">{t('todayMissing')}</span>
+                        <button
+                            type="button"
+                            onClick={() => mutations.addDay.mutate({ sheetName, date: new Date() })}
+                            disabled={mutations.addDay.isPending}
+                            className="px-3 py-1.5 rounded-md bg-amber-500/20 text-amber-200 hover:bg-amber-500/30 text-xs font-medium disabled:opacity-50"
+                        >
+                            + {t('addToday')}
+                        </button>
+                    </div>
+                )}
                 {viewMode === 'grid' ? (
                     <>
                         <CheckboxGridView
@@ -351,6 +376,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                             meta={meta}
                             dataStartRow={dataStartRow}
                             onToggle={handleToggle}
+                            onMoveColumn={moveHabit}
                             isPending={mutations.updateCell.isPending}
                             sheetName={sheetName}
                             year={year}
@@ -371,14 +397,14 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                     <thead className="bg-card text-card-foreground sticky top-0 z-10 shadow-sm">
                         <tr>
                             <th className="p-4 font-medium whitespace-nowrap min-w-[100px] sticky left-0 z-20 bg-card hidden md:table-cell">{t('habitTableDay')}</th>
-                            <th className="p-4 font-medium whitespace-nowrap min-w-[80px] md:min-w-[120px] sticky left-0 md:left-[100px] z-20 bg-card border-r border-border/50 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.5)]">{t('habitTableDate')}</th>
+                            <th className="p-2 md:p-4 font-medium whitespace-nowrap min-w-[72px] md:min-w-[120px] sticky left-0 md:left-[100px] z-20 bg-card border-r border-border/50 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.5)]">{t('habitTableDate')}</th>
                             {headers.map((h, index) => {
                                 const isEditing = editingHabit === h;
                                 const hasInfo = !!(metaMap[h] && metaMap[h].trim());
                                 return (
                                 <th
                                     key={h}
-                                    className={`p-4 font-medium whitespace-nowrap text-center min-w-[150px] group relative select-none ${isEditing ? '' : 'cursor-move'} ${draggedColumnIndex === index ? 'opacity-50 bg-accent' : ''}`}
+                                    className={`p-2 md:p-4 font-medium whitespace-nowrap text-center min-w-[104px] md:min-w-[150px] group relative select-none ${isEditing ? '' : 'cursor-move'} ${draggedColumnIndex === index ? 'opacity-50 bg-accent' : ''}`}
                                     draggable={!isEditing}
                                     onDragStart={(e) => handleDragStart(e, index)}
                                     onDragOver={(e) => handleDragOver(e, index)}
@@ -497,7 +523,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                     className={`border-b border-border/50 transition-colors ${today ? 'bg-primary/10 hover:bg-primary/20 border-l-4 border-l-primary' : 'hover:bg-white/5'}`}
                                 >
                                     <td className={`p-4 font-medium sticky left-0 z-10 backdrop-blur hidden md:table-cell ${today ? 'bg-primary/10 text-primary' : 'text-muted-foreground bg-card/95'}`}>{translateDay(row.day, tArray('days'))}</td>
-                                    <td className={`p-4 text-sm font-mono sticky left-0 md:left-[100px] z-10 backdrop-blur border-r border-border/50 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.5)] ${today ? 'bg-primary/10 text-primary' : 'text-muted-foreground bg-card/95'}`}>
+                                    <td className={`p-2 md:p-4 text-xs md:text-sm font-mono sticky left-0 md:left-[100px] z-10 backdrop-blur border-r border-border/50 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.5)] ${today ? 'bg-primary/10 text-primary' : 'text-muted-foreground bg-card/95'}`}>
                                         <span className="md:hidden">{row.date.split(/[-/]/).slice(0, 2).join('/')}</span>
                                         <span className="hidden md:inline">{row.date}</span>
                                     </td>
@@ -510,7 +536,7 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                                          return (
                                              <td
                                                  key={h}
-                                                 className="p-4 text-center relative group/cell"
+                                                 className="p-2 md:p-4 min-w-[44px] min-h-[44px] text-center relative group/cell"
                                                  title={tooltip}
                                                  onContextMenu={(e) => { e.preventDefault(); setNoteTarget({ date: row.date, habit: h }); }}
                                              >

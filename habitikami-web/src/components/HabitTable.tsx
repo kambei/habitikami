@@ -393,6 +393,8 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                     </>
                 ) : (
                 <>
+                <div className="relative">
+                <div className="overflow-x-auto scroll-smooth md:overflow-visible">
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-card text-card-foreground sticky top-0 z-10 shadow-sm">
                         <tr>
@@ -577,6 +579,10 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
                         })}
                     </tbody>
                 </table>
+                </div>
+                {/* Mobile: hint that more columns sit to the right */}
+                <div className="md:hidden pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-card to-transparent" />
+                </div>
 
                 <div className="p-4">
                     <button

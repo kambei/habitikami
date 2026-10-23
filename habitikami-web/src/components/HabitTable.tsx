@@ -83,24 +83,24 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     const [noteTarget, setNoteTarget] = useState<{ date: string; habit: string } | null>(null);
 
     // Derive everything from query data — no local copy
-    const headers: string[] = sheetData?.headers ?? [];
-    const queryData: HabitData[] = sheetData?.data ?? [];
+    const headers: string[] = useMemo(() => sheetData?.headers ?? [], [sheetData]);
+    const queryData: HabitData[] = useMemo(() => sheetData?.data ?? [], [sheetData]);
     const meta = sheetData?.meta ?? null;
     const dataStartRow: number = sheetData?.meta?.dataStartRow ?? 0;
-    const colors: Record<string, string> = habitColors ?? {};
+    const colors: Record<string, string> = useMemo(() => habitColors ?? {}, [habitColors]);
 
 
 
-    const mutations = {
-        updateCell: useUpdateCell(),
-        addHabit: useAddHabit(),
-        addDay: useAddDay(),
-        moveColumn: useMoveColumn(),
-        deleteColumn: useDeleteColumn(),
-        setHabitColor: useSetHabitColor(),
-        renameHabit: useRenameHabit(),
-        setHabitMeta: useSetHabitMeta(),
-    };
+    const updateCell = useUpdateCell();
+    const addHabit = useAddHabit();
+    const addDay = useAddDay();
+    const moveColumn = useMoveColumn();
+    const deleteColumn = useDeleteColumn();
+    const setHabitColor = useSetHabitColor();
+    const renameHabit = useRenameHabit();
+    const setHabitMeta = useSetHabitMeta();
+    const mutations = useMemo(() => ({ updateCell, addHabit, addDay, moveColumn, deleteColumn, setHabitColor, renameHabit, setHabitMeta }),
+        [updateCell, addHabit, addDay, moveColumn, deleteColumn, setHabitColor, renameHabit, setHabitMeta]);
 
 
     const [editingHabit, setEditingHabit] = useState<string | null>(null);
@@ -166,7 +166,8 @@ export function HabitTable({ sheetName, refreshKey }: HabitTableProps) {
     }, [loading, queryData, scrollDone]);
 
     useEffect(() => {
-        setScrollDone(false);
+        const id = setTimeout(() => setScrollDone(false), 0);
+        return () => clearTimeout(id);
     }, [sheetName, refreshKey]);
 
     const changeMonth = (delta: number) => {

@@ -68,7 +68,9 @@ export interface TemptationAction {
     id: string; // The column name in the spreadsheet
     label: string;
     color: string;
-    type: 'resist' | 'succumb' | 'other';
+    /** 'resist'/'positive' count as good, 'succumb'/'negative' as bad, the rest as neutral. */
+    type: 'resist' | 'succumb' | 'other' | 'positive' | 'negative' | 'neutral';
+    icon?: string;
 }
 
 export interface TemptationConfig {
@@ -81,7 +83,7 @@ export interface TemptationConfig {
 // Data structure for resistance counters
 export type CounterData = {
     date: string;
-    [key: string]: any; // Allow any counter name
+    [key: string]: string | number | undefined; // one column per counter
 }
 
 /** One mood/anxiety assessment, stored in the Mood sheet (see utils/mood.ts). */
@@ -118,3 +120,7 @@ export interface PushSettings {
     tz: string | null;
     hasRefreshToken: boolean;
 }
+
+/** One cell as the Sheets API returns it with valueRenderOption FORMATTED/UNFORMATTED. */
+export type SheetCell = string | number | boolean | null | undefined;
+export type SheetRow = SheetCell[];

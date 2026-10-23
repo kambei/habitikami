@@ -127,6 +127,7 @@ export function CompactHabitView({ pendingAction = null, onActionHandled }: Comp
     useEffect(() => {
         if (!pendingAction || loading || !meta) return;
         window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+        const id = setTimeout(() => {
         if (habits.length > 0) {
             const habit = habits[0];
             if (pendingAction === 'complete-next') {
@@ -138,11 +139,13 @@ export function CompactHabitView({ pendingAction = null, onActionHandled }: Comp
             }
         }
         onActionHandled?.();
+        }, 0);
+        return () => clearTimeout(id);
         // Runs once per action when data is ready
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pendingAction, loading, meta]);
 
-    const handleSkip = async () => {
+    async function handleSkip() {
         if (!meta || habits.length === 0) return;
         const currentHabit = habits[currentIndex];
 
@@ -165,7 +168,7 @@ export function CompactHabitView({ pendingAction = null, onActionHandled }: Comp
             habitName: currentHabit,
             date: todayStr,
         });
-    };
+    }
 
     if (loading) {
         return <div className="flex h-full items-center justify-center p-8 animate-pulse text-muted-foreground">{t('focusLoading')}</div>;

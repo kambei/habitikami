@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { habitService } from '../services/HabitService';
 import { toast } from 'sonner';
 import { translate } from '../i18n';
-import type { HabitMeta } from '../types';
+import type { HabitData, HabitMeta } from '../types';
 import { mergeHabitMeta } from '../utils/habitMeta';
 import { enqueue, isNetworkError } from '../utils/offlineQueue';
 
@@ -56,16 +56,16 @@ export function useUpdateCell() {
             } catch { /* no snapshot: the replay skips the conflict check */ }
 
             // Optimistically update to the new value
-            queryClient.setQueryData(queryKey, (old: any) => {
+            queryClient.setQueryData(queryKey, (old: { data?: HabitData[]; meta?: { dataStartRow: number } } | undefined) => {
                 if (!old || !old.data) return old;
                 
-                const newData = old.data.map((row: any) => {
+                const newData = old.data.map((row: HabitData) => {
                     // We need to identify the row. 
                     // variables.rowIndex is the ABSOLUTE sheet row.
-                    // old.meta.dataStartRow is the 1-based start row.
-                    const relativeIndex = variables.rowIndex - old.meta.dataStartRow;
+                    // (old.meta?.dataStartRow ?? 0) is the 1-based start row.
+                    const relativeIndex = variables.rowIndex - (old.meta?.dataStartRow ?? 0);
                     
-                    if (old.data.indexOf(row) === relativeIndex) {
+                    if (old.data!.indexOf(row) === relativeIndex) {
                         return {
                             ...row,
                             habits: {
@@ -188,7 +188,7 @@ export function useHabitMeta() {
         queryKey: ['habitMeta'],
         queryFn: async () => {
             const result = await habitService.getHabitMeta();
-            if (result && 'error' in result) throw new Error((result as any).error);
+            if (result && 'error' in result) throw new Error((result as { error: string }).error);
             return result as Record<string, HabitMeta>;
         },
         staleTime: 1000 * 60 * 5,
@@ -201,7 +201,7 @@ export function useSetHabitMeta() {
         // Partial update: only the given fields change, the rest of the row is kept.
         mutationFn: async ({ habitName, ...patch }: { habitName: string } & Partial<HabitMeta>) => {
             const result = await habitService.setHabitMeta(habitName, patch);
-            if (result && 'error' in result) throw new Error((result as any).error);
+            if (result && 'error' in result) throw new Error((result as { error: string }).error);
             return result;
         },
         onMutate: async ({ habitName, ...patch }) => {

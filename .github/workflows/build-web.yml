@@ -38,6 +38,10 @@ jobs:
         working-directory: habitikami-web
         run: npm ci && npm audit --omit=dev --audit-level=high
 
+      - name: Lint
+        working-directory: habitikami-web
+        run: npm run lint
+
       - name: Server route tests
         working-directory: habitikami-web
         run: npm test

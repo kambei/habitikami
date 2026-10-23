@@ -3,20 +3,25 @@ import { gapi } from 'gapi-script';
 // and we need to initialize the client.
 import { hexToSheetColor, sheetColorToHex } from '../utils/colors';
 import { findHeaderRowIndex } from '../utils/parser';
-import type { HabitMeta, HabitNote, MoodEntry, PushPrefs, PushSettings } from '../types';
+import type { HabitMeta, HabitNote, MoodEntry, PushPrefs, PushSettings, TemptationConfig, CounterData, SheetRow } from '../types';
 import { ACHIEVEMENTS_SHEET, ACHIEVEMENTS_COLUMNS, ACHIEVEMENTS_RANGE, rowsToUnlocked } from '../utils/achievements';
 import { HABIT_NOTES_COLUMNS, HABIT_NOTES_RANGE, HABIT_NOTES_SHEET, noteKey, rowsToHabitNotes } from '../utils/habitNotes';
 import { MOOD_COLUMNS, MOOD_RANGE, MOOD_SHEET, moodEntryToRow, rowsToMoodEntries } from '../utils/mood';
 import { HABIT_META_COLUMNS, HABIT_META_RANGE, mergeHabitMeta, rowToHabitMeta, habitMetaToRow } from '../utils/habitMeta';
+import { errorMessage, errorStatus } from '../utils/errors';
 
 // CLIENT_SECRET must never be referenced here; token exchange is backend-only
-const CLIENT_ID = (window as any).config?.VITE_GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const CLIENT_ID = window.config?.VITE_GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const DISCOVERY_DOCS = [
     "https://sheets.googleapis.com/$discovery/rest?version=v4",
     "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"
 ];
 const SCOPES = "https://www.googleapis.com/auth/drive.file openid email";
+
+/** Shapes of the Sheets API objects this service inspects (the client is untyped). */
+type SheetMeta = { properties?: { title?: string; sheetId?: number } };
+type CellDataLike = { userEnteredValue?: { stringValue?: string }; formattedValue?: string; userEnteredFormat?: { backgroundColor?: import('../utils/colors').Color } };
 
 const SESSION_KEY = 'habitikami_session_v3';
 
@@ -115,9 +120,9 @@ class HabitServiceImpl {
                     console.log("Initializing GAPI client...");
                     await gapi.client.init({ discoveryDocs: DISCOVERY_DOCS });
                     console.log("GAPI client initialized.");
-                } catch (e: any) {
+                } catch (e: unknown) {
                     console.error("GAPI init error:", e);
-                    this.initError = (e.result?.error?.message || e.message || JSON.stringify(e));
+                    this.initError = (errorMessage(e) || JSON.stringify(e));
                 }
             });
         };
@@ -196,7 +201,7 @@ class HabitServiceImpl {
             this.saveSession(data);
         } catch (e) {
             console.error('Error exchanging code:', e);
-            this.authError = e instanceof Error ? e.message : 'Authentication failed';
+            this.authError = e instanceof Error ? errorMessage(e) : 'Authentication failed';
         }
     }
 
@@ -234,7 +239,7 @@ class HabitServiceImpl {
         }
     }
 
-    private saveSession(data: any) {
+    private saveSession(data: { access_token: string; refresh_token?: string; email?: string; spreadsheet_id?: string | null; expires_in?: number }) {
         this.accessToken = data.access_token;
         if (data.refresh_token) this.refreshToken = data.refresh_token;
         if (data.email) this.email = data.email;
@@ -243,7 +248,7 @@ class HabitServiceImpl {
         const expires_in = data.expires_in || 3599;
         this.tokenExpiry = Date.now() + (expires_in * 1000);
 
-        if (gapi.client) (gapi.client as any).setToken({ access_token: this.accessToken });
+        if (gapi.client) gapi.client.setToken({ access_token: this.accessToken });
 
         const session: SessionData = {
             access_token: this.accessToken!,
@@ -306,7 +311,7 @@ class HabitServiceImpl {
                             const refreshed = await this.refreshAccessToken();
                             resolve(refreshed);
                         } else {
-                            (gapi.client as any).setToken({ access_token: this.accessToken });
+                            gapi.client.setToken({ access_token: this.accessToken });
                             // If spreadsheetId missing (stale session), try fetching from server
                             if (!this.spreadsheetId && this.accessToken) {
                                 try {
@@ -386,7 +391,7 @@ class HabitServiceImpl {
             const _dateStr = `${pad(today.getDate())}/${pad(today.getMonth() + 1)}/${today.getFullYear()}`;
             const _dayStr = "Lun"; // Just a placeholder day
 
-            const requests: any[] = [
+            const requests: Array<Record<string, unknown>> = [
                 // Weekdays Sheet
                 { addSheet: { properties: { title: "Weekdays", gridProperties: { frozenRowCount: 1 } } } },
                 // Weekend Sheet
@@ -446,9 +451,9 @@ class HabitServiceImpl {
             const sheetsListRes = await gapi.client.sheets.spreadsheets.get({ spreadsheetId });
             const sheets = sheetsListRes.result.sheets || [];
             
-            const formatRequests: any[] = [];
+            const formatRequests: Array<Record<string, unknown>> = [];
             
-            const weekdaysSheet = sheets.find((s: any) => s.properties?.title === 'Weekdays');
+            const weekdaysSheet = sheets.find((s: SheetMeta) => s.properties?.title === 'Weekdays');
             if (weekdaysSheet) {
                 formatRequests.push({
                     repeatCell: {
@@ -459,7 +464,7 @@ class HabitServiceImpl {
                 });
             }
             
-            const weekendSheet = sheets.find((s: any) => s.properties?.title === 'Weekend');
+            const weekendSheet = sheets.find((s: SheetMeta) => s.properties?.title === 'Weekend');
             if (weekendSheet) {
                 formatRequests.push({
                     repeatCell: {
@@ -479,9 +484,9 @@ class HabitServiceImpl {
             
             return { spreadsheetId };
 
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Error creating template", e);
-            return { error: e.result?.error?.message || e.message || "Failed to create tracker" };
+            return { error: errorMessage(e) || "Failed to create tracker" };
         }
     }
 
@@ -493,9 +498,9 @@ class HabitServiceImpl {
                 range: sheetName,
             });
             return response.result.values;
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Error fetching data", e);
-            if (e.status === 401 || e.status === 403) {
+            if (errorStatus(e) === 401 || errorStatus(e) === 403) {
                 // If we get 401, maybe token was revoked or generic error.
                 // Try one refresh if we haven't just cleared it?
                 if (this.refreshToken) {
@@ -509,12 +514,12 @@ class HabitServiceImpl {
                 }
                 return { error: "Unauthorized. Please sign in again." };
             }
-            return { error: e.result?.error?.message || e.message };
+            return { error: errorMessage(e) };
         }
     }
 
     async getDataSubset(sheetName: string, year: number, month: number): Promise<
-        { values: any[][], dataStartRow: number, headerRowIndex: number } | { error: string }
+        { values: SheetRow[], dataStartRow: number, headerRowIndex: number } | { error: string }
     > { // month is 0-indexed (0=Jan)
         return this.fetchRowsWhere(sheetName, d => d.y === year && d.m === month);
     }
@@ -525,7 +530,7 @@ class HabitServiceImpl {
      * exports that need more than one month.
      */
     async getRangeData(sheetName: string, from: Date, to: Date): Promise<
-        { values: any[][], dataStartRow: number, headerRowIndex: number } | { error: string }
+        { values: SheetRow[], dataStartRow: number, headerRowIndex: number } | { error: string }
     > {
         const fromKey = from.getFullYear() * 10000 + from.getMonth() * 100 + from.getDate();
         const toKey = to.getFullYear() * 10000 + to.getMonth() * 100 + to.getDate();
@@ -544,7 +549,7 @@ class HabitServiceImpl {
     private async fetchRowsWhere(
         sheetName: string,
         matches: (d: { y: number, m: number, d: number }) => boolean,
-    ): Promise<{ values: any[][], dataStartRow: number, headerRowIndex: number } | { error: string }> {
+    ): Promise<{ values: SheetRow[], dataStartRow: number, headerRowIndex: number } | { error: string }> {
         try {
             await this.ensureClient();
 
@@ -562,7 +567,7 @@ class HabitServiceImpl {
             const headerRow = headerValues[headerRowIndex];
             // Find Date Column Index (in the sheet, A=0)
             // Heuristic: look for 'Data' or 'Date' or just assume index 1 if not found
-            let dateColIndex = headerRow.findIndex((c: any) => typeof c === 'string' && /data|date/i.test(c));
+            let dateColIndex = headerRow.findIndex((c: unknown) => typeof c === 'string' && /data|date/i.test(c));
             if (dateColIndex === -1) dateColIndex = 1; // Default to column B (index 1)
 
             const dateColLetter = this.getColumnLetter(dateColIndex);
@@ -641,9 +646,9 @@ class HabitServiceImpl {
                 headerRowIndex: headerRowIndex
             };
 
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Error fetching subset", e);
-            return { error: e.result?.error?.message || e.message };
+            return { error: errorMessage(e) };
         }
     }
 
@@ -664,8 +669,8 @@ class HabitServiceImpl {
             const range = `${sheetName}!${this.getColumnLetter(colIndex)}${rowIndex}`;
             const res = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: this.getSpreadsheetId(), range });
             return { value: String(res.result.values?.[0]?.[0] ?? '') };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -684,9 +689,9 @@ class HabitServiceImpl {
                 }
             });
             return { success: true };
-        } catch (e: any) {
-            if (e.status === 401) await this.refreshAccessToken(); // Naive retry hook
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            if (errorStatus(e) === 401) await this.refreshAccessToken(); // Naive retry hook
+            return { error: errorMessage(e) };
         }
     }
 
@@ -717,8 +722,8 @@ class HabitServiceImpl {
             });
             return { success: true };
 
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -737,7 +742,7 @@ class HabitServiceImpl {
 
             const headerRowIndex = findHeaderRowIndex(headerValues);
             const headerRow = headerValues[headerRowIndex];
-            let dateColIndex = headerRow.findIndex((c: any) => typeof c === 'string' && /data|date/i.test(c));
+            let dateColIndex = headerRow.findIndex((c: unknown) => typeof c === 'string' && /data|date/i.test(c));
             if (dateColIndex === -1) dateColIndex = 1;
             const dateColLetter = this.getColumnLetter(dateColIndex);
 
@@ -807,8 +812,8 @@ class HabitServiceImpl {
                 }
             });
             return { success: true };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -818,7 +823,7 @@ class HabitServiceImpl {
             spreadsheetId: this.getSpreadsheetId(),
             fields: 'sheets(properties(sheetId,title))'
         });
-        const sheet = response.result.sheets?.find((s: any) => s.properties.title === sheetName);
+        const sheet = response.result.sheets?.find((s: SheetMeta) => s.properties?.title === sheetName);
         return sheet?.properties?.sheetId || null;
     }
 
@@ -844,8 +849,8 @@ class HabitServiceImpl {
                 }
             });
             return { success: true };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -870,8 +875,8 @@ class HabitServiceImpl {
                 }
             });
             return { success: true };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -885,7 +890,7 @@ class HabitServiceImpl {
             const headers = response.result.values?.[0] || [];
             const indexes: number[] = [];
             for (const name of columnNames) {
-                const idx = headers.findIndex((h: any) => typeof h === 'string' && h.toLowerCase() === name.toLowerCase());
+                const idx = headers.findIndex((h: unknown) => typeof h === 'string' && h.toLowerCase() === name.toLowerCase());
                 if (idx > 0) indexes.push(idx);
             }
             // Sort descending so deleting from right to left doesn't shift earlier indexes
@@ -894,8 +899,8 @@ class HabitServiceImpl {
                 await this.deleteColumn("Counters", idx);
             }
             return { success: true, deleted: indexes.length };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -921,7 +926,7 @@ class HabitServiceImpl {
             let headerRowIndex = 1;
             for (let i = 0; i < rowData.length; i++) {
                 const row = rowData[i];
-                if (row.values?.some((cell: any) => {
+                if (row.values?.some((cell: CellDataLike) => {
                     const val = cell.userEnteredValue?.stringValue || cell.formattedValue;
                     return val && HEADER_PATTERN.test(val);
                 })) {
@@ -933,7 +938,7 @@ class HabitServiceImpl {
             // Now parse colors from this row
             const headerRow = rowData[headerRowIndex];
             if (headerRow && headerRow.values) {
-                headerRow.values.forEach((cell: any) => {
+                headerRow.values.forEach((cell: CellDataLike) => {
                     const val = cell.userEnteredValue?.stringValue || cell.formattedValue;
                     if (val) {
                         const bgColor = cell.userEnteredFormat?.backgroundColor;
@@ -946,9 +951,9 @@ class HabitServiceImpl {
 
             return colors;
 
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Error fetching colors", e);
-            return { error: e.result?.error?.message || e.message };
+            return { error: errorMessage(e) };
         }
     }
 
@@ -968,7 +973,7 @@ class HabitServiceImpl {
             if (colIndex === -1) throw new Error(`Habit "${oldName}" not found in header`);
 
             // Reject duplicate header name
-            if (headerRow.some((h: any, i: number) => i !== colIndex && typeof h === 'string' && h === trimmed)) {
+            if (headerRow.some((h: unknown, i: number) => i !== colIndex && typeof h === 'string' && h === trimmed)) {
                 throw new Error(`A habit named "${trimmed}" already exists`);
             }
 
@@ -991,15 +996,15 @@ class HabitServiceImpl {
             } catch { /* meta migration is best-effort */ }
 
             return { success: true };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
     private async ensureHabitMetaSheet(): Promise<void> {
         const spreadsheetId = this.getSpreadsheetId();
         const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId, fields: 'sheets(properties(title))' });
-        const exists = meta.result.sheets?.some((s: any) => s.properties?.title === 'HabitMeta');
+        const exists = meta.result.sheets?.some((s: SheetMeta) => s.properties?.title === 'HabitMeta');
 
         if (!exists) {
             await gapi.client.sheets.spreadsheets.batchUpdate({
@@ -1039,10 +1044,10 @@ class HabitServiceImpl {
                 if (name) out[name] = rowToHabitMeta(rows[i]);
             }
             return out;
-        } catch (e: any) {
+        } catch (e: unknown) {
             // Sheet missing → empty meta (lazy: don't create yet)
-            const msg: string = e.result?.error?.message || e.message || '';
-            if (e.status === 400 || /Unable to parse range/i.test(msg)) return {};
+            const msg: string = errorMessage(e) || '';
+            if (errorStatus(e) === 400 || /Unable to parse range/i.test(msg)) return {};
             return { error: msg };
         }
     }
@@ -1089,8 +1094,8 @@ class HabitServiceImpl {
                 });
             }
             return { success: true };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -1123,8 +1128,8 @@ class HabitServiceImpl {
                 }
             });
             return { success: true };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -1170,8 +1175,8 @@ class HabitServiceImpl {
             });
             return { success: true };
 
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
     async getNotes(): Promise<import('../types').NoteData[] | { error: string }> {
@@ -1188,14 +1193,14 @@ class HabitServiceImpl {
             // Skip header if present (heuristic)
             const start = (rows[0][0] === "Date") ? 1 : 0;
 
-            return rows.slice(start).map((r: any[]) => ({
-                date: r[0] || "",
-                content: r[1] || "",
-                links: r[2] ? r[2].split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : []
+            return rows.slice(start).map((r: SheetRow) => ({
+                date: String(r[0] ?? ""),
+                content: String(r[1] ?? ""),
+                links: r[2] ? String(r[2]).split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : []
             }));
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error("Error fetching notes", e);
-            return { error: e.result?.error?.message || e.message };
+            return { error: errorMessage(e) };
         }
     }
 
@@ -1237,9 +1242,9 @@ class HabitServiceImpl {
 
                     // Retry fetch
                     values = await this.getData("MobNotes");
-                } catch (createError: any) {
+                } catch (createError: unknown) {
                     console.error("Failed to create sheet", createError);
-                    throw new Error("Could not create MobNotes sheet: " + (createError.result?.error?.message || createError.message));
+                    throw new Error("Could not create MobNotes sheet: " + (errorMessage(createError)));
                 }
             }
 
@@ -1281,8 +1286,8 @@ class HabitServiceImpl {
             }
             return { success: true };
 
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -1299,7 +1304,7 @@ class HabitServiceImpl {
                 range: `${sheetName}!A:Z`,
             });
 
-            let rows = response.result.values || [];
+            const rows = response.result.values || [];
 
             // Initialize sheet if empty
             if (rows.length === 0) {
@@ -1319,8 +1324,8 @@ class HabitServiceImpl {
             }
 
             const headers = rows[0];
-            const dateIdx = headers.findIndex((h: any) => typeof h === 'string' && /date/i.test(h));
-            let counterIdx = headers.findIndex((h: any) => typeof h === 'string' && h.toLowerCase() === counterName.toLowerCase());
+            const dateIdx = headers.findIndex((h: unknown) => typeof h === 'string' && /date/i.test(h));
+            let counterIdx = headers.findIndex((h: unknown) => typeof h === 'string' && h.toLowerCase() === counterName.toLowerCase());
 
             // If counter column doesn't exist, add it
             if (counterIdx === -1) {
@@ -1334,7 +1339,7 @@ class HabitServiceImpl {
                 });
             }
 
-            const todayRowIndex = rows.findIndex((r: any[]) => r[dateIdx] === dateStr);
+            const todayRowIndex = rows.findIndex((r: SheetRow) => r[dateIdx] === dateStr);
             const colLetter = this.getColumnLetter(counterIdx);
 
             if (todayRowIndex !== -1) {
@@ -1359,12 +1364,12 @@ class HabitServiceImpl {
 
             return { success: true };
 
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
-    async getPreferences(): Promise<{ enabled_tabs: string[] | null; default_tab: string | null } | { error: string }> {
+    async getPreferences(): Promise<{ enabled_tabs: string[] | null; default_tab: string | null; temptations?: TemptationConfig[] | null } | { error: string }> {
         try {
             const response = await fetch('/api/user/preferences', {
                 headers: { Authorization: `Bearer ${this.accessToken}` },
@@ -1374,12 +1379,12 @@ class HabitServiceImpl {
                 return { error: data.error || 'Failed to fetch preferences' };
             }
             return await response.json();
-        } catch (e: any) {
-            return { error: e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
-    async savePreferences(enabledTabs: string[], defaultTab?: string, temptations?: any[]): Promise<{ success: boolean } | { error: string }> {
+    async savePreferences(enabledTabs: string[], defaultTab?: string, temptations?: TemptationConfig[]): Promise<{ success: boolean } | { error: string }> {
         try {
             const response = await fetch('/api/user/preferences', {
                 method: 'POST',
@@ -1398,8 +1403,8 @@ class HabitServiceImpl {
                 return { error: data.error || 'Failed to save preferences' };
             }
             return await response.json();
-        } catch (e: any) {
-            return { error: e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -1415,8 +1420,8 @@ class HabitServiceImpl {
                 return { error: data.error || 'Failed to get API key info' };
             }
             return await response.json();
-        } catch (e: any) {
-            return { error: e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -1425,7 +1430,7 @@ class HabitServiceImpl {
     private async ensureAchievementsSheet(): Promise<void> {
         const spreadsheetId = this.getSpreadsheetId();
         const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId, fields: 'sheets(properties(title))' });
-        if (meta.result.sheets?.some((s: any) => s.properties?.title === ACHIEVEMENTS_SHEET)) return;
+        if (meta.result.sheets?.some((s: SheetMeta) => s.properties?.title === ACHIEVEMENTS_SHEET)) return;
         await gapi.client.sheets.spreadsheets.batchUpdate({
             spreadsheetId,
             resource: { requests: [{ addSheet: { properties: { title: ACHIEVEMENTS_SHEET, gridProperties: { frozenRowCount: 1 } } } }] }
@@ -1444,9 +1449,9 @@ class HabitServiceImpl {
             await this.ensureClient();
             const res = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: this.getSpreadsheetId(), range: ACHIEVEMENTS_RANGE });
             return { unlocked: rowsToUnlocked(res.result.values || []) };
-        } catch (e: any) {
-            const msg: string = e.result?.error?.message || e.message || '';
-            if (e.status === 400 || /Unable to parse range/i.test(msg)) return { unlocked: {} };
+        } catch (e: unknown) {
+            const msg: string = errorMessage(e) || '';
+            if (errorStatus(e) === 400 || /Unable to parse range/i.test(msg)) return { unlocked: {} };
             return { error: msg };
         }
     }
@@ -1465,8 +1470,8 @@ class HabitServiceImpl {
                 resource: { values: ids.map(id => [id, now]) }
             });
             return { success: true };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -1482,8 +1487,8 @@ class HabitServiceImpl {
             const data = await response.json().catch(() => ({}));
             if (!response.ok) return { error: data.error || `HTTP ${response.status}` };
             return data as T;
-        } catch (e: any) {
-            return { error: e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -1523,8 +1528,8 @@ class HabitServiceImpl {
                 return { error: data.error || 'Failed to generate API key' };
             }
             return await response.json();
-        } catch (e: any) {
-            return { error: e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -1541,12 +1546,12 @@ class HabitServiceImpl {
                 return { error: data.error || 'Failed to revoke API key' };
             }
             return await response.json();
-        } catch (e: any) {
-            return { error: e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
-    async getCounters(): Promise<any[] | { error: string }> {
+    async getCounters(): Promise<CounterData[] | { error: string }> {
         try {
             await this.ensureClient();
             const response = await gapi.client.sheets.spreadsheets.values.get({
@@ -1557,25 +1562,25 @@ class HabitServiceImpl {
             if (!rows || rows.length === 0) return [];
 
             const headers = rows[0];
-            const dateIdx = headers.findIndex((h: any) => typeof h === 'string' && /date/i.test(h));
+            const dateIdx = headers.findIndex((h: unknown) => typeof h === 'string' && /date/i.test(h));
             
             const colMap: Record<string, number> = {};
-            headers.forEach((h: any, i: number) => {
-                if (i !== dateIdx && h) colMap[h.toLowerCase()] = i;
+            headers.forEach((h: unknown, i: number) => {
+                if (i !== dateIdx && typeof h === 'string' && h) colMap[h.toLowerCase()] = i;
             });
 
-            const data = rows.slice(1).map((row: any[]) => {
-                const entry: any = { date: row[dateIdx] || "" };
+            const data = rows.slice(1).map((row: SheetRow) => {
+                const entry: CounterData = { date: String(row[dateIdx] ?? "") };
                 Object.keys(colMap).forEach(key => {
-                    entry[key] = parseInt(row[colMap[key]] || "0");
+                    entry[key] = parseInt(String(row[colMap[key]] ?? "0")) || 0;
                 });
                 return entry;
             });
 
             return data.reverse();
 
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -1734,8 +1739,8 @@ class HabitServiceImpl {
             const result = await response.json();
             console.log(`[HabitService] Document saved successfully. ID: ${result.id}`);
             return { fileId: result.id, fileUrl: result.webViewLink };
-        } catch (e: any) {
-            return { error: e.message || 'Failed to create Drive document' };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) || 'Failed to create Drive document' };
         }
     }
 
@@ -1777,8 +1782,8 @@ class HabitServiceImpl {
                 }
             }
             return results;
-        } catch (e: any) {
-            return { error: e.message || 'Failed to fetch worksheets' };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) || 'Failed to fetch worksheets' };
         }
     }
 
@@ -1797,12 +1802,12 @@ class HabitServiceImpl {
             if (!listRes.ok) throw new Error('Failed to list worksheets');
             const listData = await listRes.json();
             return listData.files || [];
-        } catch (e: any) {
-            return { error: e.message || 'Failed to fetch worksheet metadata' };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) || 'Failed to fetch worksheet metadata' };
         }
     }
 
-    async getLatestConsolidatedSummary(): Promise<{ content: string; date: string; data?: any } | null> {
+    async getLatestConsolidatedSummary(): Promise<{ content: string; date: string; data?: unknown } | null> {
         try {
             await this.ensureClient();
             const folderId = await this.findOrCreateWorksheetFolder();
@@ -1823,7 +1828,7 @@ class HabitServiceImpl {
             
             if (contentRes.ok) {
                 let content = await contentRes.text();
-                let jsonData: any = undefined;
+                let jsonData: unknown = undefined;
 
                 // Extract embedded JSON if present
                 const dataMatch = content.match(/--- JSON_DATA ---\s*([\s\S]*?)\s*--- END_JSON_DATA ---/);
@@ -1872,14 +1877,14 @@ class HabitServiceImpl {
                 }
             }
             return { success: true };
-        } catch (e: any) {
-            return { error: e.message || 'Failed to archive worksheets' };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) || 'Failed to archive worksheets' };
         }
     }
 
-    async getTemptations(): Promise<any[]> {
-        const prefs: any = await this.getPreferences();
-        if (prefs && !prefs.error && prefs.temptations) {
+    async getTemptations(): Promise<TemptationConfig[]> {
+        const prefs = await this.getPreferences();
+        if (!('error' in prefs) && prefs.temptations) {
             return prefs.temptations;
         }
 
@@ -1888,6 +1893,7 @@ class HabitServiceImpl {
             {
                 id: "Temptations",
                 label: "Temptations",
+                icon: "Shield",
                 actions: [
                     { id: "smoke", label: "Resisted", icon: "ShieldCheck", color: "#10b981", type: "positive" },
                     { id: "smoked", label: "Smoked", icon: "Flame", color: "#ef4444", type: "negative" },
@@ -1897,10 +1903,10 @@ class HabitServiceImpl {
         ];
     }
 
-    async saveTemptations(temptations: any[]): Promise<{ success: boolean } | { error: string }> {
-        const prefs: any = await this.getPreferences();
-        if (prefs && !prefs.error) {
-            return this.savePreferences(prefs.enabled_tabs, prefs.default_tab, temptations);
+    async saveTemptations(temptations: TemptationConfig[]): Promise<{ success: boolean } | { error: string }> {
+        const prefs = await this.getPreferences();
+        if (!('error' in prefs)) {
+            return this.savePreferences(prefs.enabled_tabs ?? [], prefs.default_tab ?? undefined, temptations);
         }
         return { error: "Could not fetch current preferences" };
     }
@@ -1917,7 +1923,7 @@ class HabitServiceImpl {
     private async ensureHabitNotesSheet(): Promise<void> {
         const spreadsheetId = this.getSpreadsheetId();
         const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId, fields: 'sheets(properties(title))' });
-        if (meta.result.sheets?.some((s: any) => s.properties?.title === HABIT_NOTES_SHEET)) return;
+        if (meta.result.sheets?.some((s: SheetMeta) => s.properties?.title === HABIT_NOTES_SHEET)) return;
         await gapi.client.sheets.spreadsheets.batchUpdate({
             spreadsheetId,
             resource: { requests: [{ addSheet: { properties: { title: HABIT_NOTES_SHEET, gridProperties: { frozenRowCount: 1 } } } }] }
@@ -1940,9 +1946,9 @@ class HabitServiceImpl {
                 if (note) notes[key] = { date, habit, note };
             }
             return { notes };
-        } catch (e: any) {
-            const msg: string = e.result?.error?.message || e.message || '';
-            if (e.status === 400 || /Unable to parse range/i.test(msg)) return { notes: {} };
+        } catch (e: unknown) {
+            const msg: string = errorMessage(e) || '';
+            if (errorStatus(e) === 400 || /Unable to parse range/i.test(msg)) return { notes: {} };
             return { error: msg };
         }
     }
@@ -1980,8 +1986,8 @@ class HabitServiceImpl {
                 });
             }
             return { success: true };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -1991,7 +1997,7 @@ class HabitServiceImpl {
     private async ensureMoodSheet(): Promise<void> {
         const spreadsheetId = this.getSpreadsheetId();
         const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId, fields: 'sheets(properties(title))' });
-        const exists = meta.result.sheets?.some((s: any) => s.properties?.title === MOOD_SHEET);
+        const exists = meta.result.sheets?.some((s: SheetMeta) => s.properties?.title === MOOD_SHEET);
         if (exists) return;
 
         await gapi.client.sheets.spreadsheets.batchUpdate({
@@ -2017,9 +2023,9 @@ class HabitServiceImpl {
                 range: MOOD_RANGE,
             });
             return { entries: rowsToMoodEntries(res.result.values || []) };
-        } catch (e: any) {
-            const msg: string = e.result?.error?.message || e.message || '';
-            if (e.status === 400 || /Unable to parse range/i.test(msg)) return { entries: [] };
+        } catch (e: unknown) {
+            const msg: string = errorMessage(e) || '';
+            if (errorStatus(e) === 400 || /Unable to parse range/i.test(msg)) return { entries: [] };
             return { error: msg };
         }
     }
@@ -2037,8 +2043,8 @@ class HabitServiceImpl {
                 resource: { values: entries.map(moodEntryToRow) }
             });
             return { success: true };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -2052,9 +2058,9 @@ class HabitServiceImpl {
                 resource: {}
             });
             return { success: true };
-        } catch (e: any) {
-            const msg: string = e.result?.error?.message || e.message || '';
-            if (e.status === 400 || /Unable to parse range/i.test(msg)) return { success: true };
+        } catch (e: unknown) {
+            const msg: string = errorMessage(e) || '';
+            if (errorStatus(e) === 400 || /Unable to parse range/i.test(msg)) return { success: true };
             return { error: msg };
         }
     }
@@ -2066,7 +2072,7 @@ class HabitServiceImpl {
 
             // Check if sheet already exists
             const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId });
-            const exists = meta.result.sheets?.some((s: any) => s.properties?.title === 'Training');
+            const exists = meta.result.sheets?.some((s: SheetMeta) => s.properties?.title === 'Training');
             if (exists) return { success: true };
 
             // Create sheet
@@ -2086,8 +2092,8 @@ class HabitServiceImpl {
             });
 
             return { success: true };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -2108,8 +2114,8 @@ class HabitServiceImpl {
             });
 
             return { success: true };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -2142,7 +2148,7 @@ class HabitServiceImpl {
 
             // Get the sheetId for Training
             const meta = await gapi.client.sheets.spreadsheets.get({ spreadsheetId });
-            const trainingSheet = meta.result.sheets?.find((s: any) => s.properties?.title === 'Training');
+            const trainingSheet = meta.result.sheets?.find((s: SheetMeta) => s.properties?.title === 'Training');
             if (!trainingSheet) return { error: 'Training sheet not found' };
 
             await gapi.client.sheets.spreadsheets.batchUpdate({
@@ -2162,8 +2168,8 @@ class HabitServiceImpl {
             });
 
             return { success: true };
-        } catch (e: any) {
-            return { error: e.result?.error?.message || e.message };
+        } catch (e: unknown) {
+            return { error: errorMessage(e) };
         }
     }
 
@@ -2187,9 +2193,9 @@ class HabitServiceImpl {
 
             // Filter by year/month if specified
             if (year !== undefined && month !== undefined) {
-                entries = entries.filter((row: any[]) => {
+                entries = entries.filter((row: SheetRow) => {
                     if (!row[0]) return false;
-                    const parts = row[0].split('/');
+                    const parts = String(row[0]).split('/');
                     if (parts.length < 3) return false;
                     const m = parseInt(parts[1]) - 1; // 0-indexed
                     const y = parseInt(parts[2]);
@@ -2198,12 +2204,12 @@ class HabitServiceImpl {
             }
 
             return { entries };
-        } catch (e: any) {
+        } catch (e: unknown) {
             // If sheet doesn't exist yet, return empty
-            if (e.status === 400 || (e.result?.error?.message || '').includes('Unable to parse range')) {
+            if (errorStatus(e) === 400 || (errorMessage(e) || '').includes('Unable to parse range')) {
                 return { entries: [] };
             }
-            return { error: e.result?.error?.message || e.message };
+            return { error: errorMessage(e) };
         }
     }
 }

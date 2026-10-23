@@ -5,9 +5,10 @@ import { habitService } from '../../services/HabitService';
 import { cn } from '../../lib/utils';
 import { useTranslation } from '../../i18n';
 import { ExpandableGraph } from './ExpandableGraph';
+import type { CounterData, TemptationConfig } from '../../types';
 
 interface Props {
-    data: any[];
+    data: CounterData[];
 }
 
 type ChartMode = 'weekly' | 'trend';
@@ -26,7 +27,7 @@ function getWeekBounds() {
 
 export const CounterGraph = ({ data }: Props) => {
     const { t, locale } = useTranslation();
-    const [temptations, setTemptations] = useState<any[]>([]);
+    const [temptations, setTemptations] = useState<TemptationConfig[]>([]);
     const [chartMode, setChartMode] = useState<ChartMode>('weekly');
     const [currentMonth, setCurrentMonth] = useState(() => {
         const now = new Date();
@@ -63,7 +64,7 @@ export const CounterGraph = ({ data }: Props) => {
         const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
         const lastDay = isCurrentMonth ? now.getDate() : daysInMonth;
 
-        const dataMap: Record<string, any> = {};
+        const dataMap: Record<string, CounterData> = {};
         sortedData.forEach(d => {
             // Assume d.date is "YYYY-MM-DD"
             if (!d.date) return;
@@ -107,14 +108,14 @@ export const CounterGraph = ({ data }: Props) => {
         if (temptations.length === 0) return [];
 
         return temptations.map(tConfig => {
-            const resistAction = tConfig.actions.find((a: any) => a.type === 'positive' || a.type === 'resist');
-            const succumbAction = tConfig.actions.find((a: any) => a.type === 'negative' || a.type === 'succumb');
-            const otherActions = tConfig.actions.filter((a: any) =>
+            const resistAction = tConfig.actions.find((a) => a.type === 'positive' || a.type === 'resist');
+            const succumbAction = tConfig.actions.find((a) => a.type === 'negative' || a.type === 'succumb');
+            const otherActions = tConfig.actions.filter((a) =>
                 a.type !== 'positive' && a.type !== 'resist' && a.type !== 'negative' && a.type !== 'succumb'
             );
 
-            const mapEntry = (d: any) => {
-                const entry: any = {};
+            const mapEntry = (d: CounterData) => {
+                const entry: Record<string, string | number> = {};
                 if (resistAction) entry[resistAction.label || resistAction.id] = d[resistAction.id.toLowerCase()] || d[resistAction.id] || 0;
                 if (succumbAction) entry[succumbAction.label || succumbAction.id] = d[succumbAction.id.toLowerCase()] || d[succumbAction.id] || 0;
                 for (const a of otherActions) entry[a.label || a.id] = d[a.id.toLowerCase()] || d[a.id] || 0;

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.16.1 - 2026-10-23
+### 🧹 Code quality (#120)
+- ESLint at zero errors and now part of the CI: real types replace `any` (sheet rows, counters, temptations, API errors), handlers used by effects are declared first, state updates from effects are deferred, derived table inputs are memoized.
+- `SettingsView` lives in its own file; `HelpView` keeps only the CBT/ACT tools and asks the app to open Settings when a key is missing.
+- Graphs load month rows and colours through react-query (cached, persisted, shared with the table) instead of a manual effect.
+- Temptations no longer reload the page after a tap: counters refresh in place.
+
 ## 🌐 Web 5.16.0 - 2026-10-22
 ### 🤖 AI assistant setup (#25)
 - **Guided setup** in Settings: pick Gemini (free) or Claude (paid, with a cost note), open the provider console with one tap, paste the key, "Check and save" tries it with a real call before storing it. The old two-card form is gone.

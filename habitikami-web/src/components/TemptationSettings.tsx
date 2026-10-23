@@ -4,10 +4,11 @@ import { Plus, Trash2, Edit2, Check, Flame, Info } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { habitService } from '../services/HabitService';
 import { useTranslation } from '../i18n';
+import type { TemptationConfig } from '../types';
 
 export const TemptationSettings = () => {
     const { t } = useTranslation();
-    const [temptations, setTemptations] = useState<any[]>([]);
+    const [temptations, setTemptations] = useState<TemptationConfig[]>([]);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -15,7 +16,7 @@ export const TemptationSettings = () => {
         habitService.getTemptations().then(setTemptations);
     }, []);
 
-    const handleSave = async (updated: any[]) => {
+    const handleSave = async (updated: TemptationConfig[]) => {
         setLoading(true);
         try {
             await habitService.saveTemptations(updated);
@@ -29,7 +30,7 @@ export const TemptationSettings = () => {
     };
 
     const addTemptation = () => {
-        const newT = {
+        const newT: TemptationConfig = {
             id: `custom_${Date.now()}`,
             label: "New Temptation",
             icon: "Activity",
@@ -45,7 +46,7 @@ export const TemptationSettings = () => {
         const temptation = temptations.find(t => t.id === id);
         if (!temptation) return;
         if (confirm("Are you sure you want to delete this temptation type? This will also remove its columns from the Counters sheet.")) {
-            const columnNames = temptation.actions.map((a: any) => a.id);
+            const columnNames = temptation.actions.map((a) => a.id);
             try {
                 await habitService.deleteCounterColumnsByName(columnNames);
             } catch (e) {
@@ -55,15 +56,15 @@ export const TemptationSettings = () => {
         }
     };
 
-    const updateTemptation = (id: string, field: string, value: any) => {
+    const updateTemptation = (id: string, field: string, value: string) => {
         const updated = temptations.map(t => t.id === id ? { ...t, [field]: value } : t);
         setTemptations(updated);
     };
 
-    const updateAction = (tId: string, aId: string, field: string, value: any) => {
+    const updateAction = (tId: string, aId: string, field: string, value: string) => {
         const updated = temptations.map(t => {
             if (t.id === tId) {
-                const updatedActions = t.actions.map((a: any) => {
+                const updatedActions = t.actions.map((a) => {
                     if (a.id === aId) {
                         // v5.0.4: Sync color to Google Sheet column header in real-time
                         if (field === 'color') {
@@ -157,7 +158,7 @@ export const TemptationSettings = () => {
 
                                 <div className="space-y-2">
                                     <label className="text-xs text-muted-foreground block">Actions (Spreadsheet Columns)</label>
-                                    {temp.actions.map((action: any) => (
+                                    {temp.actions.map((action) => (
                                         <div key={action.id} className="flex items-center gap-2 p-2 bg-secondary/30 rounded-lg">
                                             <input 
                                                 type="text" 

@@ -4,13 +4,15 @@ import { Loader2, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { CounterGraph } from './graphs/CounterGraph';
 import { useTranslation } from '../i18n';
+import { errorMessage } from '../utils/errors';
+import type { CounterData, TemptationConfig } from '../types';
 
 export const CountersView = () => {
     const { t } = useTranslation();
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<CounterData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [temptations, setTemptations] = useState<any[]>([]);
+    const [temptations, setTemptations] = useState<TemptationConfig[]>([]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -28,15 +30,16 @@ export const CountersView = () => {
             }
 
             setTemptations(tConfig);
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e: unknown) {
+            setError(errorMessage(e));
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchData();
+        const id = setTimeout(fetchData, 0);
+        return () => clearTimeout(id);
     }, []);
 
     return (
@@ -70,7 +73,7 @@ export const CountersView = () => {
                                 {Object.keys(data[0] || {}).filter(k => k !== 'date').map(key => {
                                     let label = key;
                                     for (const tConfig of temptations) {
-                                        const action = tConfig.actions.find((a: any) => a.id.toLowerCase() === key.toLowerCase());
+                                        const action = tConfig.actions.find((a) => a.id.toLowerCase() === key.toLowerCase());
                                         if (action) {
                                             const categoryPrefix = (tConfig.label && tConfig.label !== 'Temptations' && tConfig.label !== 'Smoking')
                                                 ? `${tConfig.label}: `
@@ -106,7 +109,7 @@ export const CountersView = () => {
                                         {Object.keys(data[0] || {}).filter(k => k !== 'date').map(key => {
                                             let color = "currentColor";
                                             for (const tConfig of temptations) {
-                                                const action = tConfig.actions.find((a: any) => a.id.toLowerCase() === key.toLowerCase());
+                                                const action = tConfig.actions.find((a) => a.id.toLowerCase() === key.toLowerCase());
                                                 if (action) {
                                                     color = action.color;
                                                     break;

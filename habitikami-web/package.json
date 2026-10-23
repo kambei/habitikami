@@ -1,7 +1,7 @@
 {
   "name": "habitikami-web",
   "private": true,
-  "version": "5.17.0",
+  "version": "5.18.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "start": "node server.js",
     "test": "vitest run",
-    "test:smoke": "node scripts/smoke-static.mjs"
+    "test:smoke": "node scripts/smoke-static.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@tanstack/query-sync-storage-persister": "^5.104.3",
@@ -40,6 +41,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/gapi": "^0.0.47",
     "@types/gapi.client.sheets-v4": "^0.0.4",

@@ -52,6 +52,14 @@ jobs:
         working-directory: habitikami-web
         run: npm run build && npm run test:smoke
 
+      - name: Install Playwright Chromium
+        working-directory: habitikami-web
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        working-directory: habitikami-web
+        run: npm run test:e2e
+
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0

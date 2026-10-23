@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.18.0 - 2026-10-23
+### 🔔 Notification buttons (#122)
+- Habit reminders carry **Done** and **Skip** buttons: the service worker posts a signed, 24-hour token to `/api/push/action`, which writes TRUE or SKIP in the habit's cell for that day. No need to open the app; a short confirmation follows, and any failure opens Focus.
+
+### ✨ Small frictions (#125)
+- **Add today** button in table, grid and Focus when the current month has no row for today.
+- **Undo** on counter taps (toast with Undo for a few seconds).
+- **Drag to reorder** habits in the grid, like in the table header.
+- **Theme**: system, dark or light from Settings (a light palette on `<html class="light">`).
+
+### 📱 Table on phones (#124)
+- Narrower sticky date column, 44px cells, less padding, a fade on the right edge that hints at more columns, smooth scrolling.
+
+### 🧪 End-to-end tests (#121)
+- Playwright suite (`npm run test:e2e`) against the built app with Google stubbed in the browser: table tap, Focus complete, grid note, Stats report and CSV, Settings/Trophies/Help, offline queue and resync. Runs in CI.
+- Found and fixed: after a reconnect the offline queue could stay stuck (the replay guard was set after an early return) so queued taps never synced.
+
 ## 🌐 Web 5.17.0 + 🤖 Android 5.5.0 - 2026-10-23
 ### 📱 Android "Today" widget (#123)
 - **New widget "Today"**: the habits of today's row as a list, pending ones first and ordered by time slot; a tap cycles not done → done → half → not done and writes the sheet right away. Numeric habits open the app. Header with date and done/total, refresh button, the usual "tap to configure", offline and wrong-key states.

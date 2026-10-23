@@ -43,9 +43,8 @@ async function apply(op: QueuedOp): Promise<void> {
 /** Replays what it can; resolves with the number of entries written. */
 export function replayQueue(queryClient?: QueryClient): Promise<number> {
     if (replaying) return replaying;
-    replaying = (async () => {
+    const run = (async () => {
         let done = 0;
-        try {
             if (typeof navigator !== 'undefined' && navigator.onLine === false) return 0;
             let queue = readQueue();
             while (queue.length > 0) {
@@ -81,19 +80,29 @@ export function replayQueue(queryClient?: QueryClient): Promise<number> {
                 }
             }
             return done;
-        } finally {
-            replaying = null;
-        }
     })();
-    return replaying;
+    // Assigned after creation: an early return would otherwise clear the guard before it is set
+    replaying = run;
+    run.finally(() => { if (replaying === run) replaying = null; }).catch(() => {});
+    return run;
 }
 
 /** Replays on start and whenever the browser comes back online; returns the stop function. */
 export function startOfflineSync(queryClient: QueryClient): () => void {
-    const onOnline = () => { replayQueue(queryClient).catch(() => {}); };
+    const replay = () => { replayQueue(queryClient).catch(() => {}); };
+    // The browser may fire "online" a moment before navigator.onLine flips: try again shortly after
+    const onOnline = () => { replay(); window.setTimeout(replay, 1500); };
     window.addEventListener('online', onOnline);
-    const timer = window.setTimeout(onOnline, 1500);
-    return () => { window.removeEventListener('online', onOnline); window.clearTimeout(timer); };
+    document.addEventListener('visibilitychange', replay);
+    const first = window.setTimeout(replay, 1500);
+    // Safety net while something is queued (a missed event, a flaky connection)
+    const interval = window.setInterval(() => { if (readQueue().length > 0) replay(); }, 30_000);
+    return () => {
+        window.removeEventListener('online', onOnline);
+        document.removeEventListener('visibilitychange', replay);
+        window.clearTimeout(first);
+        window.clearInterval(interval);
+    };
 }
 
 /** Increments a counter now, or queues the tap when there is no network. */

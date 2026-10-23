@@ -39,12 +39,6 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
     const [keysVersion, setKeysVersion] = useState(0);
     const bothKeys = keysVersion >= 0 && !!getGeminiKey() && !!getAnthropicKey();
 
-    useEffect(() => {
-        const id = setTimeout(() => { loadApiKeyInfo(); }, 0);
-        return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
     const loadApiKeyInfo = async () => {
         const result = await habitService.getApiKeyInfo();
         if (!('error' in result)) {
@@ -147,6 +141,12 @@ export function SettingsView({ onBack }: { onBack: () => void }) {
         setApiKeyCopied(true);
         setTimeout(() => setApiKeyCopied(false), 2000);
     };
+
+    useEffect(() => {
+        const id = setTimeout(() => { loadApiKeyInfo(); }, 0);
+        return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
             <div className="flex-1 flex items-start justify-center p-4 overflow-y-auto">

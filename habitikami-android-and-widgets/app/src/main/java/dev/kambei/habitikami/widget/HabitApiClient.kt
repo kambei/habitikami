@@ -20,7 +20,101 @@ data class ExportData(
     val colors: Map<String, Int> = emptyMap(),   // habit name → Android color int
 )
 
+/** One habit of today's row as GET /api/today returns it. */
+data class TodayHabit(
+    val name: String,
+    val value: String?,      // raw cell: TRUE/FALSE/HALF/SKIP, a number, or null when empty
+    val done: Boolean,
+    val type: String,        // "check" | "number"
+    val slot: String,        // any | morning | afternoon | evening
+    val time: String?,
+    val color: Int?,
+)
+
+data class TodayData(
+    val sheet: String,
+    val date: String,        // DD/MM/YYYY
+    val found: Boolean,      // false when the sheet has no row for the date
+    val habits: List<TodayHabit>,
+) {
+    val doneCount: Int get() = habits.count { it.done }
+
+    fun toJson(): String {
+        val arr = org.json.JSONArray()
+        for (h in habits) {
+            arr.put(
+                JSONObject().put("name", h.name).put("value", h.value ?: JSONObject.NULL).put("done", h.done)
+                    .put("type", h.type).put("slot", h.slot).put("time", h.time ?: JSONObject.NULL).put("color", h.color ?: JSONObject.NULL)
+            )
+        }
+        return JSONObject().put("sheet", sheet).put("date", date).put("found", found).put("habits", arr).toString()
+    }
+
+    companion object {
+        fun fromJson(raw: String): TodayData? = try { parseToday(JSONObject(raw)) } catch (_: Exception) { null }
+
+        internal fun parseToday(json: JSONObject): TodayData {
+            val arr = json.optJSONArray("habits") ?: org.json.JSONArray()
+            val habits = (0 until arr.length()).map { i ->
+                val h = arr.getJSONObject(i)
+                val colorRaw = h.opt("color")
+                val color: Int? = when (colorRaw) {
+                    is Int -> colorRaw
+                    is String -> try { android.graphics.Color.parseColor(colorRaw) } catch (_: Exception) { null }
+                    else -> null
+                }
+                TodayHabit(
+                    name = h.optString("name"),
+                    value = if (h.isNull("value")) null else h.optString("value"),
+                    done = h.optBoolean("done", false),
+                    type = h.optString("type", "check"),
+                    slot = h.optString("slot", "any"),
+                    time = if (h.isNull("time")) null else h.optString("time"),
+                    color = color,
+                )
+            }
+            return TodayData(json.optString("sheet"), json.optString("date"), json.optBoolean("found", false), habits)
+        }
+    }
+}
+
 object HabitApiClient {
+
+    /** Today's row (or [isoDate]'s) with meta and colours: GET /api/today. */
+    fun fetchToday(baseUrl: String, apiToken: String, isoDate: String = java.time.LocalDate.now().toString()): TodayData {
+        val url = URL("$baseUrl/api/today?date=$isoDate")
+        val conn = url.openConnection() as HttpURLConnection
+        try {
+            conn.requestMethod = "GET"
+            conn.setRequestProperty("X-API-Token", apiToken)
+            conn.connectTimeout = 15_000
+            conn.readTimeout = 15_000
+            if (conn.responseCode != 200) throw ApiException(conn.responseCode)
+            val body = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
+            return TodayData.parseToday(JSONObject(body))
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    /** Writes one cell (TRUE/FALSE/HALF/SKIP or a number): POST /api/cell. */
+    fun setCell(baseUrl: String, apiToken: String, isoDate: String, habit: String, value: String) {
+        val url = URL("$baseUrl/api/cell")
+        val conn = url.openConnection() as HttpURLConnection
+        try {
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("X-API-Token", apiToken)
+            conn.setRequestProperty("Content-Type", "application/json")
+            conn.doOutput = true
+            conn.connectTimeout = 10_000
+            conn.readTimeout = 10_000
+            val payload = JSONObject().put("date", isoDate).put("habit", habit).put("value", value).toString()
+            conn.outputStream.use { it.write(payload.toByteArray()) }
+            if (conn.responseCode != 200) throw ApiException(conn.responseCode)
+        } finally {
+            conn.disconnect()
+        }
+    }
 
     /** Fetch export data for the last [days] days. */
     fun fetchExport(baseUrl: String, apiToken: String, days: Int = 30): ExportData {

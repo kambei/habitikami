@@ -10,6 +10,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createPushService } from './push.js';
+import { locateCell, normalizeCellValue, sheetForDate, toSheetDate, todaySummary, columnLetter as cellColumnLetter } from './cells.js';
 
 dotenv.config();
 
@@ -1710,6 +1711,65 @@ app.get('/api/export', authenticate, async (req, res) => {
         res.json(result);
     } catch (error) {
         console.error('Export Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// ─── Today's row and single-cell writes (Android "Today" widget, issue #123) ──
+
+function requestedSheetDate(req, res) {
+    const raw = req.query?.date ?? req.body?.date;
+    const sheetDate = raw ? toSheetDate(raw) : toSheetDate(new Date().toISOString().slice(0, 10));
+    if (!sheetDate) { res.status(400).json({ error: 'Invalid date, use YYYY-MM-DD' }); return null; }
+    return sheetDate;
+}
+
+app.get('/api/today', authenticate, async (req, res) => {
+    try {
+        const sheetDate = requestedSheetDate(req, res);
+        if (!sheetDate) return;
+        const sheetName = req.query.sheet === 'Weekend' || req.query.sheet === 'Weekdays' ? req.query.sheet : sheetForDate(sheetDate);
+        const spreadsheetId = await resolveSpreadsheetId(req);
+        const sheets = await getSheetsClientForRequest(req);
+        const [valuesRes, gridRes, habitMeta] = await Promise.all([
+            sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:Z` }),
+            sheets.spreadsheets.get({ spreadsheetId, ranges: [`${sheetName}!A1:Z5`], includeGridData: true }).catch(() => null),
+            readHabitMeta(sheets, spreadsheetId),
+        ]);
+        const colors = gridRes?.data?.sheets?.[0] ? extractHabitColors(gridRes.data.sheets[0]) : {};
+        const summary = todaySummary(valuesRes.data.values || [], sheetDate, habitMeta, colors);
+        res.json({ sheet: sheetName, date: sheetDate, ...summary, pending: summary.habits.filter(h => !h.done && String(h.value ?? '').toUpperCase() !== 'SKIP').length });
+    } catch (error) {
+        console.error('Today Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.post('/api/cell', authenticate, async (req, res) => {
+    try {
+        const { habit } = req.body || {};
+        if (!habit || typeof habit !== 'string' || habit.length > 100) return res.status(400).json({ error: 'Invalid or missing habit' });
+        const value = normalizeCellValue(req.body?.value);
+        if (value === null) return res.status(400).json({ error: 'Invalid value: TRUE, FALSE, HALF, SKIP or a number' });
+        const sheetDate = requestedSheetDate(req, res);
+        if (!sheetDate) return;
+        const sheetName = req.body?.sheet === 'Weekend' || req.body?.sheet === 'Weekdays' ? req.body.sheet : sheetForDate(sheetDate);
+
+        const spreadsheetId = await resolveSpreadsheetId(req);
+        const sheets = await getSheetsClientForRequest(req);
+        const valuesRes = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:Z` });
+        const pos = locateCell(valuesRes.data.values || [], sheetDate, habit);
+        if (pos.error) return res.status(404).json({ error: pos.error, sheet: sheetName, date: sheetDate });
+
+        await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `${sheetName}!${cellColumnLetter(pos.colIndex)}${pos.rowIndex + 1}`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [[value]] },
+        });
+        res.json({ success: true, sheet: sheetName, date: sheetDate, habit, value });
+    } catch (error) {
+        console.error('Cell Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

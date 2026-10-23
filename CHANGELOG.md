@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 🌐 Web 5.17.0 + 🤖 Android 5.5.0 - 2026-10-23
+### 📱 Android "Today" widget (#123)
+- **New widget "Today"**: the habits of today's row as a list, pending ones first and ordered by time slot; a tap cycles not done → done → half → not done and writes the sheet right away. Numeric habits open the app. Header with date and done/total, refresh button, the usual "tap to configure", offline and wrong-key states.
+- **API**: `GET /api/today?date=` (today's row with meta and colours) and `POST /api/cell` (`{ date, habit, value }`, TRUE/FALSE/HALF/SKIP or a number), both with the widget API key or a Bearer token.
+
 ## 🌐 Web 5.16.1 - 2026-10-23
 ### 🧹 Code quality (#120)
 - ESLint at zero errors and now part of the CI: real types replace `any` (sheet rows, counters, temptations, API errors), handlers used by effects are declared first, state updates from effects are deferred, derived table inputs are memoized.

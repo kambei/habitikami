@@ -26,7 +26,7 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
-COPY server.js push.js ./
+COPY server.js push.js cells.js ./
 
 RUN mkdir -p /app/data
 

@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createPushService, localClock, cellIsDone, pendingHabits, reminderTime, sanitizePrefs, weeklyFigures } from '../push.js';
+import { createPushService, localClock, cellIsDone, pendingHabits, reminderTime, sanitizePrefs, weeklyFigures, signActionToken, verifyActionToken } from '../push.js';
 
 const EMAIL = 'owner@example.com';
 const sub = (n) => ({ endpoint: `https://push.example/${n}`, keys: { p256dh: 'k', auth: 'a' } });
@@ -55,11 +55,23 @@ describe('push helpers', () => {
     });
 });
 
+describe('action tokens', () => {
+    it('round-trips and rejects tampering and expiry', () => {
+        const t = signActionToken({ email: 'a@b.c', habit: 'Run', day: '2026-10-20' }, 'secret', 1000);
+        expect(verifyActionToken(t, 'secret', 2000)).toMatchObject({ email: 'a@b.c', habit: 'Run', day: '2026-10-20' });
+        expect(verifyActionToken(t, 'other', 2000)).toBeNull();
+        expect(verifyActionToken(t + 'x', 'secret', 2000)).toBeNull();
+        expect(verifyActionToken(t, 'secret', 1000 + 25 * 3600 * 1000)).toBeNull();
+        expect(verifyActionToken('garbage', 'secret')).toBeNull();
+    });
+});
+
 describe('push service', () => {
     let dataDir, service;
     const sendNotification = vi.fn(async () => ({}));
     const sheetValues = { Weekdays: [], Weekend: [], HabitMeta: [] };
-    const sheets = { spreadsheets: { values: { get: async ({ range }) => ({ data: { values: sheetValues[range.split('!')[0]] || [] } }) } } };
+    const updates = [];
+    const sheets = { spreadsheets: { values: { get: async ({ range }) => ({ data: { values: sheetValues[range.split('!')[0]] || [] } }), update: async (req) => { updates.push(req); return {}; } } } };
 
     beforeAll(() => {
         dataDir = mkdtempSync(join(tmpdir(), 'habitikami-push-'));
@@ -80,6 +92,8 @@ describe('push service', () => {
                 writeFileSync(file, JSON.stringify(next));
             },
             sendNotification,
+            locateCell: (rows, date, habit) => { const col = rows[0].indexOf(habit); const row = rows.findIndex(r => r[1] === date); return col === -1 ? { error: 'habit not found' } : row === -1 ? { error: 'row not found' } : { rowIndex: row, colIndex: col }; },
+            columnLetter: i => String.fromCharCode(65 + i),
             log: { log() {}, warn() {}, error() {} },
         });
     });
@@ -108,6 +122,12 @@ describe('push service', () => {
         const body = JSON.parse(sendNotification.mock.calls[0][1]);
         expect(body.title).toBe('⏰ Run');
         expect(body.url).toBe('/#Focus');
+        expect(body.actions.map(a => a.action)).toEqual(['done', 'skip']);
+        const applied = await service.applyAction(body.token, 'done');
+        expect(applied).toMatchObject({ ok: true, status: 200, habit: 'Run' });
+        expect(updates.at(-1)).toMatchObject({ range: 'Weekdays!C2', requestBody: { values: [['TRUE']] } });
+        expect(await service.applyAction(body.token, 'dance')).toMatchObject({ ok: false, status: 400 });
+        expect(await service.applyAction('nope', 'done')).toMatchObject({ ok: false, status: 401 });
         report = await service.tick(new Date('2026-10-20T06:00:30Z'));
         expect(report).toEqual([]);
     });

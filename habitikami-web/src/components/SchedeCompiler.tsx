@@ -7,8 +7,10 @@ import type { SchedaStep } from '../types';
 import type { SchedaTemplate } from '../data/schedeTemplates';
 import { type AIProviderConfig, callAI } from '../utils/aiProvider';
 import { saveMoodEntry } from '../hooks/useMood';
+import { moodEntryNow } from '../utils/mood';
 import { renderMarkdown } from '../lib/renderMarkdown';
 import { markdownToHtml } from '../lib/markdownUtils';
+import { errorMessage } from '../utils/errors';
 
 interface Message {
     role: 'user' | 'model';
@@ -32,10 +34,6 @@ export function SchedeCompiler({ template, providerConfig, onBack }: Props) {
     const [isSaving, setIsSaving] = useState(false);
     const [savedUrl, setSavedUrl] = useState<string | null>(null);
     const endRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        startCompilation();
-    }, []);
 
     useEffect(() => {
         endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -62,9 +60,9 @@ export function SchedeCompiler({ template, providerConfig, onBack }: Props) {
             if (parsed.completed) {
                 assessMood(updatedHistory, t(template.titleKey));
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setError(err.message || t('helpGenericError'));
+            setError(errorMessage(err) || t('helpGenericError'));
         } finally {
             setIsLoading(false);
         }
@@ -84,26 +82,25 @@ export function SchedeCompiler({ template, providerConfig, onBack }: Props) {
             );
             const parsed = JSON.parse(textResponse);
             if (typeof parsed.mood === 'number' && typeof parsed.anxiety === 'number') {
-                saveMoodEntry({
-                    date: new Date().toISOString(),
-                    timestamp: Date.now(),
-                    anxiety: Math.max(0, Math.min(100, parsed.anxiety)),
-                    mood: Math.max(0, Math.min(100, parsed.mood)),
-                    label: sessionLabel,
-                    source: 'worksheet',
-                });
+                saveMoodEntry(moodEntryNow(parsed.mood, parsed.anxiety, sessionLabel, 'worksheet'));
             }
         } catch {
             // Silent fail
         }
     };
 
-    const startCompilation = () => {
+    function startCompilation() {
         setHistory([]);
         setSavedUrl(null);
         const startMsg: Message = { role: 'user', content: t('schedaStartMessage') };
         callCurrentAI([startMsg]);
-    };
+    }
+
+    useEffect(() => {
+        const id = setTimeout(startCompilation, 0);
+        return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleOptionSelect = (option: string) => {
         setCurrentStep(null);
@@ -138,8 +135,8 @@ export function SchedeCompiler({ template, providerConfig, onBack }: Props) {
 
             if (result.error) throw new Error(result.error);
             if (result.fileUrl) setSavedUrl(result.fileUrl);
-        } catch (err: any) {
-            setError(err.message || t('helpGenericError'));
+        } catch (err: unknown) {
+            setError(errorMessage(err) || t('helpGenericError'));
         } finally {
             setIsSaving(false);
         }

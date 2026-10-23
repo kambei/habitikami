@@ -167,7 +167,7 @@ export async function callAI(
                 return { role, content: msg.content };
             }
             // Multimodal: text block + one block per attachment (image or PDF document).
-            const blocks: any[] = [{ type: 'text', text: msg.content }];
+            const blocks: Array<Record<string, unknown>> = [{ type: 'text', text: msg.content }];
             for (const att of msg.attachments) {
                 const source = { type: 'base64', media_type: att.mediaType, data: att.dataBase64 };
                 blocks.push(
@@ -218,7 +218,7 @@ export async function callAI(
             })),
         ];
 
-        const body: any = {
+        const body: { apiKey: string; contents: unknown; generationConfig?: { responseMimeType: string } } = {
             apiKey: config.apiKey,
             contents: apiMessages,
         };

@@ -5,6 +5,7 @@ import { Loader2, Plus, Link as LinkIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTranslation } from '../i18n';
 import { extractSpreadsheetId } from '../utils/spreadsheetId';
+import { errorMessage } from '../utils/errors';
 
 interface Props {
     email: string;
@@ -60,8 +61,8 @@ export function OnboardingPage({ email, onComplete }: Props) {
             } else {
                 toast.error(t('onboardingTemplateError').replace('{error}', t('toastUnknownError')));
             }
-        } catch (e: any) {
-            toast.error("Failed to create template: " + e.message);
+        } catch (e: unknown) {
+            toast.error("Failed to create template: " + errorMessage(e));
         } finally {
             setCreating(false);
         }

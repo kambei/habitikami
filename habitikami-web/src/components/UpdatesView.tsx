@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Megaphone, ChevronRight, Loader2, AlertCircle, RefreshCw, Smartphone, Globe } from 'lucide-react';
 import { habitService } from '../services/HabitService';
 import { renderMarkdown } from '../lib/renderMarkdown';
+import { errorMessage } from '../utils/errors';
 
 interface UpdatesViewProps {
     onBack: () => void;
@@ -30,8 +31,8 @@ export function UpdatesView({ onBack }: UpdatesViewProps) {
                     localStorage.setItem('lastSeenChangelogHash', data.hash);
                     window.dispatchEvent(new Event('changelogSeen'));
                 }
-            } catch (err: any) {
-                setError(err.message || 'Failed to load updates');
+            } catch (err: unknown) {
+                setError(errorMessage(err) || 'Failed to load updates');
             } finally {
                 setIsLoading(false);
             }

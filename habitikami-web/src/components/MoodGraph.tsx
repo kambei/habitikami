@@ -11,6 +11,7 @@ import { habitService } from '../services/HabitService';
 import { toast } from 'sonner';
 import { renderMarkdown } from '../lib/renderMarkdown';
 import { markdownToHtml } from '../lib/markdownUtils';
+import { errorMessage } from '../utils/errors';
 
 export type { MoodEntry } from '../types';
 
@@ -27,6 +28,12 @@ const AI_CACHE_IDS_KEY = 'habitikami_ai_insights_ids';
 
 interface Props {
     onBack: () => void;
+}
+
+function TrendIcon({ value }: { value: number }) {
+    if (value > 3) return <TrendingUp className="w-4 h-4" />;
+    if (value < -3) return <TrendingDown className="w-4 h-4" />;
+    return <Minus className="w-4 h-4" />;
 }
 
 export function MoodGraph({ onBack }: Props) {
@@ -51,7 +58,7 @@ export function MoodGraph({ onBack }: Props) {
         checkCache();
     }, [analysisLimit]); // Re-check cache if analysisLimit changes
 
-    const checkCache = async () => {
+    async function checkCache() {
         const cached = localStorage.getItem(AI_CACHE_KEY);
         const cachedIds = localStorage.getItem(AI_CACHE_IDS_KEY);
         
@@ -84,7 +91,7 @@ export function MoodGraph({ onBack }: Props) {
         setIsConsolidatedSummary(false);
 
         // If NO current worksheets (all archived), try to load latest consolidation from Drive
-        const latestSummary = await habitService.getLatestConsolidatedSummary();
+        const latestSummary = await habitService.getLatestConsolidatedSummary() as { content: string; date: string; data?: Partial<AiInsights> } | null;
         if (latestSummary) {
             // Extract analytical data if present
             const consolidatedInsights: AiInsights | null = latestSummary.data ? {
@@ -119,7 +126,7 @@ export function MoodGraph({ onBack }: Props) {
                 }
             }
         }
-    };
+    }
 
     const handleClear = () => {
         if (!window.confirm(t('moodGraphClearConfirm'))) return;
@@ -159,12 +166,6 @@ export function MoodGraph({ onBack }: Props) {
 
     const moodTrend = avgMoodLast - avgMoodPrev;
     const anxietyTrend = avgAnxietyLast - avgAnxietyPrev;
-
-    const TrendIcon = ({ value }: { value: number }) => {
-        if (value > 3) return <TrendingUp className="w-4 h-4" />;
-        if (value < -3) return <TrendingDown className="w-4 h-4" />;
-        return <Minus className="w-4 h-4" />;
-    };
 
     const handleAnalyze = async () => {
         if (!providerConfig) return;
@@ -217,9 +218,9 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
             setAiInsights(parsed);
             localStorage.setItem(AI_CACHE_KEY, JSON.stringify(parsed));
             localStorage.setItem(AI_CACHE_IDS_KEY, fileIds);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Analysis error:", err);
-            setAiError(err.message || "Failed to analyze worksheets");
+            setAiError(errorMessage(err) || "Failed to analyze worksheets");
         } finally {
             setIsAnalyzing(false);
         }
@@ -304,8 +305,8 @@ ${worksheets.map(w => `TITOLO: ${w.title}\nCONTENUTO:\n${w.content}\n---\n`).joi
             localStorage.setItem("AI_CACHE_TYPE", "consolidated");
 
             toast.success(t('moodGraphConsolidateSuccess'));
-        } catch (err: any) {
-            toast.error(err.message || "Consolidation failed");
+        } catch (err: unknown) {
+            toast.error(errorMessage(err) || "Consolidation failed");
         } finally {
             setIsConsolidating(false);
         }
@@ -336,8 +337,8 @@ ${JSON.stringify({
             
             setSavedUrl(res.fileUrl || null);
             toast.success(t('schedaSaved'));
-        } catch (err: any) {
-            toast.error(err.message || "Failed to save to Drive");
+        } catch (err: unknown) {
+            toast.error(errorMessage(err) || "Failed to save to Drive");
         } finally {
             setIsSaving(false);
         }

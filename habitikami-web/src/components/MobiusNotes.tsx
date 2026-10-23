@@ -29,7 +29,8 @@ export function MobiusNotes() {
     };
 
     useEffect(() => {
-        loadNotes();
+        const id = setTimeout(loadNotes, 0);
+        return () => clearTimeout(id);
     }, []);
 
     // Helper to get days

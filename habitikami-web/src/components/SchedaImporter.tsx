@@ -6,6 +6,7 @@ import { habitService } from '../services/HabitService';
 import { type AIProviderConfig, type AIAttachment, callAI } from '../utils/aiProvider';
 import { markdownToHtml } from '../lib/markdownUtils';
 import { renderMarkdown } from '../lib/renderMarkdown';
+import { errorMessage } from '../utils/errors';
 
 interface Props {
     providerConfig: AIProviderConfig;
@@ -121,9 +122,9 @@ export function SchedaImporter({ providerConfig, onBack }: Props) {
             setEditTitle(parsed.title?.trim() || t('importDefaultTitle'));
             setEditDate(parsed.date || todayISO());
             setEditMarkdown(parsed.markdown);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setError(err.message || t('helpGenericError'));
+            setError(errorMessage(err) || t('helpGenericError'));
         } finally {
             setIsAnalyzing(false);
         }
@@ -142,8 +143,8 @@ export function SchedaImporter({ providerConfig, onBack }: Props) {
             const res = await habitService.createDriveDocument(title, htmlContent);
             if (res.error) throw new Error(res.error);
             if (res.fileUrl) setSavedUrl(res.fileUrl);
-        } catch (err: any) {
-            setError(err.message || t('helpGenericError'));
+        } catch (err: unknown) {
+            setError(errorMessage(err) || t('helpGenericError'));
         } finally {
             setIsSaving(false);
         }

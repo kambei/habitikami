@@ -20,7 +20,7 @@ export const ExpandableGraph: React.FC<ExpandableGraphProps> = ({ children, titl
             document.body.style.overflow = 'hidden';
             
             // Try to lock orientation to landscape if supported
-            const screenAny = window.screen as any;
+            const screenAny = window.screen as Screen & { orientation?: { lock?: (o: string) => Promise<void>; unlock?: () => void } };
             if (screenAny?.orientation?.lock) {
                 screenAny.orientation.lock('landscape').catch(() => {
                     // Ignore errors if orientation lock is not supported or requires fullscreen
@@ -28,11 +28,11 @@ export const ExpandableGraph: React.FC<ExpandableGraphProps> = ({ children, titl
             }
         } else {
             document.body.style.overflow = '';
-            const screenAny = window.screen as any;
+            const screenAny = window.screen as Screen & { orientation?: { lock?: (o: string) => Promise<void>; unlock?: () => void } };
             if (screenAny?.orientation?.unlock) {
                 screenAny.orientation.unlock();
             }
-            setIsRotated(false); // Reset rotation when closing
+            setTimeout(() => setIsRotated(false), 0); // Reset rotation when closing
         }
         return () => {
             document.body.style.overflow = '';

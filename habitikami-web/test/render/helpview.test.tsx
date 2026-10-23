@@ -18,10 +18,10 @@ vi.mock('../../src/services/HabitService', () => {
     };
     return { habitService: new Proxy({}, { get: (_t, prop) => (prop === 'getStoredSpreadsheetId' ? () => 'sheet' : async () => (prop in answers ? answers[prop as string] : {})) }) };
 });
-(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+(globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
 Object.defineProperty(navigator, 'serviceWorker', { value: { ready: Promise.resolve({ pushManager: { getSubscription: async () => ({ endpoint: 'https://p/1', unsubscribe: async () => true, toJSON: () => ({}) }) } }) }, configurable: true });
-(globalThis as any).PushManager = function () {};
-(globalThis as any).Notification = { permission: 'granted', requestPermission: async () => 'granted' };
+(globalThis as Record<string, unknown>).PushManager = function () {};
+(globalThis as Record<string, unknown>).Notification = { permission: 'granted', requestPermission: async () => 'granted' };
 
 import { LanguageProvider } from '../../src/i18n';
 import { HelpView, SettingsView } from '../../src/components/HelpView';

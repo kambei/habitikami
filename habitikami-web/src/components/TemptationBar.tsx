@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Icons from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { habitService } from '../services/HabitService';
 import { incrementCounterOfflineAware } from '../utils/offlineSync';
 import { cn } from '../lib/utils';
 import { useTranslation } from '../i18n';
 import { toast } from 'sonner';
+import { errorMessage } from '../utils/errors';
+import type { TemptationConfig, TemptationAction } from '../types';
 
 const IconRenderer = ({ name, size = 24, className = "" }: { name: string, size?: number, className?: string }) => {
-  const IconComponent = (Icons as any)[name] || Icons.HelpCircle;
+  const IconComponent = (Icons as unknown as Record<string, LucideIcon>)[name] || Icons.HelpCircle;
   return <IconComponent size={size} className={className} />;
 };
 
@@ -17,7 +20,7 @@ export const TemptationBar = () => {
   const { t } = useTranslation();
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [actionId, setActionId] = useState<string | null>(null);
-  const [temptations, setTemptations] = useState<any[]>([]);
+  const [temptations, setTemptations] = useState<TemptationConfig[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   useEffect(() => {
@@ -26,7 +29,7 @@ export const TemptationBar = () => {
 
   const activeTemptation = temptations[selectedIndex];
 
-  const handleAction = async (action: any) => {
+  const handleAction = async (action: TemptationAction) => {
     setActionId(action.id);
     setStatus('loading');
     try {
@@ -48,9 +51,9 @@ export const TemptationBar = () => {
             window.dispatchEvent(new CustomEvent('habitDataChanged'));
         }, 2000);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       setStatus('error');
-      toast.error(e.message || t('helpGenericError'));
+      toast.error(errorMessage(e) || t('helpGenericError'));
       setTimeout(() => setStatus('idle'), 3000);
     }
   };
@@ -93,7 +96,7 @@ export const TemptationBar = () => {
           {/* Action Buttons */}
           <div className="flex-1 flex flex-wrap justify-center md:justify-start items-center gap-4 md:gap-8">
             <AnimatePresence mode="wait">
-              {activeTemptation?.actions.map((action: any) => (
+              {activeTemptation?.actions.map((action) => (
                 <motion.button
                   key={action.id}
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -120,7 +123,7 @@ export const TemptationBar = () => {
                     {status === 'loading' && actionId === action.id ? (
                       <Loader2 size={32} className="animate-spin" />
                     ) : (
-                      <IconRenderer name={action.icon} size={32} className="md:w-10 md:h-10 drop-shadow-lg" />
+                      <IconRenderer name={action.icon ?? 'HelpCircle'} size={32} className="md:w-10 md:h-10 drop-shadow-lg" />
                     )}
                   </div>
                   <span className="text-[10px] md:text-xs font-black uppercase tracking-tighter opacity-80 group-hover:opacity-100 transition-opacity">

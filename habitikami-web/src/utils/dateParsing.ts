@@ -12,7 +12,7 @@ export function parseDate(dateStr: string): Date | null {
     if (!dateStr) return null;
 
     // Check for DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
-    const euPattern = /^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/;
+    const euPattern = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})/;
     const match = dateStr.match(euPattern);
 
     if (match) {

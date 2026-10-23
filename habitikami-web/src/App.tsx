@@ -332,7 +332,7 @@ function App() {
           history.back();
         } else {
           lastBackTime.current = now;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           toast.info(t('backToExit'), { duration: 2000 });
           // Guard state: push us back into the app flow
           const hash = isLoggedIn ? `#${activeSheet}` : '#home';
@@ -377,6 +377,10 @@ function App() {
       setIsLoadingPrefs(false);
     }
   };
+
+  function handleRefresh() {
+    setRefreshKey(prev => prev + 1);
+  }
 
   useEffect(() => {
     habitService.tryRestoreSession().then(async restored => {
@@ -443,10 +447,6 @@ function App() {
     if (!tabs.includes(activeSheet)) {
       setActiveSheet(tabs[0]);
     }
-  };
-
-  const handleRefresh = () => {
-    setRefreshKey(prev => prev + 1);
   };
 
   const toggleLanguage = () => {
@@ -566,7 +566,7 @@ function App() {
                                   )}
                                 >
                                   {Icon && <Icon className="w-4 h-4 shrink-0" />}
-                                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                  { }
                                   <span className="flex-1">{t(TAB_LABEL_KEYS[tab])}</span>
                                   {activeSheet === tab && (
                                     <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
@@ -675,7 +675,7 @@ function App() {
                         tourHighlight === tab && "ring-2 ring-red-500 ring-offset-1 ring-offset-background"
                       )}
                     >
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      { }
                       {t(TAB_LABEL_KEYS[tab])}
                     </button>
                   ))}

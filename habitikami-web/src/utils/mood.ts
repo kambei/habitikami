@@ -98,3 +98,9 @@ export function writePendingMoodEntries(entries: MoodEntry[]): void {
 export function queuePendingMoodEntry(entry: MoodEntry): void {
     writePendingMoodEntries([...readPendingMoodEntries(), entry]);
 }
+
+/** A mood entry stamped with the current time (kept out of components for the React compiler). */
+export function moodEntryNow(mood: number, anxiety: number, label: string, source: MoodEntry['source']): MoodEntry {
+    const now = new Date();
+    return { date: now.toISOString(), timestamp: now.getTime(), mood: clamp(mood), anxiety: clamp(anxiety), label, source };
+}

@@ -104,9 +104,13 @@ export function AppTour({ onNavigate, onComplete, onHighlightChange, onMenuToggl
 
     // Run sequence when step changes
     useEffect(() => {
-        setIsTransitioning(true);
-        const cleanup = runMenuSequence(step);
+        let cleanup: unknown;
+        const t0 = setTimeout(() => {
+            setIsTransitioning(true);
+            cleanup = runMenuSequence(step);
+        }, 0);
         return () => {
+            clearTimeout(t0);
             if (typeof cleanup === 'function') cleanup();
         };
     }, [step]);

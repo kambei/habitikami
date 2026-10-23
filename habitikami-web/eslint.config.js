@@ -19,5 +19,15 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
+      // Context files export their hook next to the provider; AppTour exports a plain helper
+      'react-refresh/only-export-components': ['error', { allowConstantExport: true, allowExportNames: ['useTranslation', 'useUser', 'shouldShowTour'] }],
+    },
+  },
+  {
+    // Entry point: lazy route components live here on purpose
+    files: ['src/main.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
   },
 ])

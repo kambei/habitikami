@@ -5,6 +5,8 @@ import { habitService } from '../services/HabitService';
 import { incrementCounterOfflineAware } from '../utils/offlineSync';
 import { cn } from '../lib/utils';
 import { useTranslation } from '../i18n';
+import { errorMessage as describeError } from '../utils/errors';
+import type { TemptationConfig, TemptationAction } from '../types';
 
 const getRandomPhrase = (phrases: string[]) => phrases[Math.floor(Math.random() * phrases.length)];
 
@@ -13,7 +15,7 @@ export const TemptationView = () => {
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [actionId, setActionId] = useState<string | null>(null);
-    const [temptations, setTemptations] = useState<any[] | null>(null);
+    const [temptations, setTemptations] = useState<TemptationConfig[] | null>(null);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [successPhrase, setSuccessPhrase] = useState('');
     const [todayCounts, setTodayCounts] = useState<Record<string, number>>({});
@@ -22,30 +24,30 @@ export const TemptationView = () => {
         const counters = await habitService.getCounters();
         if (!Array.isArray(counters)) return;
         const todayStr = new Date().toISOString().split('T')[0];
-        const todayRow = counters.find((r: any) => r.date === todayStr);
+        const todayRow = counters.find((r) => r.date === todayStr);
         const counts: Record<string, number> = {};
         if (todayRow) {
             Object.keys(todayRow).forEach((k) => {
-                if (k !== 'date') counts[k.toLowerCase()] = parseInt(todayRow[k]) || 0;
+                if (k !== 'date') counts[k.toLowerCase()] = parseInt(String(todayRow[k] ?? '0')) || 0;
             });
         }
         setTodayCounts(counts);
     };
 
     useEffect(() => {
-        habitService.getTemptations().then(setTemptations);
-        refreshTodayCounts();
+        const id = setTimeout(() => { habitService.getTemptations().then(setTemptations); refreshTodayCounts(); }, 0);
+        return () => clearTimeout(id);
     }, []);
 
     const activeTemptation = temptations?.[selectedIndex];
 
-    const handleAction = async (action: any) => {
+    const handleAction = async (action: TemptationAction) => {
         setActionId(action.id);
         setStatus('loading');
         setErrorMessage(null);
 
         const isPositive = action.type === 'positive' || action.type === 'resist';
-        const phrases = isPositive ? tArray('smokePositivePhrases' as any) : tArray('smokeNegativePhrases' as any);
+        const phrases = isPositive ? tArray('smokePositivePhrases') : tArray('smokeNegativePhrases');
         setSuccessPhrase(getRandomPhrase(phrases));
 
         // Optimistic bump so the small today-counter reflects the action immediately
@@ -63,10 +65,10 @@ export const TemptationView = () => {
                 setStatus('success');
                 setTimeout(() => window.location.reload(), 3000);
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             setTodayCounts(prev => ({ ...prev, [key]: Math.max(0, (prev[key] || 1) - 1) }));
             setStatus('error');
-            setErrorMessage(e.message || t('helpGenericError'));
+            setErrorMessage(describeError(e) || t('helpGenericError'));
         }
     };
 
@@ -93,12 +95,12 @@ export const TemptationView = () => {
     if (!activeTemptation) return null;
 
     // Sort actions: positive/resist first, then negative/succumb, then others
-    const sortedActions = [...activeTemptation.actions].sort((a: any, b: any) => {
+    const sortedActions = [...activeTemptation.actions].sort((a, b) => {
         const order = (type: string) => type === 'positive' || type === 'resist' ? 0 : type === 'negative' || type === 'succumb' ? 1 : 2;
         return order(a.type) - order(b.type);
     });
 
-    const getButtonIcon = (action: any, size: number) => {
+    const getButtonIcon = (action: TemptationAction, size: number) => {
         const isPositive = action.type === 'positive' || action.type === 'resist';
         const isNegative = action.type === 'negative' || action.type === 'succumb';
         if (isPositive) return <ShieldCheck size={size} className="drop-shadow-md" />;
@@ -116,7 +118,7 @@ export const TemptationView = () => {
             >
                 {temptations.length > 1 && (
                     <div className="flex justify-center gap-2 mb-3">
-                        {temptations.map((t: any, i: number) => (
+                        {temptations.map((t, i) => (
                             <button
                                 key={t.id}
                                 onClick={() => setSelectedIndex(i)}
@@ -145,7 +147,7 @@ export const TemptationView = () => {
                 <AnimatePresence mode="wait">
                     {status === 'success' ? (
                         (() => {
-                            const action = activeTemptation.actions.find((a: any) => a.id === actionId);
+                            const action = activeTemptation.actions.find((a) => a.id === actionId);
                             const isPositive = action?.type === 'positive' || action?.type === 'resist';
                             return (
                                 <motion.div
@@ -185,7 +187,7 @@ export const TemptationView = () => {
                         })()
                     ) : (
                         <div className="flex flex-col gap-6 items-center w-full max-w-lg">
-                            {sortedActions.map((action: any) => {
+                            {sortedActions.map((action) => {
                                 const isPrimary = action.type === 'positive' || action.type === 'resist';
                                 const todayCount = todayCounts[action.id.toLowerCase()] || 0;
                                 return (

@@ -26,7 +26,9 @@ import {
 } from '../utils/aiProvider';
 import { MoodGraph } from './MoodGraph';
 import { saveMoodEntry } from '../hooks/useMood';
+import { moodEntryNow } from '../utils/mood';
 import { renderMarkdown } from '../lib/renderMarkdown';
+import { errorMessage } from '../utils/errors';
 
 interface Message {
     role: 'user' | 'model';
@@ -197,8 +199,8 @@ export function HelpView({ openSettings, onSettingsClosed, settingsOnly }: HelpV
                 setSpreadsheetSaved(true);
                 setTimeout(() => setSpreadsheetSaved(false), 3000);
             }
-        } catch (e: any) {
-            setSpreadsheetError(e.message || t('settingsSpreadsheetCreateError'));
+        } catch (e: unknown) {
+            setSpreadsheetError(errorMessage(e) || t('settingsSpreadsheetCreateError'));
         }
         setSpreadsheetCreating(false);
     };
@@ -225,9 +227,10 @@ export function HelpView({ openSettings, onSettingsClosed, settingsOnly }: HelpV
 
     // Open settings when triggered from parent (legacy prop) or as the Settings view
     useEffect(() => {
-        if (openSettings || settingsOnly) {
-            handleOpenSettings();
-        }
+        if (!(openSettings || settingsOnly)) return;
+        const id = setTimeout(handleOpenSettings, 0);
+        return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [openSettings, settingsOnly]);
 
     const callCurrentAI = async (messages: Message[]) => {
@@ -245,18 +248,18 @@ export function HelpView({ openSettings, onSettingsClosed, settingsOnly }: HelpV
             }
             setCurrentStep(parsedStep);
             setHistory(prev => [...prev, { role: 'model', content: textResponse }]);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setError(err.message || t('helpGenericError'));
+            setError(errorMessage(err) || t('helpGenericError'));
         } finally {
             setIsLoading(false);
         }
     };
 
-    const startSession = () => {
+    function startSession() {
         setHistory([]);
         callCurrentAI([{ role: 'user', content: t('helpStartMessage') }]);
-    };
+    }
 
     const handleOptionSelect = (option: string) => {
             setCurrentStep(null);
@@ -289,14 +292,7 @@ export function HelpView({ openSettings, onSettingsClosed, settingsOnly }: HelpV
             );
             const parsed = JSON.parse(textResponse);
             if (typeof parsed.mood === 'number' && typeof parsed.anxiety === 'number') {
-                saveMoodEntry({
-                    date: new Date().toISOString(),
-                    timestamp: Date.now(),
-                    anxiety: Math.max(0, Math.min(100, parsed.anxiety)),
-                    mood: Math.max(0, Math.min(100, parsed.mood)),
-                    label: sessionLabel,
-                    source: 'chat',
-                });
+                saveMoodEntry(moodEntryNow(parsed.mood, parsed.anxiety, sessionLabel, 'chat'));
             }
         } catch {
             // Silent fail - mood tracking is optional

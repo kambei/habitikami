@@ -20,6 +20,7 @@ import { CorrelationMatrix } from './graphs/CorrelationMatrix';
 import { MoodHabitCorrelation } from './graphs/MoodHabitCorrelation';
 import { ReportCard } from './graphs/ReportCard';
 import { nextMilestones } from '../utils/projections';
+import { errorMessage } from '../utils/errors';
 
 // Deterministic color generation
 const COLORS = [
@@ -124,8 +125,8 @@ export function Graphs() {
                     setTrainingStats(null);
                 }
 
-            } catch (err: any) {
-                setError(err.message);
+            } catch (err: unknown) {
+                setError(errorMessage(err));
             } finally {
                 setLoading(false);
             }
@@ -145,7 +146,7 @@ export function Graphs() {
     };
 
     const getSortedStats = () => {
-        let sorted = [...stats];
+        const sorted = [...stats];
         if (sortMethod === 'alphabetical') {
             sorted.sort((a, b) => sortDirection === 'asc'
                 ? a.name.localeCompare(b.name)
@@ -261,7 +262,7 @@ export function Graphs() {
                     <div className="flex flex-wrap gap-2 w-full md:w-auto">
                         <select
                             value={sortMethod}
-                            onChange={(e) => setSortMethod(e.target.value as any)}
+                            onChange={(e) => setSortMethod(e.target.value as typeof sortMethod)}
                             className="bg-card text-card-foreground p-2 rounded-md border border-border outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer text-sm flex-1 min-w-0"
                         >
                             <option value="default">{t('graphsSortDefault')}</option>
@@ -319,7 +320,7 @@ export function Graphs() {
                                     itemStyle={{ color: '#f3f4f6' }}
                                     content={({ active, payload }) => {
                                         if (!active || !payload?.length) return null;
-                                        const entry = payload.find((p: any) => p.dataKey === 'percentage');
+                                        const entry = payload.find((p) => p.dataKey === 'percentage');
                                         if (!entry) return null;
                                         return (
                                             <div style={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: 8, padding: '8px 12px' }}>
@@ -363,8 +364,8 @@ export function Graphs() {
                                 >
                                     <LabelList
                                         dataKey="name"
-                                        content={(props: any) => {
-                                            const { x, y, width, height, value, index } = props;
+                                        content={(raw) => {
+                                            const { x = 0, y = 0, width = 0, height = 0, value = '', index = 0 } = raw as { x?: number; y?: number; width?: number; height?: number; value?: string; index?: number };
                                             const entry = filteredStats[index];
                                             if (!entry) return null;
 
@@ -466,7 +467,7 @@ export function Graphs() {
             {/* Training Stats */}
             {trainingStats && trainingStats.totalExercises > 0 && (
                 <div className="mt-8 space-y-6">
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    { }
                     <h2 className="text-xl font-bold">{t('trainingStatsTitle')}</h2>
 
                     {/* Summary cards */}
@@ -511,7 +512,7 @@ export function Graphs() {
 
                         {/* Section breakdown */}
                         {trainingStats.sectionBreakdown.length > 0 && (
-                            /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                             
                             <ExpandableGraph title={t('trainingBySection')}>
                                 <div className="space-y-2 p-2">
                                     {trainingStats.sectionBreakdown.map(sec => (

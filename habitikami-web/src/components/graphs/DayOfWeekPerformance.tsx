@@ -27,7 +27,7 @@ export function DayOfWeekPerformance({ data }: DayOfWeekPerformanceProps) {
                         <PolarAngleAxis dataKey="day" tick={{ fill: '#888', fontSize: 12 }} />
                         <Tooltip
                             contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f3f4f6', borderRadius: '8px' }}
-                            formatter={(value: any) => [`${value}%`, t('graphsCompletion')]}
+                            formatter={(value) => [`${value}%`, t('graphsCompletion')]}
                         />
                         <Radar
                             name={t('graphsCompletion')}

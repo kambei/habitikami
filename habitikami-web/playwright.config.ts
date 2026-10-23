@@ -1,6 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
-/** End-to-end tests (issue #121): the built app served by `vite preview`, Google stubbed in the browser. */
+/**
+ * End-to-end tests (issue #121): the built app served by `vite preview`, Google
+ * stubbed in the browser. Run locally with `npm run build && npm run test:e2e`
+ * (needs `npx playwright install chromium` once); not part of the CI on purpose,
+ * the browser install there is slow.
+ */
 export default defineConfig({
     testDir: 'e2e',
     timeout: 60_000,

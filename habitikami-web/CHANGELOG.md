@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file.
 - Narrower sticky date column, 44px cells, less padding, a fade on the right edge that hints at more columns, smooth scrolling.
 
 ### 🧪 End-to-end tests (#121)
-- Playwright suite (`npm run test:e2e`) against the built app with Google stubbed in the browser: table tap, Focus complete, grid note, Stats report and CSV, Settings/Trophies/Help, offline queue and resync. Runs in CI.
+- Playwright suite (`npm run test:e2e`) against the built app with Google stubbed in the browser: table tap, Focus complete, grid note, Stats report and CSV, Settings/Trophies/Help, offline queue and resync. Run locally (`npm run build && npm run test:e2e`).
 - Found and fixed: after a reconnect the offline queue could stay stuck (the replay guard was set after an early return) so queued taps never synced.
 
 ## 🌐 Web 5.17.0 + 🤖 Android 5.5.0 - 2026-10-23

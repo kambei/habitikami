@@ -71,7 +71,7 @@ android {
 
 dependencies {
     // TWA (Trusted Web Activity)
-    implementation("com.google.androidbrowserhelper:androidbrowserhelper:2.5.0")
+    implementation("com.google.androidbrowserhelper:androidbrowserhelper:2.7.4")
     implementation("androidx.browser:browser:1.8.0")
 
     // Core
